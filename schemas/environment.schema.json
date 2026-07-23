@@ -1,0 +1,152 @@
+{
+  "$defs": {
+    "EnvironmentVerificationSpec": {
+      "additionalProperties": false,
+      "description": "Committed verification script reference.",
+      "properties": {
+        "script": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+          "title": "Script",
+          "type": "string"
+        }
+      },
+      "required": [
+        "script"
+      ],
+      "title": "EnvironmentVerificationSpec",
+      "type": "object"
+    },
+    "PlatformSpecification": {
+      "additionalProperties": false,
+      "description": "Platform evidence for a model environment.",
+      "properties": {
+        "expected_compatible": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Expected Compatible",
+          "type": "array"
+        },
+        "resolved_on": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Resolved On",
+          "type": "array"
+        },
+        "verified": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Verified",
+          "type": "array"
+        }
+      },
+      "required": [
+        "resolved_on",
+        "expected_compatible",
+        "verified"
+      ],
+      "title": "PlatformSpecification",
+      "type": "object"
+    },
+    "PythonSpecification": {
+      "additionalProperties": false,
+      "description": "Declared and resolved Python version.",
+      "properties": {
+        "constraint": {
+          "minLength": 1,
+          "title": "Constraint",
+          "type": "string"
+        },
+        "resolved_version": {
+          "minLength": 1,
+          "pattern": "^[0-9]+(\\.[0-9]+){1,2}$",
+          "title": "Resolved Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "constraint",
+        "resolved_version"
+      ],
+      "title": "PythonSpecification",
+      "type": "object"
+    }
+  },
+  "$id": "https://torch-dae.local/schemas/environment.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Committed model-specific environment specification.",
+  "properties": {
+    "dependency_manager": {
+      "const": "uv",
+      "minLength": 1,
+      "title": "Dependency Manager",
+      "type": "string"
+    },
+    "environment_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Environment Id",
+      "type": "string"
+    },
+    "lockfile": {
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+      "title": "Lockfile",
+      "type": "string"
+    },
+    "model_card_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Model Card Id",
+      "type": "string"
+    },
+    "platforms": {
+      "$ref": "#/$defs/PlatformSpecification"
+    },
+    "project_file": {
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+      "title": "Project File",
+      "type": "string"
+    },
+    "python": {
+      "$ref": "#/$defs/PythonSpecification"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sources_file": {
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+      "title": "Sources File",
+      "type": "string"
+    },
+    "verification": {
+      "$ref": "#/$defs/EnvironmentVerificationSpec"
+    }
+  },
+  "required": [
+    "schema_version",
+    "environment_id",
+    "model_card_id",
+    "python",
+    "platforms",
+    "dependency_manager",
+    "lockfile",
+    "project_file",
+    "sources_file",
+    "verification"
+  ],
+  "title": "EnvironmentSpecification",
+  "type": "object"
+}

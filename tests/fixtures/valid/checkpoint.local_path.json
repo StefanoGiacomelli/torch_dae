@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint_id": "synthetic-local-path",
+  "source_type": "local_path",
+  "url": null,
+  "repository_id": null,
+  "revision": null,
+  "release_tag": null,
+  "filename": null,
+  "local_path": "tests/fixtures/assets/synthetic.bin",
+  "expected_sha256": null,
+  "observed_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "format": "binary",
+  "loader": "synthetic_loader",
+  "license": {
+    "name": null,
+    "url": null,
+    "status": "not_applicable"
+  }
+}

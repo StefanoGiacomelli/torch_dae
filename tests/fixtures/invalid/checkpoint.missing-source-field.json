@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint_id": "synthetic-missing-source",
+  "source_type": "https",
+  "url": null,
+  "repository_id": null,
+  "revision": null,
+  "release_tag": null,
+  "filename": null,
+  "local_path": null,
+  "expected_sha256": null,
+  "observed_sha256": null,
+  "format": "binary",
+  "loader": "synthetic_loader",
+  "license": {
+    "name": null,
+    "url": null,
+    "status": "unresolved"
+  }
+}

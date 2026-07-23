@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint_id": "synthetic-package-bundle",
+  "source_type": "package_bundle",
+  "url": null,
+  "repository_id": null,
+  "package": "synthetic_package",
+  "package_version": "0.0.0",
+  "revision": null,
+  "release_tag": null,
+  "filename": "weights.bin",
+  "local_path": null,
+  "expected_sha256": null,
+  "observed_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "format": "package_resource",
+  "loader": "synthetic_loader",
+  "license": {
+    "name": null,
+    "url": null,
+    "status": "not_reported"
+  }
+}

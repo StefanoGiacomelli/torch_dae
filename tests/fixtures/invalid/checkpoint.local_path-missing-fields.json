@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint_id": "synthetic-invalid-local_path",
+  "source_type": "local_path",
+  "url": null,
+  "repository_id": null,
+  "revision": null,
+  "release_tag": null,
+  "filename": null,
+  "local_path": null,
+  "expected_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "observed_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+  "format": "state_dict",
+  "loader": "synthetic_loader",
+  "license": {
+    "name": null,
+    "url": null,
+    "status": "unresolved"
+  },
+  "package": null,
+  "package_version": null
+}

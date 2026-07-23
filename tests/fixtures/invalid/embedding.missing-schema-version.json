@@ -1,0 +1,20 @@
+{
+  "embedding_id": "synthetic.global",
+  "name": "Synthetic global representation",
+  "description": "Synthetic fixture embedding, not a real model.",
+  "officially_defined": false,
+  "default": true,
+  "network_location": "synthetic.encoder.pool",
+  "layout": "B,D",
+  "dimension": 16,
+  "granularity": "clipwise",
+  "temporal_hop_seconds": null,
+  "pooling": "synthetic global mean",
+  "projection": "none",
+  "normalization": "none",
+  "task_head_relation": "before synthetic head",
+  "dtype": "float32",
+  "status": "verified",
+  "selection_rationale": "Synthetic default selected for contract testing.",
+  "evidence_ids": []
+}

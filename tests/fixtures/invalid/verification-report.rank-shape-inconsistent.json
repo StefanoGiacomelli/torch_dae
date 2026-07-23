@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0.0",
+  "report_id": "synthetic-runtime-report",
+  "model_card_id": "synthetic-family-variant-checkpoint-runtime",
+  "environment_id": "synthetic-family-variant-checkpoint",
+  "environment_fingerprint": "5555555555555555555555555555555555555555555555555555555555555555",
+  "created_at": "2026-07-22T00:00:00Z",
+  "platform": "macos-arm64",
+  "device": "cpu",
+  "checkpoint_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+  "input_contracts": [
+    "waveform[B,C,T]",
+    "sample_rate",
+    "valid_lengths[B]"
+  ],
+  "tensor_observations": [
+    {
+      "name": "logits",
+      "role": "primary_output",
+      "component_path": "outputs.primary",
+      "shape": [
+        {
+          "name": "B",
+          "size": 2,
+          "dynamic": true,
+          "description": "batch"
+        }
+      ],
+      "rank": 2,
+      "dtype": "float32",
+      "device": "cpu",
+      "lengths": null,
+      "temporal_metadata": null
+    }
+  ],
+  "embedding_results": [
+    "synthetic.global",
+    "synthetic.frame"
+  ],
+  "passed_capabilities": [
+    "forward",
+    "embeddings"
+  ],
+  "unsupported_capabilities": [
+    "probabilities"
+  ],
+  "known_limitations": [],
+  "checks": [
+    {
+      "name": "canonical input",
+      "status": "passed",
+      "details": null
+    }
+  ]
+}

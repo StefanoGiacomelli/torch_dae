@@ -1,0 +1,289 @@
+{
+  "schema_version": "1.0.0",
+  "card_id": "synthetic-family-variant-checkpoint",
+  "card_status": "analyzed",
+  "identity": {
+    "model_name": "Synthetic Audio Fixture",
+    "model_family": "SyntheticFamily",
+    "variant": "VariantA",
+    "checkpoint_name": "Synthetic Checkpoint",
+    "framework": "pytorch",
+    "wrapper_entry_point": "torch_dae.synthetic:AudioModel"
+  },
+  "checkpoint": {
+    "schema_version": "1.0.0",
+    "checkpoint_id": "synthetic-https",
+    "source_type": "https",
+    "url": "https://example.invalid/synthetic.bin",
+    "repository_id": null,
+    "package": null,
+    "package_version": null,
+    "revision": null,
+    "release_tag": null,
+    "filename": "synthetic.bin",
+    "local_path": null,
+    "expected_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "observed_sha256": null,
+    "format": "state_dict",
+    "loader": "synthetic_loader",
+    "license": {
+      "name": null,
+      "url": null,
+      "status": "unresolved"
+    }
+  },
+  "sources": {
+    "official_repository": {
+      "source_id": "official",
+      "kind": "repository",
+      "url": "https://example.invalid/official",
+      "package": null,
+      "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "path": null,
+      "evidence_status": "not_applicable"
+    },
+    "implementation": {
+      "source_id": "implementation",
+      "kind": "package",
+      "url": null,
+      "package": "synthetic-audio",
+      "revision": null,
+      "path": null,
+      "evidence_status": "not_applicable"
+    },
+    "checkpoint": {
+      "source_id": "checkpoint-source",
+      "kind": "asset",
+      "url": "https://example.invalid/synthetic.bin",
+      "package": null,
+      "revision": null,
+      "path": null,
+      "evidence_status": "not_applicable"
+    },
+    "wrapper": {
+      "source_id": "wrapper",
+      "kind": "local",
+      "url": null,
+      "package": null,
+      "revision": null,
+      "path": "src/torch_dae/synthetic.py",
+      "evidence_status": "not_applicable"
+    }
+  },
+  "scientific_reference": {
+    "title": "Synthetic fixture without scientific claims",
+    "doi": null,
+    "official_publication": null,
+    "authors": [
+      "Synthetic Fixture"
+    ],
+    "year": 2026
+  },
+  "description": {
+    "architecture": "Synthetic architecture text for contract testing.",
+    "preprocessing": "Synthetic preprocessing text for contract testing.",
+    "training_objective": "Synthetic objective text for contract testing.",
+    "checkpoint_behavior": "Synthetic checkpoint behavior text for contract testing.",
+    "implementation": "Synthetic implementation text for contract testing."
+  },
+  "tasks": {
+    "pretraining": [],
+    "finetuning": [],
+    "official_evaluation": [],
+    "supported_inference": [
+      "synthetic_classification"
+    ]
+  },
+  "datasets": {
+    "training": [
+      {
+        "name": "Synthetic Dataset",
+        "version": null,
+        "subset": null,
+        "split": "train",
+        "role": "training",
+        "source_status": "not_applicable",
+        "evidence_ids": []
+      }
+    ],
+    "validation": [],
+    "testing": []
+  },
+  "reported_metrics": [
+    {
+      "task": "synthetic_classification",
+      "dataset": "Synthetic Dataset",
+      "split": "test",
+      "metric": "accuracy",
+      "value": null,
+      "unit": null,
+      "protocol": "Synthetic fixture has no reported metric.",
+      "checkpoint_specific": true,
+      "source_status": "not_applicable",
+      "evidence_ids": []
+    }
+  ],
+  "usage": {
+    "recommended_environment": {
+      "environment_id": "synthetic-family-variant-checkpoint",
+      "specification": "environments/synthetic-family-variant-checkpoint/environment.json",
+      "lockfile": "environments/synthetic-family-variant-checkpoint/uv.lock",
+      "verified": false
+    },
+    "installation_commands": [],
+    "checkpoint_loading": [],
+    "smoke_test_command": "torch-dae model verify synthetic-family-variant-checkpoint"
+  },
+  "input": {
+    "shape": "B,C,T",
+    "sample_rate_hz": 16000,
+    "dtype": "float32",
+    "valid_lengths_shape": "B",
+    "channels": "mono or stereo accepted by wrapper",
+    "resampling": "automatic unless disabled",
+    "padding": "valid_lengths identifies padded samples",
+    "normalization": "synthetic fixture normalization"
+  },
+  "outputs": {
+    "primary": {
+      "name": "logits",
+      "kind": "tensor",
+      "semantic_kind": "logits",
+      "rank": 2,
+      "layout": "B,2",
+      "dimensions": [
+        "B",
+        "classes"
+      ],
+      "dtype": "float32",
+      "granularity": "clipwise",
+      "task_head_relation": "task head output"
+    },
+    "components": [
+      {
+        "name": "logits",
+        "kind": "tensor",
+        "semantic_kind": "logits",
+        "rank": 2,
+        "layout": "B,2",
+        "dimensions": [
+          "B",
+          "classes"
+        ],
+        "dtype": "float32",
+        "granularity": "clipwise",
+        "task_head_relation": "task head output"
+      }
+    ],
+    "probability_output": null
+  },
+  "embeddings": {
+    "default_embedding_id": "synthetic.global",
+    "items": [
+      {
+        "schema_version": "1.0.0",
+        "embedding_id": "synthetic.global",
+        "name": "Synthetic global representation",
+        "description": "Synthetic fixture embedding, not a real model.",
+        "officially_defined": false,
+        "default": true,
+        "network_location": "synthetic.encoder.pool",
+        "layout": "B,D",
+        "dimension": 16,
+        "granularity": "clipwise",
+        "temporal_hop_seconds": null,
+        "pooling": "synthetic global mean",
+        "projection": "none",
+        "normalization": "none",
+        "task_head_relation": "before synthetic head",
+        "dtype": "float32",
+        "status": "verified",
+        "selection_rationale": "Synthetic default selected for contract testing.",
+        "evidence_ids": []
+      },
+      {
+        "schema_version": "1.0.0",
+        "embedding_id": "synthetic.frame",
+        "name": "Synthetic frame representation",
+        "description": "Synthetic fixture frame embedding, not a real model.",
+        "officially_defined": false,
+        "default": false,
+        "network_location": "synthetic.encoder.frames",
+        "layout": "B,N,D",
+        "dimension": 8,
+        "granularity": "framewise",
+        "temporal_hop_seconds": 0.02,
+        "pooling": "none",
+        "projection": "none",
+        "normalization": "none",
+        "task_head_relation": "before pooling",
+        "dtype": "float32",
+        "status": "verified",
+        "selection_rationale": "Synthetic non-default embedding.",
+        "evidence_ids": []
+      }
+    ]
+  },
+  "capabilities": {
+    "random_initialization": {
+      "supported": true,
+      "reason": null
+    },
+    "checkpoint_loading": {
+      "supported": true,
+      "reason": null
+    },
+    "probabilities": {
+      "supported": false,
+      "reason": null
+    },
+    "embeddings": {
+      "supported": true,
+      "reason": null
+    }
+  },
+  "device_support": {
+    "upstream_declared": [
+      "cpu"
+    ],
+    "locally_tested": [],
+    "known_limitations": []
+  },
+  "verification_report": null,
+  "architectural_profiling": {
+    "status": "not_profiled",
+    "report": null
+  },
+  "inference_profiling": {
+    "status": "not_profiled",
+    "report": null
+  },
+  "energy_profiling": {
+    "status": "not_profiled",
+    "report": null
+  },
+  "limitations": [
+    "Synthetic fixture only."
+  ],
+  "issues": [
+    {
+      "issue_id": "synthetic-no-real-model",
+      "kind": "phase00_fixture",
+      "status": "not_applicable",
+      "description": "This is not a real model card.",
+      "impact": "Used only for tests."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-synthetic-001",
+      "kind": "fixture",
+      "status": "not_applicable",
+      "url": null,
+      "revision": null,
+      "path": "tests/fixtures/valid/model-card.analyzed.json",
+      "symbol": null,
+      "description": "Synthetic evidence record."
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "embedding_id": "synthetic.extra",
+  "name": "Synthetic extra property",
+  "description": "Invalid fixture.",
+  "officially_defined": false,
+  "default": true,
+  "network_location": "x",
+  "layout": "B,D",
+  "dimension": 8,
+  "granularity": "clipwise",
+  "temporal_hop_seconds": null,
+  "pooling": "none",
+  "projection": "none",
+  "normalization": "none",
+  "task_head_relation": "none",
+  "dtype": "float32",
+  "status": "verified",
+  "selection_rationale": "Invalid fixture.",
+  "evidence_ids": [],
+  "unexpected": true
+}

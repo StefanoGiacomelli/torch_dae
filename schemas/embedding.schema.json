@@ -1,0 +1,148 @@
+{
+  "$id": "https://torch-dae.local/schemas/embedding.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Model-independent embedding declaration.",
+  "properties": {
+    "default": {
+      "title": "Default",
+      "type": "boolean"
+    },
+    "description": {
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "dimension": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Dimension"
+    },
+    "dtype": {
+      "minLength": 1,
+      "title": "Dtype",
+      "type": "string"
+    },
+    "embedding_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Embedding Id",
+      "type": "string"
+    },
+    "evidence_ids": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "granularity": {
+      "minLength": 1,
+      "title": "Granularity",
+      "type": "string"
+    },
+    "layout": {
+      "minLength": 1,
+      "title": "Layout",
+      "type": "string"
+    },
+    "name": {
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "network_location": {
+      "minLength": 1,
+      "title": "Network Location",
+      "type": "string"
+    },
+    "normalization": {
+      "minLength": 1,
+      "title": "Normalization",
+      "type": "string"
+    },
+    "officially_defined": {
+      "title": "Officially Defined",
+      "type": "boolean"
+    },
+    "pooling": {
+      "minLength": 1,
+      "title": "Pooling",
+      "type": "string"
+    },
+    "projection": {
+      "minLength": 1,
+      "title": "Projection",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selection_rationale": {
+      "minLength": 1,
+      "title": "Selection Rationale",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "declared",
+        "verified",
+        "unsupported"
+      ],
+      "minLength": 1,
+      "title": "Status",
+      "type": "string"
+    },
+    "task_head_relation": {
+      "minLength": 1,
+      "title": "Task Head Relation",
+      "type": "string"
+    },
+    "temporal_hop_seconds": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Temporal Hop Seconds"
+    }
+  },
+  "required": [
+    "schema_version",
+    "embedding_id",
+    "name",
+    "description",
+    "officially_defined",
+    "default",
+    "network_location",
+    "layout",
+    "granularity",
+    "pooling",
+    "projection",
+    "normalization",
+    "task_head_relation",
+    "dtype",
+    "status",
+    "selection_rationale"
+  ],
+  "title": "EmbeddingSpec",
+  "type": "object"
+}

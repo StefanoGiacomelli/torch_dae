@@ -1,0 +1,1914 @@
+{
+  "$defs": {
+    "BooleanCapability": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "supported": {
+                "const": false
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "reason": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "reason"
+            ]
+          }
+        }
+      ],
+      "description": "Capability support plus optional reason.",
+      "properties": {
+        "reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "supported": {
+          "title": "Supported",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "supported"
+      ],
+      "title": "BooleanCapability",
+      "type": "object"
+    },
+    "CapabilitiesSection": {
+      "additionalProperties": false,
+      "description": "Model-independent capability declarations.",
+      "properties": {
+        "checkpoint_loading": {
+          "$ref": "#/$defs/BooleanCapability"
+        },
+        "embeddings": {
+          "$ref": "#/$defs/BooleanCapability"
+        },
+        "probabilities": {
+          "$ref": "#/$defs/BooleanCapability"
+        },
+        "random_initialization": {
+          "$ref": "#/$defs/BooleanCapability"
+        }
+      },
+      "required": [
+        "random_initialization",
+        "checkpoint_loading",
+        "probabilities",
+        "embeddings"
+      ],
+      "title": "CapabilitiesSection",
+      "type": "object"
+    },
+    "CheckpointSourceType": {
+      "description": "Supported checkpoint source variants.",
+      "enum": [
+        "https",
+        "github_release",
+        "huggingface",
+        "package_bundle",
+        "local_path"
+      ],
+      "minLength": 1,
+      "title": "CheckpointSourceType",
+      "type": "string"
+    },
+    "CheckpointSpec": {
+      "additionalProperties": false,
+      "description": "Checkpoint specification for one concrete pretrained asset.",
+      "properties": {
+        "checkpoint_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Checkpoint Id",
+          "type": "string"
+        },
+        "expected_sha256": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Sha256"
+        },
+        "filename": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Filename"
+        },
+        "format": {
+          "minLength": 1,
+          "title": "Format",
+          "type": "string"
+        },
+        "license": {
+          "$ref": "#/$defs/LicenseRecord"
+        },
+        "loader": {
+          "minLength": 1,
+          "title": "Loader",
+          "type": "string"
+        },
+        "local_path": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Local Path"
+        },
+        "observed_sha256": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observed Sha256"
+        },
+        "package": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Package"
+        },
+        "package_version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Package Version"
+        },
+        "release_tag": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Release Tag"
+        },
+        "repository_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Repository Id"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[0-9a-f]{40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revision"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "minLength": 1,
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_type": {
+          "$ref": "#/$defs/CheckpointSourceType"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "schema_version",
+        "checkpoint_id",
+        "source_type",
+        "format",
+        "loader",
+        "license"
+      ],
+      "title": "CheckpointSpec",
+      "type": "object"
+    },
+    "DatasetRecord": {
+      "additionalProperties": false,
+      "description": "Dataset usage record.",
+      "properties": {
+        "evidence_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "role": {
+          "minLength": 1,
+          "title": "Role",
+          "type": "string"
+        },
+        "source_status": {
+          "$ref": "#/$defs/EvidenceStatus"
+        },
+        "split": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Split"
+        },
+        "subset": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subset"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "name",
+        "role",
+        "source_status"
+      ],
+      "title": "DatasetRecord",
+      "type": "object"
+    },
+    "Datasets": {
+      "additionalProperties": false,
+      "description": "Training, validation, and testing dataset partitions.",
+      "properties": {
+        "testing": {
+          "items": {
+            "$ref": "#/$defs/DatasetRecord"
+          },
+          "title": "Testing",
+          "type": "array"
+        },
+        "training": {
+          "items": {
+            "$ref": "#/$defs/DatasetRecord"
+          },
+          "title": "Training",
+          "type": "array"
+        },
+        "validation": {
+          "items": {
+            "$ref": "#/$defs/DatasetRecord"
+          },
+          "title": "Validation",
+          "type": "array"
+        }
+      },
+      "required": [
+        "training",
+        "validation",
+        "testing"
+      ],
+      "title": "Datasets",
+      "type": "object"
+    },
+    "Description": {
+      "additionalProperties": false,
+      "description": "Separated descriptive claims.",
+      "properties": {
+        "architecture": {
+          "minLength": 1,
+          "title": "Architecture",
+          "type": "string"
+        },
+        "checkpoint_behavior": {
+          "minLength": 1,
+          "title": "Checkpoint Behavior",
+          "type": "string"
+        },
+        "implementation": {
+          "minLength": 1,
+          "title": "Implementation",
+          "type": "string"
+        },
+        "preprocessing": {
+          "minLength": 1,
+          "title": "Preprocessing",
+          "type": "string"
+        },
+        "training_objective": {
+          "minLength": 1,
+          "title": "Training Objective",
+          "type": "string"
+        }
+      },
+      "required": [
+        "architecture",
+        "preprocessing",
+        "training_objective",
+        "checkpoint_behavior",
+        "implementation"
+      ],
+      "title": "Description",
+      "type": "object"
+    },
+    "DeviceSupport": {
+      "additionalProperties": false,
+      "description": "Declared and observed device support.",
+      "properties": {
+        "known_limitations": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Known Limitations",
+          "type": "array"
+        },
+        "locally_tested": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Locally Tested",
+          "type": "array"
+        },
+        "upstream_declared": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Upstream Declared",
+          "type": "array"
+        }
+      },
+      "required": [
+        "upstream_declared",
+        "locally_tested",
+        "known_limitations"
+      ],
+      "title": "DeviceSupport",
+      "type": "object"
+    },
+    "EmbeddingSpec": {
+      "additionalProperties": false,
+      "description": "Model-independent embedding declaration.",
+      "properties": {
+        "default": {
+          "title": "Default",
+          "type": "boolean"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "dimension": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dimension"
+        },
+        "dtype": {
+          "minLength": 1,
+          "title": "Dtype",
+          "type": "string"
+        },
+        "embedding_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Embedding Id",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "granularity": {
+          "minLength": 1,
+          "title": "Granularity",
+          "type": "string"
+        },
+        "layout": {
+          "minLength": 1,
+          "title": "Layout",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "network_location": {
+          "minLength": 1,
+          "title": "Network Location",
+          "type": "string"
+        },
+        "normalization": {
+          "minLength": 1,
+          "title": "Normalization",
+          "type": "string"
+        },
+        "officially_defined": {
+          "title": "Officially Defined",
+          "type": "boolean"
+        },
+        "pooling": {
+          "minLength": 1,
+          "title": "Pooling",
+          "type": "string"
+        },
+        "projection": {
+          "minLength": 1,
+          "title": "Projection",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "minLength": 1,
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "selection_rationale": {
+          "minLength": 1,
+          "title": "Selection Rationale",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "declared",
+            "verified",
+            "unsupported"
+          ],
+          "minLength": 1,
+          "title": "Status",
+          "type": "string"
+        },
+        "task_head_relation": {
+          "minLength": 1,
+          "title": "Task Head Relation",
+          "type": "string"
+        },
+        "temporal_hop_seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temporal Hop Seconds"
+        }
+      },
+      "required": [
+        "schema_version",
+        "embedding_id",
+        "name",
+        "description",
+        "officially_defined",
+        "default",
+        "network_location",
+        "layout",
+        "granularity",
+        "pooling",
+        "projection",
+        "normalization",
+        "task_head_relation",
+        "dtype",
+        "status",
+        "selection_rationale"
+      ],
+      "title": "EmbeddingSpec",
+      "type": "object"
+    },
+    "EmbeddingsSection": {
+      "additionalProperties": false,
+      "description": "Embedding declarations with one selected default.",
+      "properties": {
+        "default_embedding_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Default Embedding Id",
+          "type": "string"
+        },
+        "items": {
+          "contains": {
+            "properties": {
+              "default": {
+                "const": true
+              }
+            },
+            "required": [
+              "default"
+            ],
+            "type": "object"
+          },
+          "items": {
+            "$ref": "#/$defs/EmbeddingSpec"
+          },
+          "maxContains": 1,
+          "minContains": 1,
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "default_embedding_id",
+        "items"
+      ],
+      "title": "EmbeddingsSection",
+      "type": "object"
+    },
+    "EvidenceRecord": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "inferred"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "rationale": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "rationale"
+            ]
+          }
+        }
+      ],
+      "description": "Concise evidence record for a material claim.",
+      "properties": {
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "evidence_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "kind": {
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "rationale": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rationale"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[0-9a-f]{40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revision"
+        },
+        "status": {
+          "$ref": "#/$defs/EvidenceStatus"
+        },
+        "symbol": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Symbol"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "kind",
+        "status",
+        "description"
+      ],
+      "title": "EvidenceRecord",
+      "type": "object"
+    },
+    "EvidenceStatus": {
+      "description": "Evidence provenance status.",
+      "enum": [
+        "officially_reported",
+        "observed",
+        "inferred",
+        "unresolved",
+        "not_reported",
+        "not_applicable"
+      ],
+      "minLength": 1,
+      "title": "EvidenceStatus",
+      "type": "string"
+    },
+    "Identity": {
+      "additionalProperties": false,
+      "description": "Checkpoint-specific card identity.",
+      "properties": {
+        "checkpoint_name": {
+          "minLength": 1,
+          "title": "Checkpoint Name",
+          "type": "string"
+        },
+        "framework": {
+          "const": "pytorch",
+          "minLength": 1,
+          "title": "Framework",
+          "type": "string"
+        },
+        "model_family": {
+          "minLength": 1,
+          "title": "Model Family",
+          "type": "string"
+        },
+        "model_name": {
+          "minLength": 1,
+          "title": "Model Name",
+          "type": "string"
+        },
+        "variant": {
+          "minLength": 1,
+          "title": "Variant",
+          "type": "string"
+        },
+        "wrapper_entry_point": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*:[A-Z][A-Za-z0-9_]*$",
+          "title": "Wrapper Entry Point",
+          "type": "string"
+        }
+      },
+      "required": [
+        "model_name",
+        "model_family",
+        "variant",
+        "checkpoint_name",
+        "framework",
+        "wrapper_entry_point"
+      ],
+      "title": "Identity",
+      "type": "object"
+    },
+    "IssueRecord": {
+      "additionalProperties": false,
+      "description": "Explicit issue record; lifecycle state is not used for every problem.",
+      "properties": {
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "impact": {
+          "minLength": 1,
+          "title": "Impact",
+          "type": "string"
+        },
+        "issue_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Issue Id",
+          "type": "string"
+        },
+        "kind": {
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/IssueStatus"
+        }
+      },
+      "required": [
+        "issue_id",
+        "kind",
+        "status",
+        "description",
+        "impact"
+      ],
+      "title": "IssueRecord",
+      "type": "object"
+    },
+    "IssueStatus": {
+      "description": "Issue lifecycle state.",
+      "enum": [
+        "open",
+        "resolved",
+        "accepted",
+        "not_applicable"
+      ],
+      "minLength": 1,
+      "title": "IssueStatus",
+      "type": "string"
+    },
+    "LicenseRecord": {
+      "additionalProperties": false,
+      "description": "Informational license metadata; never an automatic blocker.",
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "status": {
+          "enum": [
+            "officially_reported",
+            "observed",
+            "inferred",
+            "unresolved",
+            "not_reported",
+            "not_applicable"
+          ],
+          "minLength": 1,
+          "title": "Status",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "LicenseRecord",
+      "type": "object"
+    },
+    "MetricRecord": {
+      "additionalProperties": false,
+      "description": "Reported metric record.",
+      "properties": {
+        "checkpoint_specific": {
+          "title": "Checkpoint Specific",
+          "type": "boolean"
+        },
+        "dataset": {
+          "minLength": 1,
+          "title": "Dataset",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "metric": {
+          "minLength": 1,
+          "title": "Metric",
+          "type": "string"
+        },
+        "protocol": {
+          "minLength": 1,
+          "title": "Protocol",
+          "type": "string"
+        },
+        "source_status": {
+          "$ref": "#/$defs/EvidenceStatus"
+        },
+        "split": {
+          "minLength": 1,
+          "title": "Split",
+          "type": "string"
+        },
+        "task": {
+          "minLength": 1,
+          "title": "Task",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "task",
+        "dataset",
+        "split",
+        "metric",
+        "value",
+        "protocol",
+        "checkpoint_specific",
+        "source_status"
+      ],
+      "title": "MetricRecord",
+      "type": "object"
+    },
+    "ModelCardLifecycle": {
+      "description": "Lifecycle states defined by project_spec.md.",
+      "enum": [
+        "draft",
+        "analyzed",
+        "environment_resolved",
+        "checkpoint_verified",
+        "runtime_verified",
+        "profiled"
+      ],
+      "minLength": 1,
+      "title": "ModelCardLifecycle",
+      "type": "string"
+    },
+    "OutputComponent": {
+      "additionalProperties": false,
+      "description": "Stable output component description.",
+      "properties": {
+        "dimensions": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Dimensions",
+          "type": "array"
+        },
+        "dtype": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dtype"
+        },
+        "granularity": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Granularity"
+        },
+        "kind": {
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "layout": {
+          "minLength": 1,
+          "title": "Layout",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "rank": {
+          "minimum": 0,
+          "title": "Rank",
+          "type": "integer"
+        },
+        "semantic_kind": {
+          "minLength": 1,
+          "title": "Semantic Kind",
+          "type": "string"
+        },
+        "task_head_relation": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Task Head Relation"
+        }
+      },
+      "required": [
+        "name",
+        "kind",
+        "semantic_kind",
+        "rank",
+        "layout",
+        "dimensions"
+      ],
+      "title": "OutputComponent",
+      "type": "object"
+    },
+    "Outputs": {
+      "additionalProperties": false,
+      "description": "Forward and probability output declarations.",
+      "properties": {
+        "components": {
+          "items": {
+            "$ref": "#/$defs/OutputComponent"
+          },
+          "title": "Components",
+          "type": "array"
+        },
+        "primary": {
+          "$ref": "#/$defs/OutputComponent"
+        },
+        "probability_output": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OutputComponent"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "primary",
+        "components"
+      ],
+      "title": "Outputs",
+      "type": "object"
+    },
+    "ProfilingSection": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "profiled"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "report": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "report"
+            ]
+          }
+        }
+      ],
+      "description": "Profiling placeholder or completed profiling reference.",
+      "properties": {
+        "report": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Report"
+        },
+        "status": {
+          "$ref": "#/$defs/ProfilingStatus"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "ProfilingSection",
+      "type": "object"
+    },
+    "ProfilingStatus": {
+      "description": "Profiling status reserved for later phases.",
+      "enum": [
+        "not_profiled",
+        "profiled"
+      ],
+      "minLength": 1,
+      "title": "ProfilingStatus",
+      "type": "string"
+    },
+    "RecommendedEnvironment": {
+      "additionalProperties": false,
+      "description": "Reference to committed environment artifacts.",
+      "properties": {
+        "environment_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Environment Id",
+          "type": "string"
+        },
+        "lockfile": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+          "title": "Lockfile",
+          "type": "string"
+        },
+        "specification": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+          "title": "Specification",
+          "type": "string"
+        },
+        "verified": {
+          "title": "Verified",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "environment_id",
+        "specification",
+        "lockfile",
+        "verified"
+      ],
+      "title": "RecommendedEnvironment",
+      "type": "object"
+    },
+    "ScientificReference": {
+      "additionalProperties": false,
+      "description": "Publication metadata.",
+      "properties": {
+        "authors": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Authors",
+          "type": "array"
+        },
+        "doi": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Doi"
+        },
+        "official_publication": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Official Publication"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "year": {
+          "anyOf": [
+            {
+              "maximum": 2100,
+              "minimum": 1900,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Year"
+        }
+      },
+      "required": [
+        "title",
+        "authors"
+      ],
+      "title": "ScientificReference",
+      "type": "object"
+    },
+    "SourceRecord": {
+      "additionalProperties": false,
+      "description": "Repository, package, or asset source evidence.",
+      "properties": {
+        "evidence_status": {
+          "$ref": "#/$defs/EvidenceStatus"
+        },
+        "kind": {
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "package": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Package"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[0-9a-f]{40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revision"
+        },
+        "source_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Source Id",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "source_id",
+        "kind",
+        "evidence_status"
+      ],
+      "title": "SourceRecord",
+      "type": "object"
+    },
+    "Sources": {
+      "additionalProperties": false,
+      "description": "Required source roles.",
+      "properties": {
+        "checkpoint": {
+          "$ref": "#/$defs/SourceRecord"
+        },
+        "implementation": {
+          "$ref": "#/$defs/SourceRecord"
+        },
+        "official_repository": {
+          "$ref": "#/$defs/SourceRecord"
+        },
+        "wrapper": {
+          "$ref": "#/$defs/SourceRecord"
+        }
+      },
+      "required": [
+        "official_repository",
+        "implementation",
+        "checkpoint",
+        "wrapper"
+      ],
+      "title": "Sources",
+      "type": "object"
+    },
+    "Tasks": {
+      "additionalProperties": false,
+      "description": "Task roles separated by phase.",
+      "properties": {
+        "finetuning": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Finetuning",
+          "type": "array"
+        },
+        "official_evaluation": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Official Evaluation",
+          "type": "array"
+        },
+        "pretraining": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Pretraining",
+          "type": "array"
+        },
+        "supported_inference": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Supported Inference",
+          "type": "array"
+        }
+      },
+      "required": [
+        "pretraining",
+        "finetuning",
+        "official_evaluation",
+        "supported_inference"
+      ],
+      "title": "Tasks",
+      "type": "object"
+    },
+    "Usage": {
+      "additionalProperties": false,
+      "description": "Usage references and commands.",
+      "properties": {
+        "checkpoint_loading": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Checkpoint Loading",
+          "type": "array"
+        },
+        "installation_commands": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Installation Commands",
+          "type": "array"
+        },
+        "recommended_environment": {
+          "$ref": "#/$defs/RecommendedEnvironment"
+        },
+        "smoke_test_command": {
+          "minLength": 1,
+          "title": "Smoke Test Command",
+          "type": "string"
+        }
+      },
+      "required": [
+        "recommended_environment",
+        "installation_commands",
+        "checkpoint_loading",
+        "smoke_test_command"
+      ],
+      "title": "Usage",
+      "type": "object"
+    },
+    "WaveformInput": {
+      "additionalProperties": false,
+      "description": "Canonical public waveform input contract.",
+      "properties": {
+        "channels": {
+          "minLength": 1,
+          "title": "Channels",
+          "type": "string"
+        },
+        "dtype": {
+          "default": "float32",
+          "minLength": 1,
+          "title": "Dtype",
+          "type": "string"
+        },
+        "normalization": {
+          "minLength": 1,
+          "title": "Normalization",
+          "type": "string"
+        },
+        "padding": {
+          "minLength": 1,
+          "title": "Padding",
+          "type": "string"
+        },
+        "resampling": {
+          "minLength": 1,
+          "title": "Resampling",
+          "type": "string"
+        },
+        "sample_rate_hz": {
+          "exclusiveMinimum": 0,
+          "title": "Sample Rate Hz",
+          "type": "integer"
+        },
+        "shape": {
+          "const": "B,C,T",
+          "minLength": 1,
+          "title": "Shape",
+          "type": "string"
+        },
+        "valid_lengths_shape": {
+          "anyOf": [
+            {
+              "const": "B",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "B",
+          "title": "Valid Lengths Shape"
+        }
+      },
+      "required": [
+        "shape",
+        "sample_rate_hz",
+        "channels",
+        "resampling",
+        "padding",
+        "normalization"
+      ],
+      "title": "WaveformInput",
+      "type": "object"
+    }
+  },
+  "$id": "https://torch-dae.local/schemas/model-card.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "card_status": {
+            "enum": [
+              "environment_resolved",
+              "checkpoint_verified",
+              "runtime_verified",
+              "profiled"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "usage": {
+            "properties": {
+              "recommended_environment": {
+                "properties": {
+                  "verified": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "verified"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "card_status": {
+            "enum": [
+              "checkpoint_verified",
+              "runtime_verified",
+              "profiled"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "checkpoint": {
+            "properties": {
+              "observed_sha256": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "observed_sha256"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "card_status": {
+            "enum": [
+              "runtime_verified",
+              "profiled"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "verification_report": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "verification_report"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "card_status": {
+            "const": "profiled"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "architectural_profiling": {
+            "properties": {
+              "status": {
+                "const": "profiled"
+              }
+            }
+          },
+          "energy_profiling": {
+            "properties": {
+              "status": {
+                "const": "profiled"
+              }
+            }
+          },
+          "inference_profiling": {
+            "properties": {
+              "status": {
+                "const": "profiled"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capabilities": {
+            "properties": {
+              "probabilities": {
+                "properties": {
+                  "supported": {
+                    "const": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "outputs": {
+            "properties": {
+              "probability_output": {
+                "$ref": "#/$defs/OutputComponent"
+              }
+            },
+            "required": [
+              "probability_output"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capabilities": {
+            "properties": {
+              "probabilities": {
+                "properties": {
+                  "supported": {
+                    "const": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "outputs": {
+            "properties": {
+              "probability_output": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "capabilities": {
+            "properties": {
+              "embeddings": {
+                "properties": {
+                  "supported": {
+                    "const": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "embeddings": {
+            "properties": {
+              "items": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "description": "Complete checkpoint-specific model card contract.",
+  "properties": {
+    "architectural_profiling": {
+      "$ref": "#/$defs/ProfilingSection"
+    },
+    "capabilities": {
+      "$ref": "#/$defs/CapabilitiesSection"
+    },
+    "card_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Card Id",
+      "type": "string"
+    },
+    "card_status": {
+      "$ref": "#/$defs/ModelCardLifecycle"
+    },
+    "checkpoint": {
+      "$ref": "#/$defs/CheckpointSpec"
+    },
+    "datasets": {
+      "$ref": "#/$defs/Datasets"
+    },
+    "description": {
+      "$ref": "#/$defs/Description"
+    },
+    "device_support": {
+      "$ref": "#/$defs/DeviceSupport"
+    },
+    "embeddings": {
+      "$ref": "#/$defs/EmbeddingsSection"
+    },
+    "energy_profiling": {
+      "$ref": "#/$defs/ProfilingSection"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/EvidenceRecord"
+      },
+      "title": "Evidence",
+      "type": "array"
+    },
+    "identity": {
+      "$ref": "#/$defs/Identity"
+    },
+    "inference_profiling": {
+      "$ref": "#/$defs/ProfilingSection"
+    },
+    "input": {
+      "$ref": "#/$defs/WaveformInput"
+    },
+    "issues": {
+      "items": {
+        "$ref": "#/$defs/IssueRecord"
+      },
+      "title": "Issues",
+      "type": "array"
+    },
+    "limitations": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "outputs": {
+      "$ref": "#/$defs/Outputs"
+    },
+    "reported_metrics": {
+      "items": {
+        "$ref": "#/$defs/MetricRecord"
+      },
+      "title": "Reported Metrics",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scientific_reference": {
+      "$ref": "#/$defs/ScientificReference"
+    },
+    "sources": {
+      "$ref": "#/$defs/Sources"
+    },
+    "tasks": {
+      "$ref": "#/$defs/Tasks"
+    },
+    "usage": {
+      "$ref": "#/$defs/Usage"
+    },
+    "verification_report": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Verification Report"
+    }
+  },
+  "required": [
+    "schema_version",
+    "card_id",
+    "card_status",
+    "identity",
+    "checkpoint",
+    "sources",
+    "scientific_reference",
+    "description",
+    "tasks",
+    "datasets",
+    "reported_metrics",
+    "usage",
+    "input",
+    "outputs",
+    "embeddings",
+    "capabilities",
+    "device_support",
+    "architectural_profiling",
+    "inference_profiling",
+    "energy_profiling",
+    "limitations",
+    "issues",
+    "evidence"
+  ],
+  "title": "ModelCard",
+  "type": "object"
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0.0",
+  "report_id": "bad-report",
+  "model_card_id": "synthetic",
+  "environment_id": "synthetic",
+  "environment_fingerprint": "bad",
+  "created_at": "2026-07-22T00:00:00Z",
+  "platform": "macos-arm64",
+  "device": "cpu",
+  "checkpoint_sha256": "bad",
+  "input_contracts": [],
+  "output_names": [],
+  "tensor_shapes": [],
+  "dtypes": [],
+  "embedding_results": [],
+  "passed_capabilities": [],
+  "unsupported_capabilities": [],
+  "known_limitations": [],
+  "checks": []
+}

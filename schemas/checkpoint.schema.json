@@ -1,0 +1,446 @@
+{
+  "$defs": {
+    "CheckpointSourceType": {
+      "description": "Supported checkpoint source variants.",
+      "enum": [
+        "https",
+        "github_release",
+        "huggingface",
+        "package_bundle",
+        "local_path"
+      ],
+      "minLength": 1,
+      "title": "CheckpointSourceType",
+      "type": "string"
+    },
+    "LicenseRecord": {
+      "additionalProperties": false,
+      "description": "Informational license metadata; never an automatic blocker.",
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "status": {
+          "enum": [
+            "officially_reported",
+            "observed",
+            "inferred",
+            "unresolved",
+            "not_reported",
+            "not_applicable"
+          ],
+          "minLength": 1,
+          "title": "Status",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "LicenseRecord",
+      "type": "object"
+    }
+  },
+  "$id": "https://torch-dae.local/schemas/checkpoint.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "source_type": {
+            "const": "https"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "local_path": {
+            "type": "null"
+          },
+          "package": {
+            "type": "null"
+          },
+          "package_version": {
+            "type": "null"
+          },
+          "release_tag": {
+            "type": "null"
+          },
+          "repository_id": {
+            "type": "null"
+          },
+          "revision": {
+            "type": "null"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "source_type": {
+            "const": "github_release"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "filename": {
+            "type": "string"
+          },
+          "local_path": {
+            "type": "null"
+          },
+          "package": {
+            "type": "null"
+          },
+          "package_version": {
+            "type": "null"
+          },
+          "release_tag": {
+            "type": "string"
+          },
+          "repository_id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "repository_id",
+          "release_tag",
+          "filename"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "source_type": {
+            "const": "huggingface"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "filename": {
+            "type": "string"
+          },
+          "local_path": {
+            "type": "null"
+          },
+          "package": {
+            "type": "null"
+          },
+          "package_version": {
+            "type": "null"
+          },
+          "release_tag": {
+            "type": "null"
+          },
+          "repository_id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "repository_id",
+          "filename"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "source_type": {
+            "const": "package_bundle"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "filename": {
+            "type": "string"
+          },
+          "local_path": {
+            "type": "null"
+          },
+          "package": {
+            "type": "string"
+          },
+          "package_version": {
+            "type": "string"
+          },
+          "release_tag": {
+            "type": "null"
+          },
+          "repository_id": {
+            "type": "null"
+          },
+          "revision": {
+            "type": "null"
+          },
+          "url": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "package",
+          "package_version",
+          "filename"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "source_type": {
+            "const": "local_path"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "filename": {
+            "type": "null"
+          },
+          "local_path": {
+            "type": "string"
+          },
+          "package": {
+            "type": "null"
+          },
+          "package_version": {
+            "type": "null"
+          },
+          "release_tag": {
+            "type": "null"
+          },
+          "repository_id": {
+            "type": "null"
+          },
+          "revision": {
+            "type": "null"
+          },
+          "url": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "local_path"
+        ]
+      }
+    }
+  ],
+  "description": "Checkpoint specification for one concrete pretrained asset.",
+  "properties": {
+    "checkpoint_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "expected_sha256": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expected Sha256"
+    },
+    "filename": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Filename"
+    },
+    "format": {
+      "minLength": 1,
+      "title": "Format",
+      "type": "string"
+    },
+    "license": {
+      "$ref": "#/$defs/LicenseRecord"
+    },
+    "loader": {
+      "minLength": 1,
+      "title": "Loader",
+      "type": "string"
+    },
+    "local_path": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Local Path"
+    },
+    "observed_sha256": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Observed Sha256"
+    },
+    "package": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Package"
+    },
+    "package_version": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Package Version"
+    },
+    "release_tag": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Release Tag"
+    },
+    "repository_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Repository Id"
+    },
+    "revision": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{40}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Revision"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_type": {
+      "$ref": "#/$defs/CheckpointSourceType"
+    },
+    "url": {
+      "anyOf": [
+        {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Url"
+    }
+  },
+  "required": [
+    "schema_version",
+    "checkpoint_id",
+    "source_type",
+    "format",
+    "loader",
+    "license"
+  ],
+  "title": "CheckpointSpec",
+  "type": "object"
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint_id": "invalid-huggingface-contradictory",
+  "source_type": "huggingface",
+  "url": null,
+  "repository_id": "example/synthetic-audio",
+  "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "release_tag": "v1",
+  "filename": "model.safetensors",
+  "local_path": null,
+  "expected_sha256": null,
+  "observed_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "format": "safetensors",
+  "loader": "synthetic_loader",
+  "license": {
+    "name": null,
+    "url": null,
+    "status": "unresolved"
+  }
+}

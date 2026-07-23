@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint_id": "../escape",
+  "source_type": "https",
+  "url": "https://example.invalid/synthetic.bin",
+  "repository_id": null,
+  "revision": null,
+  "release_tag": null,
+  "filename": "synthetic.bin",
+  "local_path": null,
+  "expected_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "observed_sha256": null,
+  "format": "state_dict",
+  "loader": "synthetic_loader",
+  "license": {
+    "name": null,
+    "url": null,
+    "status": "unresolved"
+  }
+}

@@ -1,0 +1,303 @@
+{
+  "$defs": {
+    "TensorDimension": {
+      "additionalProperties": false,
+      "description": "Structured tensor dimension observation.",
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "dynamic": {
+          "default": false,
+          "title": "Dynamic",
+          "type": "boolean"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "size": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Size"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "TensorDimension",
+      "type": "object"
+    },
+    "TensorObservation": {
+      "additionalProperties": false,
+      "description": "Structured tensor observation from runtime verification.",
+      "properties": {
+        "component_path": {
+          "minLength": 1,
+          "title": "Component Path",
+          "type": "string"
+        },
+        "device": {
+          "minLength": 1,
+          "title": "Device",
+          "type": "string"
+        },
+        "dtype": {
+          "minLength": 1,
+          "title": "Dtype",
+          "type": "string"
+        },
+        "lengths": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lengths"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "rank": {
+          "minimum": 0,
+          "title": "Rank",
+          "type": "integer"
+        },
+        "role": {
+          "minLength": 1,
+          "title": "Role",
+          "type": "string"
+        },
+        "shape": {
+          "items": {
+            "$ref": "#/$defs/TensorDimension"
+          },
+          "title": "Shape",
+          "type": "array"
+        },
+        "temporal_metadata": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temporal Metadata"
+        }
+      },
+      "required": [
+        "name",
+        "role",
+        "component_path",
+        "shape",
+        "rank",
+        "dtype",
+        "device"
+      ],
+      "title": "TensorObservation",
+      "type": "object"
+    },
+    "VerificationCheck": {
+      "additionalProperties": false,
+      "description": "Single runtime verification check.",
+      "properties": {
+        "details": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Details"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "passed",
+            "failed",
+            "unsupported"
+          ],
+          "minLength": 1,
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "status"
+      ],
+      "title": "VerificationCheck",
+      "type": "object"
+    }
+  },
+  "$id": "https://torch-dae.local/schemas/verification-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Runtime verification report contract.",
+  "properties": {
+    "checkpoint_sha256": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Checkpoint Sha256",
+      "type": "string"
+    },
+    "checks": {
+      "items": {
+        "$ref": "#/$defs/VerificationCheck"
+      },
+      "title": "Checks",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "minLength": 1,
+      "title": "Created At",
+      "type": "string"
+    },
+    "device": {
+      "minLength": 1,
+      "title": "Device",
+      "type": "string"
+    },
+    "embedding_results": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Embedding Results",
+      "type": "array"
+    },
+    "environment_fingerprint": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Environment Fingerprint",
+      "type": "string"
+    },
+    "environment_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Environment Id",
+      "type": "string"
+    },
+    "input_contracts": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Input Contracts",
+      "type": "array"
+    },
+    "known_limitations": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Known Limitations",
+      "type": "array"
+    },
+    "model_card_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Model Card Id",
+      "type": "string"
+    },
+    "passed_capabilities": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Passed Capabilities",
+      "type": "array"
+    },
+    "platform": {
+      "minLength": 1,
+      "title": "Platform",
+      "type": "string"
+    },
+    "report_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Report Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "tensor_observations": {
+      "items": {
+        "$ref": "#/$defs/TensorObservation"
+      },
+      "title": "Tensor Observations",
+      "type": "array"
+    },
+    "unsupported_capabilities": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Unsupported Capabilities",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "report_id",
+    "model_card_id",
+    "environment_id",
+    "environment_fingerprint",
+    "created_at",
+    "platform",
+    "device",
+    "checkpoint_sha256",
+    "input_contracts",
+    "tensor_observations",
+    "embedding_results",
+    "passed_capabilities",
+    "unsupported_capabilities",
+    "known_limitations",
+    "checks"
+  ],
+  "title": "VerificationReport",
+  "type": "object"
+}

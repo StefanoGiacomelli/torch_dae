@@ -1,0 +1,218 @@
+{
+  "$defs": {
+    "OfficialPackageSource": {
+      "additionalProperties": false,
+      "description": "Official package installation source.",
+      "properties": {
+        "installation": {
+          "const": "package",
+          "minLength": 1,
+          "title": "Installation",
+          "type": "string"
+        },
+        "package": {
+          "minLength": 1,
+          "title": "Package",
+          "type": "string"
+        },
+        "role": {
+          "minLength": 1,
+          "title": "Role",
+          "type": "string"
+        },
+        "source_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Source Id",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_id",
+        "role",
+        "installation",
+        "package",
+        "version"
+      ],
+      "title": "OfficialPackageSource",
+      "type": "object"
+    },
+    "PinnedGitSource": {
+      "additionalProperties": false,
+      "description": "Pinned official Git repository source.",
+      "properties": {
+        "build": {
+          "enum": [
+            "wheel",
+            "editable"
+          ],
+          "minLength": 1,
+          "title": "Build",
+          "type": "string"
+        },
+        "installation": {
+          "const": "git",
+          "minLength": 1,
+          "title": "Installation",
+          "type": "string"
+        },
+        "revision": {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Revision",
+          "type": "string"
+        },
+        "role": {
+          "minLength": 1,
+          "title": "Role",
+          "type": "string"
+        },
+        "source_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Source Id",
+          "type": "string"
+        },
+        "url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_id",
+        "role",
+        "installation",
+        "url",
+        "revision",
+        "build"
+      ],
+      "title": "PinnedGitSource",
+      "type": "object"
+    },
+    "VendoredAdaptationSource": {
+      "additionalProperties": false,
+      "description": "Minimal vendored adaptation source.",
+      "properties": {
+        "adaptation_description": {
+          "minLength": 1,
+          "title": "Adaptation Description",
+          "type": "string"
+        },
+        "copied_files": {
+          "items": {
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+            "type": "string"
+          },
+          "title": "Copied Files",
+          "type": "array"
+        },
+        "installation": {
+          "const": "vendored",
+          "minLength": 1,
+          "title": "Installation",
+          "type": "string"
+        },
+        "justification": {
+          "minLength": 1,
+          "title": "Justification",
+          "type": "string"
+        },
+        "role": {
+          "minLength": 1,
+          "title": "Role",
+          "type": "string"
+        },
+        "source_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Source Id",
+          "type": "string"
+        },
+        "upstream_revision": {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Upstream Revision",
+          "type": "string"
+        },
+        "upstream_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Upstream Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_id",
+        "role",
+        "installation",
+        "upstream_url",
+        "upstream_revision",
+        "copied_files",
+        "adaptation_description",
+        "justification"
+      ],
+      "title": "VendoredAdaptationSource",
+      "type": "object"
+    }
+  },
+  "$id": "https://torch-dae.local/schemas/environment-sources.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Canonical committed source manifest referenced by environment.json.",
+  "properties": {
+    "environment_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Environment Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sources": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "git": "#/$defs/PinnedGitSource",
+            "package": "#/$defs/OfficialPackageSource",
+            "vendored": "#/$defs/VendoredAdaptationSource"
+          },
+          "propertyName": "installation"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/OfficialPackageSource"
+          },
+          {
+            "$ref": "#/$defs/PinnedGitSource"
+          },
+          {
+            "$ref": "#/$defs/VendoredAdaptationSource"
+          }
+        ]
+      },
+      "title": "Sources",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "environment_id",
+    "sources"
+  ],
+  "title": "EnvironmentSourcesManifest",
+  "type": "object"
+}

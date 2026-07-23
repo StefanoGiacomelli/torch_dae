@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0.0",
+  "checkpoint_id": "synthetic-github-release",
+  "source_type": "github_release",
+  "url": null,
+  "repository_id": "example/synthetic",
+  "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "release_tag": "v0.0.0",
+  "filename": "synthetic.pt",
+  "local_path": null,
+  "expected_sha256": null,
+  "observed_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "format": "state_dict",
+  "loader": "synthetic_loader",
+  "license": {
+    "name": "Synthetic",
+    "url": null,
+    "status": "not_applicable"
+  }
+}

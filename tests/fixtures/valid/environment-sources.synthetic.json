@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "environment_id": "synthetic-family-variant-checkpoint",
+  "sources": [
+    {
+      "source_id": "synthetic-package",
+      "role": "model_implementation",
+      "installation": "package",
+      "package": "synthetic-audio",
+      "version": "0.0.0"
+    },
+    {
+      "source_id": "synthetic-repository",
+      "role": "reference",
+      "installation": "git",
+      "url": "https://example.invalid/synthetic.git",
+      "revision": "cccccccccccccccccccccccccccccccccccccccc",
+      "build": "wheel"
+    },
+    {
+      "source_id": "synthetic-vendor",
+      "role": "adaptation",
+      "installation": "vendored",
+      "upstream_url": "https://example.invalid/vendor.git",
+      "upstream_revision": "dddddddddddddddddddddddddddddddddddddddd",
+      "copied_files": [
+        "vendor/synthetic.py"
+      ],
+      "adaptation_description": "Synthetic vendored fixture.",
+      "justification": "Exercises the vendored source contract."
+    }
+  ]
+}

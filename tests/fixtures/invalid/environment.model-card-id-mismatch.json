@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0.0",
+  "environment_id": "synthetic-family-variant-checkpoint",
+  "model_card_id": "different-card",
+  "python": {
+    "constraint": "==3.12.13",
+    "resolved_version": "3.12.13"
+  },
+  "platforms": {
+    "resolved_on": [
+      "macos-arm64"
+    ],
+    "expected_compatible": [
+      "linux-x86_64"
+    ],
+    "verified": [
+      "macos-arm64"
+    ]
+  },
+  "dependency_manager": "uv",
+  "lockfile": "environments/synthetic-family-variant-checkpoint/uv.lock",
+  "project_file": "environments/synthetic-family-variant-checkpoint/pyproject.toml",
+  "sources_file": "environments/synthetic-family-variant-checkpoint/sources.json",
+  "verification": {
+    "script": "environments/synthetic-family-variant-checkpoint/verify_environment.py"
+  }
+}
