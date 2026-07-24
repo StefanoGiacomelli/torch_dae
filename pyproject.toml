@@ -18,6 +18,7 @@ torch-dae = "torch_dae.cli.main:app"
 [dependency-groups]
 dev = [
   "build>=1.2.0",
+  "hatchling>=1.27.0",
   "mypy>=1.17.0",
   "pytest>=8.4.0",
   "pytest-cov>=6.2.0",
@@ -38,6 +39,9 @@ select = ["E", "F", "I", "B", "UP", "RUF"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--strict-markers --strict-config"
+markers = [
+  "integration: tests that materialize local synthetic runtime environments",
+]
 
 [tool.mypy]
 python_version = "3.11"

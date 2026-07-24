@@ -12,7 +12,7 @@ from torch_dae.core.checkpoint import (
     CheckpointSpec,
     checkpoint_cache_path,
 )
-from torch_dae.core.errors import NotImplementedInPhaseError
+from torch_dae.core.errors import CheckpointNotFoundError
 
 
 def test_checkpoint_source_variants(valid_fixture_dir: Path) -> None:
@@ -59,6 +59,17 @@ def test_checkpoint_schema_version_required(valid_fixture_dir: Path) -> None:
         CheckpointSpec.model_validate(data)
 
 
+@pytest.mark.parametrize("filename", ["/abs.bin", "../escape.bin", "a\\b.bin", "a//b.bin"])
+def test_package_bundle_filename_rejects_unsafe_paths(
+    valid_fixture_dir: Path,
+    filename: str,
+) -> None:
+    data = json.loads((valid_fixture_dir / "checkpoint.package_bundle.json").read_text())
+    data["filename"] = filename
+    with pytest.raises(ValidationError):
+        CheckpointSpec.model_validate(data)
+
+
 @pytest.mark.parametrize(
     "name",
     [
@@ -74,8 +85,11 @@ def test_checkpoint_source_exclusivity(invalid_fixture_dir: Path, name: str) -> 
         CheckpointSpec.model_validate_json((invalid_fixture_dir / name).read_text())
 
 
-def test_checkpoint_manager_phase00(repo_root: Path) -> None:
+def test_checkpoint_manager_requires_card(repo_root: Path) -> None:
     manager = CheckpointManager(repo_root)
-    assert manager.info("card")["runtime_root"].endswith(".torch-dae/checkpoints")
-    with pytest.raises(NotImplementedInPhaseError):
+    with pytest.raises(CheckpointNotFoundError):
+        manager.info("card")
+    with pytest.raises(CheckpointNotFoundError):
         manager.ensure("card")
+    with pytest.raises(CheckpointNotFoundError):
+        manager.remove("card")

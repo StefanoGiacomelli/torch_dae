@@ -47,10 +47,7 @@
       "description": "Pinned official Git repository source.",
       "properties": {
         "build": {
-          "enum": [
-            "wheel",
-            "editable"
-          ],
+          "const": "wheel",
           "minLength": 1,
           "title": "Build",
           "type": "string"
@@ -79,8 +76,6 @@
           "type": "string"
         },
         "url": {
-          "format": "uri",
-          "maxLength": 2083,
           "minLength": 1,
           "title": "Url",
           "type": "string"

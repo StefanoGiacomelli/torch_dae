@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from torch_dae.core.errors import NotImplementedInPhaseError
+from torch_dae.core.errors import EnvironmentMaterializationError
 from torch_dae.environment.fingerprint import (
     FingerprintInputs,
     calculate_environment_fingerprint,
@@ -133,17 +133,16 @@ def test_environment_manager_absent_state(repo_root: Path) -> None:
     assert not info.materialized
 
 
-def test_environment_manager_deferred_operations(repo_root: Path) -> None:
+def test_environment_manager_missing_card_operations(repo_root: Path) -> None:
     manager = EnvironmentManager(repo_root)
-    with pytest.raises(NotImplementedInPhaseError):
+    with pytest.raises(EnvironmentMaterializationError):
         manager.create("card")
-    with pytest.raises(NotImplementedInPhaseError):
+    with pytest.raises(EnvironmentMaterializationError):
         manager.ensure("card")
-    with pytest.raises(NotImplementedInPhaseError):
+    with pytest.raises(EnvironmentMaterializationError):
         manager.verify("card")
-    with pytest.raises(NotImplementedInPhaseError):
-        manager.remove("card")
-    with pytest.raises(NotImplementedInPhaseError):
+    manager.remove("card")
+    with pytest.raises(EnvironmentMaterializationError):
         manager.run("card", ["python", "--version"])
 
 
@@ -253,8 +252,14 @@ def commit_all(root: Path) -> str:
 
 def make_package_repo(root: Path) -> str:
     (root / "src/torch_dae").mkdir(parents=True)
-    (root / "pyproject.toml").write_text("[project]\nname='fixture'\nversion='0.0.0'\n")
+    (root / "pyproject.toml").write_text(
+        "[project]\nname='fixture'\nversion='0.0.0'\nreadme='README.md'\n"
+    )
+    (root / "README.md").write_text("fixture readme\n")
     (root / "src/torch_dae/__init__.py").write_text("__version__ = '0.0.0'\n")
+    (root / "src/torch_dae/package-data.json").write_text('{"value": 1}\n')
+    (root / "src/torch_dae/vendor").mkdir()
+    (root / "src/torch_dae/vendor/source.txt").write_text("vendored\n")
     run_git(root, "init")
     return commit_all(root)
 
@@ -262,14 +267,21 @@ def make_package_repo(root: Path) -> str:
 def test_local_package_identity_clean_and_dirty_states(tmp_path: Path) -> None:
     head = make_package_repo(tmp_path)
     clean = local_package_identity(tmp_path)
-    assert clean == f"git:{head}"
+    assert clean.startswith(f"git:{head}:content:")
     assert local_package_identity(tmp_path) == clean
+
+    readme = tmp_path / "README.md"
+    readme.write_text("fixture readme changed\n")
+    readme_dirty = local_package_identity(tmp_path)
+    assert readme_dirty.startswith("content:")
+    assert readme_dirty != clean
+    readme.write_text("fixture readme\n")
 
     source = tmp_path / "src/torch_dae/__init__.py"
     source.write_text("__version__ = '0.0.1'\n")
     unstaged = local_package_identity(tmp_path)
     assert unstaged.startswith("content:")
-    assert unstaged != clean
+    assert unstaged != readme_dirty
     assert local_package_identity(tmp_path) == unstaged
 
     run_git(tmp_path, "add", "src/torch_dae/__init__.py")
@@ -282,6 +294,18 @@ def test_local_package_identity_clean_and_dirty_states(tmp_path: Path) -> None:
     untracked = local_package_identity(tmp_path)
     assert untracked.startswith("content:")
     assert untracked != clean
+
+    data = tmp_path / "src/torch_dae/package-data.json"
+    data.write_text('{"value": 2}\n')
+    package_data_dirty = local_package_identity(tmp_path)
+    assert package_data_dirty.startswith("content:")
+    assert package_data_dirty != untracked
+
+    vendored = tmp_path / "src/torch_dae/vendor/source.txt"
+    vendored.write_text("vendored changed\n")
+    vendored_dirty = local_package_identity(tmp_path)
+    assert vendored_dirty.startswith("content:")
+    assert vendored_dirty != package_data_dirty
 
     run_git(tmp_path, "add", "src/torch_dae/new_module.py")
     commit_all(tmp_path)

@@ -72,9 +72,16 @@ class PinnedGitSource(StrictBaseModel):
     source_id: CanonicalId
     role: str
     installation: Literal[SourceInstallationType.GIT]
-    url: HttpUrl
+    url: str
     revision: Annotated[str, Field(pattern=GIT_REVISION_PATTERN)]
-    build: Literal["wheel", "editable"]
+    build: Literal["wheel"]
+
+    @field_validator("url")
+    @classmethod
+    def url_is_explicit(cls, value: str) -> str:
+        if not value:
+            raise ValueError("git source url must be explicit")
+        return value
 
 
 class VendoredAdaptationSource(StrictBaseModel):

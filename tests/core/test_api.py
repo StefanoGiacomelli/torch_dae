@@ -4,6 +4,7 @@ import pytest
 
 from torch_dae.core.capabilities import Capability, ModelCapabilities
 from torch_dae.core.errors import UnsupportedCapabilityError
+from torch_dae.core.model import AudioModelProtocol
 from torch_dae.core.outputs import AudioModelOutput, EmbeddingOutput, PreprocessingOutput
 from torch_dae.core.preprocessing import WaveformInputContract
 
@@ -43,3 +44,14 @@ def test_probability_capability_error() -> None:
     )
     with pytest.raises(UnsupportedCapabilityError, match="no probability head"):
         capabilities.probabilities.require("predict_probability")
+
+
+def test_audio_model_protocol_stub_methods_are_importable() -> None:
+    assert AudioModelProtocol.from_random() is None
+    assert AudioModelProtocol.from_pretrained() is None
+    assert AudioModelProtocol.load_checkpoint(object(), "checkpoint") is None
+    assert AudioModelProtocol.preprocess(object(), Tensor(), 16000) is None
+    assert AudioModelProtocol.forward(object(), Tensor(), 16000) is None
+    assert AudioModelProtocol.predict_probability(object(), Tensor(), 16000) is None
+    assert AudioModelProtocol.available_embeddings(object()) is None
+    assert AudioModelProtocol.compute_embedding(object(), Tensor(), 16000) is None

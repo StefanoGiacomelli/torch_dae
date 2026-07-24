@@ -51,6 +51,7 @@ def test_runtime_verified_requires_report(valid_fixture_dir: Path) -> None:
     data["card_status"] = "runtime_verified"
     data["usage"]["recommended_environment"]["verified"] = True
     data["checkpoint"]["observed_sha256"] = "9" * 64
+    data["checkpoint"]["expected_sha256"] = "9" * 64
     with pytest.raises(ValidationError, match="verification_report"):
         ModelCard.model_validate(data)
 
