@@ -1,3 +1,4 @@
 # References
 
-Placeholder boundary for future Phase 02 workflow references. Phase 00 intentionally does not implement model onboarding.
+Focused Phase 02 onboarding guidance lives in this directory. `SKILL.md` links each required
+reference and remains the canonical orchestration entry point.

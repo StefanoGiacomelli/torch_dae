@@ -22,6 +22,8 @@ SCHEMA_MAP = {
     "environment": "environment.schema.json",
     "environment-sources": "environment-sources.schema.json",
     "verification-report": "verification-report.schema.json",
+    "analysis-report": "analysis-report.schema.json",
+    "environment-resolution-report": "environment-resolution-report.schema.json",
 }
 
 

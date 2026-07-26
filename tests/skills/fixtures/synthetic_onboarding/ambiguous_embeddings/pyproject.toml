@@ -1,0 +1,5 @@
+[project]
+name = "synthetic-ambiguous-embeddings"
+version = "0.4.0"
+requires-python = ">=3.10"
+dependencies = ["torch==2.1.0", "numpy==1.26.0"]

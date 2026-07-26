@@ -1,0 +1,1 @@
+{"scenario_id":"official-package","expected_source_strategy":"official_package","requires_user_decision":true,"expected_checkpoint_ids":["clear-audio"],"expected_next_mode":"resolve-environment","synthetic":true}

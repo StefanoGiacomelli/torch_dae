@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0.0",
+  "report_id": "synthetic-environment-resolution-invalid",
+  "created_at": "2026-01-01T00:00:00Z",
+  "analysis_report_id": "official-package-analysis",
+  "evidence_items": [
+    {
+      "evidence_id": "ev-env",
+      "kind": "configuration_file",
+      "claim_status": "locally_observed_behavior",
+      "description": "Synthetic environment artifact evidence.",
+      "source_file": "environments/synthetic/environment.json",
+      "source_line_or_symbol": null,
+      "url": null,
+      "revision": null,
+      "rationale": null,
+      "package_name": "synthetic-official-audio",
+      "package_version": "0.1.0"
+    }
+  ],
+  "evidence_summary": [
+    {
+      "statement": "The synthetic environment candidate passed local verification.",
+      "status": "locally_observed_behavior",
+      "evidence_ids": [
+        "ev-env"
+      ],
+      "rationale": null
+    }
+  ],
+  "ordered_candidates": [
+    {
+      "candidate_id": "candidate-1",
+      "reason_for_selection": "Pinned synthetic dependencies are declared.",
+      "python_constraint": "==3.10",
+      "python_version": "3.10",
+      "pytorch_constraint": "==2.2.2",
+      "pytorch_version": "2.2.2",
+      "torchaudio_constraint": "==2.2.2",
+      "torchaudio_version": "2.2.2",
+      "numpy_constraint": "==1.26.4",
+      "numpy_version": "1.26.4",
+      "other_principal_dependencies": {},
+      "source_revision": null,
+      "source_package_name": "synthetic-official-audio",
+      "source_package_version": "0.1.0",
+      "installation_strategy": "official_package",
+      "expected_compatibility_evidence": [
+        "ev-env"
+      ],
+      "trial_status": "failed",
+      "failure_classification": null,
+      "failure_diagnostics": "failed",
+      "uncertainty": [],
+      "predicted_failure_risks": [],
+      "trial_command_plan": [
+        "uv lock inside environments/synthetic"
+      ]
+    }
+  ],
+  "attempted_candidates": [],
+  "selected_candidate_id": null,
+  "unresolved_risks": [],
+  "phase01_artifact_paths": [
+    "environments/synthetic/environment.json",
+    "environments/synthetic/pyproject.toml",
+    "environments/synthetic/uv.lock",
+    "environments/synthetic/sources.json",
+    "environments/synthetic/verify_environment.py"
+  ],
+  "phase01_materialization_succeeded": false,
+  "phase01_verification_succeeded": false,
+  "environment_fingerprint": null,
+  "verification_report_or_diagnostic_reference": null,
+  "next_lifecycle_status": null
+}

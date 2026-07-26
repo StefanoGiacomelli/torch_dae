@@ -1,0 +1,265 @@
+{
+  "schema_version": "1.0.0",
+  "report_id": "unpinned-dependencies-analysis",
+  "created_at": "2026-01-01T00:00:00Z",
+  "repository": {
+    "canonical_repository_url": null,
+    "repository_owner": null,
+    "repository_name": "unpinned-dependencies",
+    "revision_inspected": null,
+    "license_evidence": [],
+    "package_name": "synthetic-unpinned-audio",
+    "release_or_tag_evidence": [],
+    "maintenance_status_evidence": [],
+    "official_status": {
+      "statement": "Officiality is unresolved until primary upstream evidence is cited.",
+      "status": "unresolved_ambiguity",
+      "evidence_ids": [],
+      "rationale": null
+    }
+  },
+  "revision": null,
+  "official_status": {
+    "statement": "Officiality is unresolved until primary upstream evidence is cited.",
+    "status": "unresolved_ambiguity",
+    "evidence_ids": [],
+    "rationale": null
+  },
+  "license_evidence": [],
+  "scientific_identity": {
+    "summary": "Synthetic fixture; no scientific claim is made.",
+    "claims": []
+  },
+  "architecture": {
+    "summary": "Static model source evidence was inspected.",
+    "claims": []
+  },
+  "variants": [],
+  "runtime_interface": {
+    "summary": "Runtime interface is not verified in Phase 02.",
+    "claims": []
+  },
+  "preprocessing": {
+    "summary": "Preprocessing remains unresolved.",
+    "claims": []
+  },
+  "outputs": {
+    "summary": "Output semantics remain unresolved unless separately evidenced.",
+    "claims": []
+  },
+  "embedding_candidates": [],
+  "checkpoint_candidates": [],
+  "dependency_evidence": {
+    "summary": "Dependency evidence is static only.",
+    "claims": [
+      {
+        "statement": "Observed dependency: numpy<1.24",
+        "status": "locally_observed_behavior",
+        "evidence_ids": [
+          "ev-environment-yml"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "Observed dependency: python=3.8",
+        "status": "locally_observed_behavior",
+        "evidence_ids": [
+          "ev-environment-yml"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "Observed dependency: pytorch=1.12",
+        "status": "locally_observed_behavior",
+        "evidence_ids": [
+          "ev-environment-yml"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "Observed dependency: torchaudio=0.12",
+        "status": "locally_observed_behavior",
+        "evidence_ids": [
+          "ev-environment-yml"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "Observed dependency: numpy",
+        "status": "locally_observed_behavior",
+        "evidence_ids": [
+          "ev-pyproject-toml"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "Observed dependency: torch",
+        "status": "locally_observed_behavior",
+        "evidence_ids": [
+          "ev-pyproject-toml"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "Observed dependency: torchaudio>=0.10",
+        "status": "locally_observed_behavior",
+        "evidence_ids": [
+          "ev-pyproject-toml"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "Observed dependency: numpy",
+        "status": "locally_observed_behavior",
+        "evidence_ids": [
+          "ev-requirements-txt"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "Observed dependency: torch",
+        "status": "locally_observed_behavior",
+        "evidence_ids": [
+          "ev-requirements-txt"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "Observed dependency: torchaudio>=0.10",
+        "status": "locally_observed_behavior",
+        "evidence_ids": [
+          "ev-requirements-txt"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "Observed Python constraint: >=3.8",
+        "status": "locally_observed_behavior",
+        "evidence_ids": [
+          "ev-pyproject-toml"
+        ],
+        "rationale": null
+      }
+    ]
+  },
+  "source_strategy_candidates": [
+    {
+      "strategy": "official_package",
+      "status": "unresolved_ambiguity",
+      "rationale": "Package metadata exists, but officiality and semantic equivalence require separate upstream evidence.",
+      "evidence_ids": [
+        "ev-pyproject-toml"
+      ],
+      "user_decision_required": true,
+      "unresolved_reason": "Package metadata exists, but officiality and semantic equivalence require separate upstream evidence."
+    }
+  ],
+  "environment_evidence": {
+    "summary": "No isolated model environment has been materialized.",
+    "claims": []
+  },
+  "open_questions": [
+    {
+      "question_id": "q-source-strategy",
+      "classification": "needs_user_decision",
+      "description": "Select the source strategy after reviewing primary upstream evidence.",
+      "alternatives": [
+        "accept observed candidate",
+        "collect more evidence"
+      ],
+      "evidence_ids": [
+        "ev-pyproject-toml"
+      ],
+      "default_if_deferred": "collect more evidence",
+      "failure_classification": null
+    },
+    {
+      "question_id": "q-dependency-conflict",
+      "classification": "needs_environment_resolution",
+      "description": "Synthetic fixture represents dependency_conflict until more evidence is collected.",
+      "alternatives": [],
+      "evidence_ids": [
+        "ev-readme-md"
+      ],
+      "default_if_deferred": "do not integrate",
+      "failure_classification": "dependency_conflict"
+    }
+  ],
+  "decisions": [],
+  "evidence_items": [
+    {
+      "evidence_id": "ev-environment-yml",
+      "kind": "source_file",
+      "claim_status": "locally_observed_behavior",
+      "description": "Inspected synthetic fixture file environment.yml.",
+      "source_file": "environment.yml",
+      "source_line_or_symbol": null,
+      "url": null,
+      "revision": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-github-workflows-ci-yml",
+      "kind": "source_file",
+      "claim_status": "locally_observed_behavior",
+      "description": "Inspected synthetic fixture file .github/workflows/ci.yml.",
+      "source_file": null,
+      "source_line_or_symbol": null,
+      "url": null,
+      "revision": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-legacy-api-py",
+      "kind": "source_file",
+      "claim_status": "locally_observed_behavior",
+      "description": "Inspected synthetic fixture file legacy_api.py.",
+      "source_file": "legacy_api.py",
+      "source_line_or_symbol": null,
+      "url": null,
+      "revision": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-pyproject-toml",
+      "kind": "source_file",
+      "claim_status": "locally_observed_behavior",
+      "description": "Inspected synthetic fixture file pyproject.toml.",
+      "source_file": "pyproject.toml",
+      "source_line_or_symbol": null,
+      "url": null,
+      "revision": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-readme-md",
+      "kind": "source_file",
+      "claim_status": "locally_observed_behavior",
+      "description": "Inspected synthetic fixture file README.md.",
+      "source_file": "README.md",
+      "source_line_or_symbol": null,
+      "url": null,
+      "revision": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-requirements-txt",
+      "kind": "source_file",
+      "claim_status": "locally_observed_behavior",
+      "description": "Inspected synthetic fixture file requirements.txt.",
+      "source_file": "requirements.txt",
+      "source_line_or_symbol": null,
+      "url": null,
+      "revision": null,
+      "rationale": null
+    }
+  ],
+  "confidence_summary": {
+    "verified_fact_count": 0,
+    "locally_observed_count": 17,
+    "inference_count": 0,
+    "unresolved_count": 5,
+    "unsupported_claim_count": 0
+  },
+  "recommended_next_mode": "resolve-environment"
+}

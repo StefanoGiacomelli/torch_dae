@@ -1,0 +1,1 @@
+{"scenario_id":"hidden-checkpoint-helper","expected_source_strategy":"official_package","requires_user_decision":true,"expected_checkpoint_ids":["hidden-audio-model"],"expected_next_mode":"resolve-environment","synthetic":true}

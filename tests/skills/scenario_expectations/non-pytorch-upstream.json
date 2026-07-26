@@ -1,0 +1,1 @@
+{"scenario_id":"non-pytorch-upstream","expected_source_strategy":"external_pytorch_implementation","requires_user_decision":true,"expected_next_mode":"analyze","synthetic":true}

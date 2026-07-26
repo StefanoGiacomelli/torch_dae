@@ -1,0 +1,1 @@
+{"scenario_id":"ambiguous-embeddings","expected_source_strategy":"official_package","requires_user_decision":true,"expected_embedding_decision":true,"expected_next_mode":"analyze","synthetic":true}

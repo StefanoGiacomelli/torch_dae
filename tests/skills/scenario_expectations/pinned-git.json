@@ -1,0 +1,1 @@
+{"scenario_id":"pinned-git","expected_source_strategy":"pinned_official_git_repository","requires_user_decision":true,"expected_next_mode":"resolve-environment","synthetic":true}

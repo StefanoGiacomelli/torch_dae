@@ -1,0 +1,121 @@
+{
+  "schema_version": "1.0.0",
+  "report_id": "non-pytorch-upstream-analysis",
+  "created_at": "2026-01-01T00:00:00Z",
+  "repository": {
+    "canonical_repository_url": null,
+    "repository_owner": null,
+    "repository_name": "non-pytorch-upstream",
+    "revision_inspected": null,
+    "license_evidence": [],
+    "package_name": null,
+    "release_or_tag_evidence": [],
+    "maintenance_status_evidence": [],
+    "official_status": {
+      "statement": "Officiality is unresolved until primary upstream evidence is cited.",
+      "status": "unresolved_ambiguity",
+      "evidence_ids": [],
+      "rationale": null
+    }
+  },
+  "revision": null,
+  "official_status": {
+    "statement": "Officiality is unresolved until primary upstream evidence is cited.",
+    "status": "unresolved_ambiguity",
+    "evidence_ids": [],
+    "rationale": null
+  },
+  "license_evidence": [],
+  "scientific_identity": {
+    "summary": "Synthetic fixture; no scientific claim is made.",
+    "claims": []
+  },
+  "architecture": {
+    "summary": "Static model source evidence was inspected.",
+    "claims": []
+  },
+  "variants": [],
+  "runtime_interface": {
+    "summary": "Runtime interface is not verified in Phase 02.",
+    "claims": []
+  },
+  "preprocessing": {
+    "summary": "Preprocessing remains unresolved.",
+    "claims": []
+  },
+  "outputs": {
+    "summary": "Output semantics remain unresolved unless separately evidenced.",
+    "claims": []
+  },
+  "embedding_candidates": [],
+  "checkpoint_candidates": [],
+  "dependency_evidence": {
+    "summary": "Dependency evidence is static only.",
+    "claims": []
+  },
+  "source_strategy_candidates": [
+    {
+      "strategy": "external_pytorch_implementation",
+      "status": "unresolved_ambiguity",
+      "rationale": "A non-PyTorch upstream and an explicit PyTorch implementation were both inspected; semantic equivalence still requires review.",
+      "evidence_ids": [
+        "ev-model-tf-py"
+      ],
+      "user_decision_required": true,
+      "unresolved_reason": "A non-PyTorch upstream and an explicit PyTorch implementation were both inspected; semantic equivalence still requires review."
+    }
+  ],
+  "environment_evidence": {
+    "summary": "No isolated model environment has been materialized.",
+    "claims": []
+  },
+  "open_questions": [
+    {
+      "question_id": "q-source-strategy",
+      "classification": "needs_user_decision",
+      "description": "Select the source strategy after reviewing primary upstream evidence.",
+      "alternatives": [
+        "accept observed candidate",
+        "collect more evidence"
+      ],
+      "evidence_ids": [
+        "ev-model-tf-py"
+      ],
+      "default_if_deferred": "collect more evidence",
+      "failure_classification": null
+    }
+  ],
+  "decisions": [],
+  "evidence_items": [
+    {
+      "evidence_id": "ev-model-tf-py",
+      "kind": "source_file",
+      "claim_status": "locally_observed_behavior",
+      "description": "Inspected synthetic fixture file model_tf.py.",
+      "source_file": "model_tf.py",
+      "source_line_or_symbol": null,
+      "url": null,
+      "revision": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-readme-md",
+      "kind": "source_file",
+      "claim_status": "locally_observed_behavior",
+      "description": "Inspected synthetic fixture file README.md.",
+      "source_file": "README.md",
+      "source_line_or_symbol": null,
+      "url": null,
+      "revision": null,
+      "rationale": null
+    }
+  ],
+  "confidence_summary": {
+    "verified_fact_count": 0,
+    "locally_observed_count": 2,
+    "inference_count": 0,
+    "unresolved_count": 4,
+    "unsupported_claim_count": 0
+  },
+  "recommended_next_mode": "analyze"
+}

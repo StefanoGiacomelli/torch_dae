@@ -1,0 +1,1103 @@
+{
+  "$defs": {
+    "CheckpointCandidate": {
+      "additionalProperties": false,
+      "description": "Candidate checkpoint metadata.",
+      "properties": {
+        "access_or_license_notes": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Access Or License Notes"
+        },
+        "checkpoint_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Checkpoint Id",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "items": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "expression_status": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expression Status"
+        },
+        "filename": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Filename"
+        },
+        "hash_evidence": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hash Evidence"
+        },
+        "helper_symbol": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Helper Symbol"
+        },
+        "loader": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Loader"
+        },
+        "model_variant": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Variant"
+        },
+        "source_type": {
+          "minLength": 1,
+          "title": "Source Type",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ClaimStatus",
+          "default": "locally_observed_behavior"
+        },
+        "unresolved_components": {
+          "anyOf": [
+            {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unresolved Components"
+        },
+        "unresolved_reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unresolved Reason"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "checkpoint_id",
+        "source_type",
+        "evidence_ids"
+      ],
+      "title": "CheckpointCandidate",
+      "type": "object"
+    },
+    "ClaimStatus": {
+      "description": "Scientific status of a claim or candidate.",
+      "enum": [
+        "verified_upstream_fact",
+        "locally_observed_behavior",
+        "reasoned_inference",
+        "user_provided_decision",
+        "unresolved_ambiguity",
+        "unsupported_claim"
+      ],
+      "minLength": 1,
+      "title": "ClaimStatus",
+      "type": "string"
+    },
+    "ConfidenceSummary": {
+      "additionalProperties": false,
+      "description": "Summary counts used to expose uncertainty.",
+      "properties": {
+        "inference_count": {
+          "minimum": 0,
+          "title": "Inference Count",
+          "type": "integer"
+        },
+        "locally_observed_count": {
+          "minimum": 0,
+          "title": "Locally Observed Count",
+          "type": "integer"
+        },
+        "unresolved_count": {
+          "minimum": 0,
+          "title": "Unresolved Count",
+          "type": "integer"
+        },
+        "unsupported_claim_count": {
+          "minimum": 0,
+          "title": "Unsupported Claim Count",
+          "type": "integer"
+        },
+        "verified_fact_count": {
+          "minimum": 0,
+          "title": "Verified Fact Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "verified_fact_count",
+        "locally_observed_count",
+        "inference_count",
+        "unresolved_count",
+        "unsupported_claim_count"
+      ],
+      "title": "ConfidenceSummary",
+      "type": "object"
+    },
+    "DecisionRecord": {
+      "additionalProperties": false,
+      "description": "A user-provided or evidence-determined decision.",
+      "properties": {
+        "decision": {
+          "minLength": 1,
+          "title": "Decision",
+          "type": "string"
+        },
+        "decision_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Decision Id",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "rationale": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rationale"
+        },
+        "selected_option": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Selected Option"
+        },
+        "status": {
+          "$ref": "#/$defs/ClaimStatus"
+        }
+      },
+      "required": [
+        "decision_id",
+        "decision",
+        "status"
+      ],
+      "title": "DecisionRecord",
+      "type": "object"
+    },
+    "EmbeddingCandidate": {
+      "additionalProperties": false,
+      "description": "Candidate embedding tensor whose semantics require evidence.",
+      "properties": {
+        "batch_dimension": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Batch Dimension"
+        },
+        "embedding_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Embedding Id",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "items": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "requires_user_decision": {
+          "default": false,
+          "title": "Requires User Decision",
+          "type": "boolean"
+        },
+        "semantic_kind": {
+          "enum": [
+            "architectural_intermediate_tensor",
+            "pooled_representation",
+            "task_head_input",
+            "pre_logit_representation",
+            "post_activation_output",
+            "sequence_level_embedding",
+            "frame_level_embedding",
+            "latent_code"
+          ],
+          "minLength": 1,
+          "title": "Semantic Kind",
+          "type": "string"
+        },
+        "shape_semantics": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Shape Semantics"
+        },
+        "status": {
+          "$ref": "#/$defs/ClaimStatus"
+        },
+        "tensor_origin": {
+          "minLength": 1,
+          "title": "Tensor Origin",
+          "type": "string"
+        },
+        "time_dimension": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Time Dimension"
+        },
+        "unresolved_reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unresolved Reason"
+        }
+      },
+      "required": [
+        "embedding_id",
+        "tensor_origin",
+        "semantic_kind",
+        "shape_semantics",
+        "batch_dimension",
+        "time_dimension",
+        "status",
+        "evidence_ids"
+      ],
+      "title": "EmbeddingCandidate",
+      "type": "object"
+    },
+    "EvidenceBackedClaim": {
+      "additionalProperties": false,
+      "description": "A claim that cannot silently promote inference to verified fact.",
+      "properties": {
+        "evidence_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "rationale": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rationale"
+        },
+        "statement": {
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ClaimStatus"
+        }
+      },
+      "required": [
+        "statement",
+        "status"
+      ],
+      "title": "EvidenceBackedClaim",
+      "type": "object"
+    },
+    "EvidenceItem": {
+      "additionalProperties": false,
+      "description": "Atomic evidence item used by Phase 02 reports.",
+      "properties": {
+        "claim_status": {
+          "$ref": "#/$defs/ClaimStatus"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "evidence_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/EvidenceItemKind"
+        },
+        "package_name": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Package Name"
+        },
+        "package_version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Package Version"
+        },
+        "rationale": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rationale"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[0-9a-f]{40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revision"
+        },
+        "source_file": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "[A-Za-z0-9.][A-Za-z0-9._/-]*",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source File"
+        },
+        "source_line_or_symbol": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Line Or Symbol"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "kind",
+        "claim_status",
+        "description"
+      ],
+      "title": "EvidenceItem",
+      "type": "object"
+    },
+    "EvidenceItemKind": {
+      "description": "Accepted evidence item sources for onboarding analysis.",
+      "enum": [
+        "source_file",
+        "source_line_or_symbol",
+        "package_metadata",
+        "configuration_file",
+        "official_documentation",
+        "paper",
+        "runtime_observation",
+        "agent_inference",
+        "user_decision"
+      ],
+      "minLength": 1,
+      "title": "EvidenceItemKind",
+      "type": "string"
+    },
+    "FailureClassification": {
+      "description": "Environment-resolution failure classifications required by Phase 02.",
+      "enum": [
+        "python_constraint",
+        "dependency_conflict",
+        "resolution_failure",
+        "removed_api",
+        "deprecated_api",
+        "binary_or_abi_incompatibility",
+        "missing_binary_wheel",
+        "torch_torchaudio_mismatch",
+        "numpy_compatibility",
+        "checkpoint_incompatibility",
+        "source_build_failure",
+        "import_failure",
+        "runtime_failure",
+        "platform_incompatibility",
+        "access_or_authentication_blocker",
+        "insufficient_evidence"
+      ],
+      "minLength": 1,
+      "title": "FailureClassification",
+      "type": "string"
+    },
+    "OpenQuestion": {
+      "additionalProperties": false,
+      "description": "Explicit unresolved item carried forward by the workflow.",
+      "properties": {
+        "alternatives": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Alternatives",
+          "type": "array"
+        },
+        "classification": {
+          "$ref": "#/$defs/OpenQuestionClassification"
+        },
+        "default_if_deferred": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default If Deferred"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "failure_classification": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FailureClassification"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "question_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Question Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "question_id",
+        "classification",
+        "description"
+      ],
+      "title": "OpenQuestion",
+      "type": "object"
+    },
+    "OpenQuestionClassification": {
+      "description": "Required open-question classifications.",
+      "enum": [
+        "needs_more_evidence",
+        "needs_runtime_probe",
+        "needs_environment_resolution",
+        "needs_user_decision",
+        "unsupported_upstream_claim",
+        "out_of_scope"
+      ],
+      "minLength": 1,
+      "title": "OpenQuestionClassification",
+      "type": "string"
+    },
+    "RecommendedNextMode": {
+      "description": "Allowed next skill modes.",
+      "enum": [
+        "analyze",
+        "resolve-environment",
+        "integrate",
+        "verify",
+        "card",
+        "profile"
+      ],
+      "minLength": 1,
+      "title": "RecommendedNextMode",
+      "type": "string"
+    },
+    "ReportSection": {
+      "additionalProperties": false,
+      "description": "Named report section rendered in machine and Markdown outputs.",
+      "properties": {
+        "claims": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EvidenceBackedClaim"
+          },
+          "title": "Claims",
+          "type": "array"
+        },
+        "summary": {
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "summary"
+      ],
+      "title": "ReportSection",
+      "type": "object"
+    },
+    "RepositoryIdentity": {
+      "additionalProperties": false,
+      "description": "Repository identity fields required by analyze mode.",
+      "properties": {
+        "canonical_repository_url": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Canonical Repository Url"
+        },
+        "license_evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceBackedClaim"
+          },
+          "title": "License Evidence",
+          "type": "array"
+        },
+        "maintenance_status_evidence": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EvidenceBackedClaim"
+          },
+          "title": "Maintenance Status Evidence",
+          "type": "array"
+        },
+        "official_status": {
+          "$ref": "#/$defs/EvidenceBackedClaim"
+        },
+        "package_name": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Package Name"
+        },
+        "release_or_tag_evidence": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EvidenceBackedClaim"
+          },
+          "title": "Release Or Tag Evidence",
+          "type": "array"
+        },
+        "repository_name": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Repository Name"
+        },
+        "repository_owner": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Repository Owner"
+        },
+        "revision_inspected": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Revision Inspected"
+        }
+      },
+      "required": [
+        "canonical_repository_url",
+        "repository_owner",
+        "repository_name",
+        "revision_inspected",
+        "license_evidence",
+        "official_status"
+      ],
+      "title": "RepositoryIdentity",
+      "type": "object"
+    },
+    "SourceStrategy": {
+      "description": "Source strategy decisions evaluated by the onboarding workflow.",
+      "enum": [
+        "official_package",
+        "pinned_official_git_repository",
+        "minimal_vendored_adaptation",
+        "external_pytorch_implementation",
+        "unsupported_or_non_equivalent_implementation"
+      ],
+      "minLength": 1,
+      "title": "SourceStrategy",
+      "type": "string"
+    },
+    "SourceStrategyCandidate": {
+      "additionalProperties": false,
+      "description": "Evidence-supported source strategy candidate.",
+      "properties": {
+        "evidence_ids": {
+          "items": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "rationale": {
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ClaimStatus"
+        },
+        "strategy": {
+          "$ref": "#/$defs/SourceStrategy"
+        },
+        "unresolved_reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unresolved Reason"
+        },
+        "user_decision_required": {
+          "default": false,
+          "title": "User Decision Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "strategy",
+        "status",
+        "rationale",
+        "evidence_ids"
+      ],
+      "title": "SourceStrategyCandidate",
+      "type": "object"
+    },
+    "VariantCandidate": {
+      "additionalProperties": false,
+      "description": "Candidate model variant found during static analysis.",
+      "properties": {
+        "evidence_ids": {
+          "items": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ClaimStatus"
+        },
+        "unresolved_reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unresolved Reason"
+        },
+        "variant_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Variant Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "variant_id",
+        "name",
+        "status",
+        "evidence_ids"
+      ],
+      "title": "VariantCandidate",
+      "type": "object"
+    }
+  },
+  "$id": "https://torch-dae.local/schemas/analysis-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Machine-readable Phase 02 technical analysis report.",
+  "properties": {
+    "architecture": {
+      "$ref": "#/$defs/ReportSection"
+    },
+    "checkpoint_candidates": {
+      "items": {
+        "$ref": "#/$defs/CheckpointCandidate"
+      },
+      "title": "Checkpoint Candidates",
+      "type": "array"
+    },
+    "confidence_summary": {
+      "$ref": "#/$defs/ConfidenceSummary"
+    },
+    "created_at": {
+      "format": "date-time",
+      "minLength": 1,
+      "title": "Created At",
+      "type": "string"
+    },
+    "decisions": {
+      "items": {
+        "$ref": "#/$defs/DecisionRecord"
+      },
+      "title": "Decisions",
+      "type": "array"
+    },
+    "dependency_evidence": {
+      "$ref": "#/$defs/ReportSection"
+    },
+    "embedding_candidates": {
+      "items": {
+        "$ref": "#/$defs/EmbeddingCandidate"
+      },
+      "title": "Embedding Candidates",
+      "type": "array"
+    },
+    "environment_evidence": {
+      "$ref": "#/$defs/ReportSection"
+    },
+    "evidence_items": {
+      "items": {
+        "$ref": "#/$defs/EvidenceItem"
+      },
+      "title": "Evidence Items",
+      "type": "array"
+    },
+    "license_evidence": {
+      "items": {
+        "$ref": "#/$defs/EvidenceBackedClaim"
+      },
+      "title": "License Evidence",
+      "type": "array"
+    },
+    "official_status": {
+      "$ref": "#/$defs/EvidenceBackedClaim"
+    },
+    "open_questions": {
+      "items": {
+        "$ref": "#/$defs/OpenQuestion"
+      },
+      "title": "Open Questions",
+      "type": "array"
+    },
+    "outputs": {
+      "$ref": "#/$defs/ReportSection"
+    },
+    "preprocessing": {
+      "$ref": "#/$defs/ReportSection"
+    },
+    "recommended_next_mode": {
+      "$ref": "#/$defs/RecommendedNextMode"
+    },
+    "report_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Report Id",
+      "type": "string"
+    },
+    "repository": {
+      "$ref": "#/$defs/RepositoryIdentity"
+    },
+    "revision": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Revision"
+    },
+    "runtime_interface": {
+      "$ref": "#/$defs/ReportSection"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scientific_identity": {
+      "$ref": "#/$defs/ReportSection"
+    },
+    "source_strategy_candidates": {
+      "items": {
+        "$ref": "#/$defs/SourceStrategyCandidate"
+      },
+      "title": "Source Strategy Candidates",
+      "type": "array"
+    },
+    "variants": {
+      "items": {
+        "$ref": "#/$defs/VariantCandidate"
+      },
+      "title": "Variants",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "report_id",
+    "created_at",
+    "repository",
+    "revision",
+    "official_status",
+    "license_evidence",
+    "scientific_identity",
+    "architecture",
+    "variants",
+    "runtime_interface",
+    "preprocessing",
+    "outputs",
+    "embedding_candidates",
+    "checkpoint_candidates",
+    "dependency_evidence",
+    "source_strategy_candidates",
+    "environment_evidence",
+    "open_questions",
+    "decisions",
+    "evidence_items",
+    "confidence_summary",
+    "recommended_next_mode"
+  ],
+  "title": "AnalysisReport",
+  "type": "object"
+}

@@ -1,0 +1,5 @@
+[project]
+name = "synthetic-hidden-checkpoint"
+version = "2.0.0"
+requires-python = ">=3.10"
+dependencies = ["torch==2.0.1"]

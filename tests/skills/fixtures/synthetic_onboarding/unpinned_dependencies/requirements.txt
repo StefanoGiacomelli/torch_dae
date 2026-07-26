@@ -1,0 +1,3 @@
+torch
+torchaudio>=0.10
+numpy

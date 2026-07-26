@@ -1,0 +1,8 @@
+name: synthetic-ci
+on: [push]
+jobs:
+  test:
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10"]
+        torch-version: ["1.13.1"]

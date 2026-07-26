@@ -14,6 +14,7 @@ from torch_dae.core.checkpoint import CheckpointSpec
 from torch_dae.core.embeddings import EmbeddingSpec
 from torch_dae.environment.specification import EnvironmentSourcesManifest, EnvironmentSpecification
 from torch_dae.environment.verification import VerificationReport
+from torch_dae.onboarding.contracts import AnalysisReport, EnvironmentResolutionReport
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "schemas"
@@ -39,6 +40,14 @@ SCHEMAS: dict[str, tuple[str, type[BaseModel]]] = {
     "verification-report.schema.json": (
         "https://torch-dae.local/schemas/verification-report.schema.json",
         VerificationReport,
+    ),
+    "analysis-report.schema.json": (
+        "https://torch-dae.local/schemas/analysis-report.schema.json",
+        AnalysisReport,
+    ),
+    "environment-resolution-report.schema.json": (
+        "https://torch-dae.local/schemas/environment-resolution-report.schema.json",
+        EnvironmentResolutionReport,
     ),
 }
 

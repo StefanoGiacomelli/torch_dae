@@ -1,0 +1,751 @@
+{
+  "$defs": {
+    "CandidateTrialStatus": {
+      "description": "Observed status for an explicitly selected environment candidate.",
+      "enum": [
+        "not_attempted",
+        "passed",
+        "failed",
+        "blocked"
+      ],
+      "minLength": 1,
+      "title": "CandidateTrialStatus",
+      "type": "string"
+    },
+    "ClaimStatus": {
+      "description": "Scientific status of a claim or candidate.",
+      "enum": [
+        "verified_upstream_fact",
+        "locally_observed_behavior",
+        "reasoned_inference",
+        "user_provided_decision",
+        "unresolved_ambiguity",
+        "unsupported_claim"
+      ],
+      "minLength": 1,
+      "title": "ClaimStatus",
+      "type": "string"
+    },
+    "EnvironmentCandidate": {
+      "additionalProperties": false,
+      "description": "Evidence-motivated compatibility candidate; not a verified environment.",
+      "properties": {
+        "candidate_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "expected_compatibility_evidence": {
+          "items": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+            "type": "string"
+          },
+          "title": "Expected Compatibility Evidence",
+          "type": "array"
+        },
+        "failure_classification": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FailureClassification"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "failure_diagnostics": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Failure Diagnostics"
+        },
+        "installation_strategy": {
+          "$ref": "#/$defs/SourceStrategy"
+        },
+        "numpy_constraint": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Numpy Constraint"
+        },
+        "numpy_version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Numpy Version"
+        },
+        "other_principal_dependencies": {
+          "additionalProperties": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Other Principal Dependencies",
+          "type": "object"
+        },
+        "predicted_failure_risks": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/FailureClassification"
+          },
+          "title": "Predicted Failure Risks",
+          "type": "array"
+        },
+        "python_constraint": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Python Constraint"
+        },
+        "python_version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Python Version"
+        },
+        "pytorch_constraint": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pytorch Constraint"
+        },
+        "pytorch_version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pytorch Version"
+        },
+        "reason_for_selection": {
+          "minLength": 1,
+          "title": "Reason For Selection",
+          "type": "string"
+        },
+        "source_package_name": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Package Name"
+        },
+        "source_package_version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Package Version"
+        },
+        "source_revision": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Revision"
+        },
+        "torchaudio_constraint": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Torchaudio Constraint"
+        },
+        "torchaudio_version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Torchaudio Version"
+        },
+        "trial_command_plan": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Trial Command Plan",
+          "type": "array"
+        },
+        "trial_status": {
+          "$ref": "#/$defs/CandidateTrialStatus",
+          "default": "not_attempted"
+        },
+        "uncertainty": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Uncertainty",
+          "type": "array"
+        }
+      },
+      "required": [
+        "candidate_id",
+        "reason_for_selection",
+        "installation_strategy",
+        "expected_compatibility_evidence"
+      ],
+      "title": "EnvironmentCandidate",
+      "type": "object"
+    },
+    "EvidenceBackedClaim": {
+      "additionalProperties": false,
+      "description": "A claim that cannot silently promote inference to verified fact.",
+      "properties": {
+        "evidence_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "rationale": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rationale"
+        },
+        "statement": {
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ClaimStatus"
+        }
+      },
+      "required": [
+        "statement",
+        "status"
+      ],
+      "title": "EvidenceBackedClaim",
+      "type": "object"
+    },
+    "EvidenceItem": {
+      "additionalProperties": false,
+      "description": "Atomic evidence item used by Phase 02 reports.",
+      "properties": {
+        "claim_status": {
+          "$ref": "#/$defs/ClaimStatus"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "evidence_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/EvidenceItemKind"
+        },
+        "package_name": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Package Name"
+        },
+        "package_version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Package Version"
+        },
+        "rationale": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rationale"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[0-9a-f]{40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revision"
+        },
+        "source_file": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "[A-Za-z0-9.][A-Za-z0-9._/-]*",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source File"
+        },
+        "source_line_or_symbol": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Line Or Symbol"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "kind",
+        "claim_status",
+        "description"
+      ],
+      "title": "EvidenceItem",
+      "type": "object"
+    },
+    "EvidenceItemKind": {
+      "description": "Accepted evidence item sources for onboarding analysis.",
+      "enum": [
+        "source_file",
+        "source_line_or_symbol",
+        "package_metadata",
+        "configuration_file",
+        "official_documentation",
+        "paper",
+        "runtime_observation",
+        "agent_inference",
+        "user_decision"
+      ],
+      "minLength": 1,
+      "title": "EvidenceItemKind",
+      "type": "string"
+    },
+    "FailureClassification": {
+      "description": "Environment-resolution failure classifications required by Phase 02.",
+      "enum": [
+        "python_constraint",
+        "dependency_conflict",
+        "resolution_failure",
+        "removed_api",
+        "deprecated_api",
+        "binary_or_abi_incompatibility",
+        "missing_binary_wheel",
+        "torch_torchaudio_mismatch",
+        "numpy_compatibility",
+        "checkpoint_incompatibility",
+        "source_build_failure",
+        "import_failure",
+        "runtime_failure",
+        "platform_incompatibility",
+        "access_or_authentication_blocker",
+        "insufficient_evidence"
+      ],
+      "minLength": 1,
+      "title": "FailureClassification",
+      "type": "string"
+    },
+    "OpenQuestion": {
+      "additionalProperties": false,
+      "description": "Explicit unresolved item carried forward by the workflow.",
+      "properties": {
+        "alternatives": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Alternatives",
+          "type": "array"
+        },
+        "classification": {
+          "$ref": "#/$defs/OpenQuestionClassification"
+        },
+        "default_if_deferred": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default If Deferred"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "failure_classification": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FailureClassification"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "question_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Question Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "question_id",
+        "classification",
+        "description"
+      ],
+      "title": "OpenQuestion",
+      "type": "object"
+    },
+    "OpenQuestionClassification": {
+      "description": "Required open-question classifications.",
+      "enum": [
+        "needs_more_evidence",
+        "needs_runtime_probe",
+        "needs_environment_resolution",
+        "needs_user_decision",
+        "unsupported_upstream_claim",
+        "out_of_scope"
+      ],
+      "minLength": 1,
+      "title": "OpenQuestionClassification",
+      "type": "string"
+    },
+    "SourceStrategy": {
+      "description": "Source strategy decisions evaluated by the onboarding workflow.",
+      "enum": [
+        "official_package",
+        "pinned_official_git_repository",
+        "minimal_vendored_adaptation",
+        "external_pytorch_implementation",
+        "unsupported_or_non_equivalent_implementation"
+      ],
+      "minLength": 1,
+      "title": "SourceStrategy",
+      "type": "string"
+    }
+  },
+  "$id": "https://torch-dae.local/schemas/environment-resolution-report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Structured output from resolve-environment mode.",
+  "properties": {
+    "analysis_report_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Analysis Report Id"
+    },
+    "attempted_candidates": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+        "type": "string"
+      },
+      "title": "Attempted Candidates",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "minLength": 1,
+      "title": "Created At",
+      "type": "string"
+    },
+    "environment_fingerprint": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Environment Fingerprint"
+    },
+    "evidence_items": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/EvidenceItem"
+      },
+      "title": "Evidence Items",
+      "type": "array"
+    },
+    "evidence_summary": {
+      "items": {
+        "$ref": "#/$defs/EvidenceBackedClaim"
+      },
+      "title": "Evidence Summary",
+      "type": "array"
+    },
+    "next_lifecycle_status": {
+      "anyOf": [
+        {
+          "const": "environment_resolved",
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Next Lifecycle Status"
+    },
+    "ordered_candidates": {
+      "items": {
+        "$ref": "#/$defs/EnvironmentCandidate"
+      },
+      "title": "Ordered Candidates",
+      "type": "array"
+    },
+    "phase01_artifact_paths": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+        "type": "string"
+      },
+      "title": "Phase01 Artifact Paths",
+      "type": "array"
+    },
+    "phase01_materialization_succeeded": {
+      "default": false,
+      "title": "Phase01 Materialization Succeeded",
+      "type": "boolean"
+    },
+    "phase01_verification_succeeded": {
+      "default": false,
+      "title": "Phase01 Verification Succeeded",
+      "type": "boolean"
+    },
+    "report_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Report Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selected_candidate_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Selected Candidate Id"
+    },
+    "source_strategy_decision_gates": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/OpenQuestion"
+      },
+      "title": "Source Strategy Decision Gates",
+      "type": "array"
+    },
+    "unresolved_risks": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Unresolved Risks",
+      "type": "array"
+    },
+    "verification_report_or_diagnostic_reference": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Verification Report Or Diagnostic Reference"
+    }
+  },
+  "required": [
+    "schema_version",
+    "report_id",
+    "created_at",
+    "evidence_summary",
+    "ordered_candidates"
+  ],
+  "title": "EnvironmentResolutionReport",
+  "type": "object"
+}

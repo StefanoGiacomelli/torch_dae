@@ -1,7 +1,8 @@
 # torch-dae
 
-`torch-dae` is a PyTorch audio-model onboarding framework. Phase 01 implements the control-plane
-environment and checkpoint cache subsystems on top of the Phase 00 typed contracts and schemas.
+`torch-dae` is a PyTorch audio-model onboarding framework. Phase 02 implements the canonical
+audio-model onboarding skill MVP on top of the Phase 00 typed contracts and Phase 01 environment and
+checkpoint cache subsystems.
 
 No real model is integrated yet. The root environment stays lightweight and model-agnostic;
 model-specific dependencies, materialized environments, checkpoints, reports, and profiling outputs
@@ -61,7 +62,45 @@ offline-cache, cache-finalization, metadata-write, cleanup, and response-close o
 checkpoint CLI exits with code `3` for not-found/offline-unavailable failures and code `4` for
 acquisition or hash failures, without displaying tracebacks for expected operational errors.
 
-Model integration commands are still deferred because Phase 02+ onboarding and pilot wrappers have
-not started.
+Model integration commands are still deferred. Phase 02 defines the evidence-driven onboarding
+workflow, static inspection utilities, templates, report contracts, synthetic evaluations, and
+validation rules that future model integrations must follow. Synthetic golden reports are evaluated
+against production-inspector observations, so fixture evidence such as package metadata, dependency
+declarations, model symbols, checkpoint helpers, pinned revisions, source strategy evidence, and
+embedding tensor candidates must stay truthful.
 
-The canonical onboarding skill lives at `skills/audio-model-onboarding/`. Codex and Claude project skill entries are relative symlinks to that single directory.
+The canonical onboarding skill lives at `skills/audio-model-onboarding/`. Codex and Claude project
+skill entries are relative symlinks to that single directory. The skill supports these modes:
+
+- `analyze`
+- `resolve-environment`
+- `integrate`
+- `verify`
+- `card`
+- `profile`
+
+`profile` remains reserved. Phase 02 does not integrate PANNs, BYOL-A, EnCodec, or any other real
+audio model; PANNs begins only in Phase 03. Phase 02 tests use synthetic repositories only, and each
+fixture is marked as synthetic and scientifically meaningless.
+
+The onboarding evidence policy requires every material claim to be classified as a verified upstream
+fact, locally observed behavior, reasoned inference, user-provided decision, unresolved ambiguity, or
+unsupported claim. Inferences need a rationale and cannot silently become verified facts. Candidate
+generation applies the same semantic compatibility checks to dependency records, source strategies,
+environment candidates, and decision gates.
+
+Environment candidate generation emits a strict result envelope with evidence items, normalized
+dependency provenance, source-strategy context, decision gates, unresolved constraints, and optional
+target platform. Official-package candidates carry exact `source_package_name` and
+`source_package_version` evidence, source-strategy gates always block promotion, and Phase 01
+diagnostics are referenced as `.torch-dae`-relative
+`reports/environments/<card-id>/<fingerprint>/<report>.json` paths. Conda ranges, GitHub Actions CI
+matrices, `.github/workflows/ci.yml` evidence paths, checkpoint-helper provenance, shared inspection
+budgets, and local real-Git evaluation are covered by Phase 02 tests. Real environment
+materialization remains a Phase 01 operation.
+
+Additional documentation:
+
+- `docs/model-onboarding-skill.md`
+- `docs/onboarding-evidence-policy.md`
+- `docs/onboarding-artifacts.md`

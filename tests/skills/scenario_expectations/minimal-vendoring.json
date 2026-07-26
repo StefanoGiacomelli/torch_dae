@@ -1,0 +1,1 @@
+{"scenario_id":"minimal-vendoring","expected_source_strategy":"minimal_vendored_adaptation","requires_user_decision":true,"expected_next_mode":"integrate","synthetic":true}

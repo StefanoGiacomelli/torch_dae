@@ -1,0 +1,14 @@
+{
+  "upstream_repository_identity": "synthetic-non-pytorch-upstream",
+  "external_repository_identity": "synthetic-external-pytorch-wrapper",
+  "architecture_mapping": "declared synthetic architecture mapping",
+  "input_mapping": "declared synthetic waveform input mapping",
+  "output_mapping": "declared synthetic output mapping",
+  "checkpoint_provenance": "unresolved",
+  "known_differences": [
+    "synthetic fixture; no scientific equivalence"
+  ],
+  "unresolved_equivalence_questions": [
+    "semantic equivalence requires user review"
+  ]
+}

@@ -1,0 +1,225 @@
+{
+  "schema_version": "1.0.0",
+  "report_id": "ambiguous-embeddings-analysis",
+  "created_at": "2026-01-01T00:00:00Z",
+  "repository": {
+    "canonical_repository_url": null,
+    "repository_owner": null,
+    "repository_name": "ambiguous-embeddings",
+    "revision_inspected": null,
+    "license_evidence": [],
+    "package_name": "synthetic-ambiguous-embeddings",
+    "release_or_tag_evidence": [],
+    "maintenance_status_evidence": [],
+    "official_status": {
+      "statement": "Officiality is unresolved until primary upstream evidence is cited.",
+      "status": "unresolved_ambiguity",
+      "evidence_ids": [],
+      "rationale": null
+    }
+  },
+  "revision": null,
+  "official_status": {
+    "statement": "Officiality is unresolved until primary upstream evidence is cited.",
+    "status": "unresolved_ambiguity",
+    "evidence_ids": [],
+    "rationale": null
+  },
+  "license_evidence": [],
+  "scientific_identity": {
+    "summary": "Synthetic fixture; no scientific claim is made.",
+    "claims": []
+  },
+  "architecture": {
+    "summary": "Static model source evidence was inspected.",
+    "claims": []
+  },
+  "variants": [
+    {
+      "variant_id": "ambiguousembeddingmodel",
+      "name": "AmbiguousEmbeddingModel",
+      "status": "locally_observed_behavior",
+      "evidence_ids": [
+        "ev-model-py"
+      ],
+      "unresolved_reason": null
+    }
+  ],
+  "runtime_interface": {
+    "summary": "Runtime interface is not verified in Phase 02.",
+    "claims": []
+  },
+  "preprocessing": {
+    "summary": "Preprocessing remains unresolved.",
+    "claims": []
+  },
+  "outputs": {
+    "summary": "Output semantics remain unresolved unless separately evidenced.",
+    "claims": []
+  },
+  "embedding_candidates": [
+    {
+      "embedding_id": "classifier-input",
+      "tensor_origin": "classifier_input",
+      "semantic_kind": "architectural_intermediate_tensor",
+      "shape_semantics": null,
+      "batch_dimension": null,
+      "time_dimension": null,
+      "status": "unresolved_ambiguity",
+      "evidence_ids": [
+        "ev-model-py"
+      ],
+      "requires_user_decision": true,
+      "unresolved_reason": "Multiple tensor candidates were statically observed; semantics require a user decision."
+    },
+    {
+      "embedding_id": "frame-features",
+      "tensor_origin": "frame_features",
+      "semantic_kind": "architectural_intermediate_tensor",
+      "shape_semantics": null,
+      "batch_dimension": null,
+      "time_dimension": null,
+      "status": "unresolved_ambiguity",
+      "evidence_ids": [
+        "ev-model-py"
+      ],
+      "requires_user_decision": true,
+      "unresolved_reason": "Multiple tensor candidates were statically observed; semantics require a user decision."
+    },
+    {
+      "embedding_id": "pooled-features",
+      "tensor_origin": "pooled_features",
+      "semantic_kind": "architectural_intermediate_tensor",
+      "shape_semantics": null,
+      "batch_dimension": null,
+      "time_dimension": null,
+      "status": "unresolved_ambiguity",
+      "evidence_ids": [
+        "ev-model-py"
+      ],
+      "requires_user_decision": true,
+      "unresolved_reason": "Multiple tensor candidates were statically observed; semantics require a user decision."
+    }
+  ],
+  "checkpoint_candidates": [],
+  "dependency_evidence": {
+    "summary": "Dependency evidence is static only.",
+    "claims": [
+      {
+        "statement": "Observed dependency: numpy==1.26.0",
+        "status": "locally_observed_behavior",
+        "evidence_ids": [
+          "ev-pyproject-toml"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "Observed dependency: torch==2.1.0",
+        "status": "locally_observed_behavior",
+        "evidence_ids": [
+          "ev-pyproject-toml"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "Observed Python constraint: >=3.10",
+        "status": "locally_observed_behavior",
+        "evidence_ids": [
+          "ev-pyproject-toml"
+        ],
+        "rationale": null
+      }
+    ]
+  },
+  "source_strategy_candidates": [
+    {
+      "strategy": "official_package",
+      "status": "unresolved_ambiguity",
+      "rationale": "Package metadata exists, but officiality and semantic equivalence require separate upstream evidence.",
+      "evidence_ids": [
+        "ev-pyproject-toml"
+      ],
+      "user_decision_required": true,
+      "unresolved_reason": "Package metadata exists, but officiality and semantic equivalence require separate upstream evidence."
+    }
+  ],
+  "environment_evidence": {
+    "summary": "No isolated model environment has been materialized.",
+    "claims": []
+  },
+  "open_questions": [
+    {
+      "question_id": "q-source-strategy",
+      "classification": "needs_user_decision",
+      "description": "Select the source strategy after reviewing primary upstream evidence.",
+      "alternatives": [
+        "accept observed candidate",
+        "collect more evidence"
+      ],
+      "evidence_ids": [
+        "ev-pyproject-toml"
+      ],
+      "default_if_deferred": "collect more evidence",
+      "failure_classification": null
+    },
+    {
+      "question_id": "q-embedding-selection",
+      "classification": "needs_user_decision",
+      "description": "Select the embedding tensor after reviewing candidate tensor semantics.",
+      "alternatives": [
+        "frame_features",
+        "pooled_features",
+        "classifier_input"
+      ],
+      "evidence_ids": [
+        "ev-model-py"
+      ],
+      "default_if_deferred": "do not select a default embedding",
+      "failure_classification": null
+    }
+  ],
+  "decisions": [],
+  "evidence_items": [
+    {
+      "evidence_id": "ev-model-py",
+      "kind": "source_file",
+      "claim_status": "locally_observed_behavior",
+      "description": "Inspected synthetic fixture file model.py.",
+      "source_file": "model.py",
+      "source_line_or_symbol": null,
+      "url": null,
+      "revision": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-pyproject-toml",
+      "kind": "source_file",
+      "claim_status": "locally_observed_behavior",
+      "description": "Inspected synthetic fixture file pyproject.toml.",
+      "source_file": "pyproject.toml",
+      "source_line_or_symbol": null,
+      "url": null,
+      "revision": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-readme-md",
+      "kind": "source_file",
+      "claim_status": "locally_observed_behavior",
+      "description": "Inspected synthetic fixture file README.md.",
+      "source_file": "README.md",
+      "source_line_or_symbol": null,
+      "url": null,
+      "revision": null,
+      "rationale": null
+    }
+  ],
+  "confidence_summary": {
+    "verified_fact_count": 0,
+    "locally_observed_count": 7,
+    "inference_count": 0,
+    "unresolved_count": 8,
+    "unsupported_claim_count": 0
+  },
+  "recommended_next_mode": "analyze"
+}

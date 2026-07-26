@@ -1,0 +1,1 @@
+{"scenario_id":"unsupported","expected_source_strategy":"unsupported_or_non_equivalent_implementation","requires_user_decision":true,"expected_failure_classification":"insufficient_evidence","expected_next_mode":"analyze","synthetic":true}
