@@ -33,6 +33,14 @@ def test_no_legacy_backbone_json(repo_root: Path) -> None:
     assert not list(repo_root.glob("**/*backbone*.json"))
 
 
+def test_repository_validation_is_checkout_name_independent(
+    repo_root: Path,
+) -> None:
+    source = (repo_root / "scripts/validate_repository.py").read_text()
+    assert 'ROOT.name != "torch-dae"' not in source
+    assert "repository root basename is not torch-dae" not in source
+
+
 def test_root_environment_has_no_torch() -> None:
     assert importlib.util.find_spec("torch") is None
 

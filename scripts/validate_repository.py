@@ -609,8 +609,6 @@ def onboarding_behavioral_smoke(failures: list[str]) -> None:
 def main() -> int:
     failures: list[str] = []
 
-    if ROOT.name != "torch-dae":
-        fail("repository root basename is not torch-dae", failures)
     for relative in REQUIRED:
         if not (ROOT / relative).exists():
             fail(f"missing required path: {relative}", failures)
