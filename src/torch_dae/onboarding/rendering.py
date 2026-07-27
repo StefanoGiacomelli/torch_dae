@@ -1,4 +1,4 @@
-"""Deterministic renderers for Phase 02 onboarding artifacts."""
+"""Deterministic renderers for onboarding artifacts."""
 
 from __future__ import annotations
 
@@ -6,7 +6,23 @@ from torch_dae.onboarding.contracts import AnalysisReport, EvidenceBackedClaim
 
 
 def render_analysis_markdown(report: AnalysisReport) -> str:
-    """Render a technical analysis report without adding facts absent from JSON."""
+    """Render a deterministic Markdown view of an analysis report.
+
+    Parameters
+    ----------
+    report
+        Validated evidence-grounded analysis report.
+
+    Returns
+    -------
+    str
+        Markdown containing the report sections, candidates, decisions, evidence, confidence
+        summary, and recommended next mode.
+
+    Notes
+    -----
+    Rendering is side-effect free and never adds facts that are absent from ``report``.
+    """
 
     lines: list[str] = [
         f"# Technical Analysis Report: {report.report_id}",

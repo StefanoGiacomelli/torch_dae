@@ -1,4 +1,4 @@
-"""Strict model-card contracts for Phase 00."""
+"""Strict model-card contracts for repository foundation."""
 
 from __future__ import annotations
 
@@ -335,7 +335,39 @@ class ProfilingSection(StrictBaseModel):
 
 
 class ModelCard(StrictBaseModel):
-    """Complete checkpoint-specific model card contract."""
+    """Validate the complete metadata for one checkpoint-specific integration.
+
+    A card represents exactly one model-family, variant, and checkpoint tuple. Validation enforces
+    lifecycle prerequisites, unique evidence identifiers, resolved evidence references, consistent
+    capabilities, repository-relative artifact paths, and the canonical waveform/output contracts.
+
+    Attributes
+    ----------
+    card_id
+        Stable canonical identifier for this exact integration tuple.
+    card_status
+        Current lifecycle state. Later states require verified environment, checkpoint, runtime,
+        and profiling evidence as applicable.
+    identity
+        Model, variant, checkpoint, framework, and public wrapper identity.
+    input
+        Canonical waveform contract using ``[B,C,T]``, sample rate in hertz, and optional ``[B]``
+        valid lengths.
+    embeddings
+        Declared embedding tensors, including exactly one default when embeddings are supported.
+    evidence
+        Provenance records supporting material scientific and technical claims.
+
+    Raises
+    ------
+    pydantic.ValidationError
+        If any field or cross-document lifecycle constraint is invalid.
+
+    Notes
+    -----
+    License fields are informational. Constructing a card never imports a model runtime, downloads
+    a checkpoint, or materializes an environment.
+    """
 
     schema_version: Literal["1.0.0"]
     card_id: CanonicalId

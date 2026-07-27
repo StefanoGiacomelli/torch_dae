@@ -1,0 +1,24 @@
+/* Small, theme-compatible readability fixes for technical reference content. */
+.sig {
+  overflow-wrap: anywhere;
+}
+
+.api-flow {
+  margin: 1rem 0;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--color-background-border);
+  border-radius: 0.35rem;
+  background: var(--color-background-secondary);
+  overflow-wrap: anywhere;
+}
+
+table.docutils {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+img[src*="logo-univaq"] {
+  width: min(100%, 26rem);
+  height: auto;
+}

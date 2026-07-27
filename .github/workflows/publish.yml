@@ -1,0 +1,116 @@
+name: Publish release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+    outputs:
+      project-version: ${{ steps.project-version.outputs.value }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v9
+        with:
+          python-version: "3.12"
+      - name: Read project version
+        id: project-version
+        run: >-
+          python -c "import pathlib,tomllib;
+          value=tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'];
+          print(f'value={value}')" >> "$GITHUB_OUTPUT"
+      - run: uv sync --all-groups --frozen
+      - name: Validate production tag
+        env:
+          PROJECT_VERSION: ${{ steps.project-version.outputs.value }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          test "$RELEASE_TAG" = "v$PROJECT_VERSION"
+          uv run python scripts/check_release_version.py "$RELEASE_TAG"
+      - run: uv run ruff format --check
+      - run: uv run ruff check
+      - run: uv run mypy src scripts
+      - run: |
+          mkdir -p .torch-dae
+          uv run pytest -q \
+            --cov=torch_dae \
+            --cov-branch \
+            --cov-report=term-missing \
+            --cov-report=json:.torch-dae/coverage-release.json
+          uv run python scripts/check_coverage.py \
+            .torch-dae/coverage-release.json \
+            --min-line 85 \
+            --min-branch 70
+      - run: uv run python scripts/generate_schemas.py --check
+      - run: uv run python scripts/validate_repository.py
+      - run: uv run python skills/audio-model-onboarding/scripts/validate_skill_artifacts.py . --json
+      - run: uv run sphinx-build -W --keep-going -b html docs docs/_build/html
+      - name: Build distributions once
+        run: uv run python -m build
+      - run: uv run python -m twine check dist/*
+      - name: Validate built distribution versions
+        env:
+          PROJECT_VERSION: ${{ steps.project-version.outputs.value }}
+        run: >-
+          uv run python -c "import pathlib;
+          version=__import__('os').environ['PROJECT_VERSION'];
+          names=[path.name for path in pathlib.Path('dist').iterdir()];
+          assert names and all(version in name for name in names), names"
+      - name: Verify the built wheel in a clean environment
+        env:
+          PROJECT_VERSION: ${{ steps.project-version.outputs.value }}
+        run: |
+          python -m venv "$RUNNER_TEMP/torch-dae-wheel-check"
+          "$RUNNER_TEMP/torch-dae-wheel-check/bin/python" -m pip install dist/*.whl
+          "$RUNNER_TEMP/torch-dae-wheel-check/bin/python" -c \
+            "import importlib.metadata, os; import torch_dae; import torch_dae.onboarding; assert importlib.metadata.version('torch-deepaudioembedding') == os.environ['PROJECT_VERSION']"
+      - uses: actions/upload-artifact@v5
+        with:
+          name: python-package-distributions
+          path: dist/
+          retention-days: 7
+
+  publish-pypi:
+    needs: validate-and-build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/torch-deepaudioembedding
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          name: python-package-distributions
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  upload-release-assets:
+    needs: validate-and-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Attach distributions to the published GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROJECT_VERSION: ${{ needs.validate-and-build.outputs.project-version }}
+        run: |
+          python -c "import os,pathlib; version=os.environ['PROJECT_VERSION']; names=[path.name for path in pathlib.Path('dist').iterdir()]; assert names and all(version in name for name in names), names"
+          gh release upload "${{ github.event.release.tag_name }}" \
+            dist/*.whl dist/*.tar.gz \
+            --repo "${{ github.repository }}" \
+            --clobber

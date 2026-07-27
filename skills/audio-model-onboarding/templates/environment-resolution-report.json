@@ -9,9 +9,9 @@
   "attempted_candidates": [],
   "selected_candidate_id": null,
   "unresolved_risks": [],
-  "phase01_artifact_paths": [],
-  "phase01_materialization_succeeded": false,
-  "phase01_verification_succeeded": false,
+  "environment_artifact_paths": [],
+  "environment_materialization_succeeded": false,
+  "environment_verification_succeeded": false,
   "environment_fingerprint": null,
   "verification_report_or_diagnostic_reference": null,
   "next_lifecycle_status": null

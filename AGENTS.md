@@ -8,4 +8,7 @@ Keep the root control-plane environment model-agnostic. Do not add PyTorch, Torc
 
 One model card represents exactly one model-family, variant, and checkpoint tuple. Public waveform inputs use `[B,C,T]` plus `sample_rate`, with optional `[B]` valid lengths. Licenses are informational and non-blocking.
 
-No legacy backbone data is a project input. Profiling is deferred. Unresolved information must remain explicit. Prefer primary upstream evidence. Do not start real model integration during Phase 00.
+No legacy backbone data is a project input. Profiling is deferred. Unresolved information must remain explicit. Prefer primary upstream evidence.
+
+Do not begin a real model integration unless the user explicitly invokes the canonical
+`audio-model-onboarding` skill for a named model and workflow mode.

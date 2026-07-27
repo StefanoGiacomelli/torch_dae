@@ -1,0 +1,41 @@
+cff-version: 1.2.0
+message: "If you use torch-dae in academic work, please cite this software."
+title: "torch-dae: an AI skill-based framework for Audio Embedding Models"
+type: software
+version: 0.1.0
+license: Apache-2.0
+repository-code: "https://github.com/StefanoGiacomelli/torch_dae"
+url: "https://github.com/StefanoGiacomelli/torch_dae"
+authors:
+  - family-names: Giacomelli
+    given-names: Stefano
+    email: stefano.giacomelli@graduate.univaq.it
+    orcid: "https://orcid.org/0009-0009-0438-1748"
+    affiliation: "Department of Information Engineering, Computer Science and Mathematics (DISIM), University of L'Aquila"
+abstract: >-
+  torch-dae is a generic framework that provides an AI skill-based workflow for
+  evidence-grounded onboarding and integration of audio embedding models. It keeps
+  model-specific dependencies in isolated environments and records provenance,
+  checkpoint identity, environment resolution, public wrapper behavior, embeddings,
+  and runtime verification as explicit artifacts. Research activities were mainly
+  funded under the Ministerial Decree (DM) 118/2023, Mission 4, Component 1,
+  Investment 4.1 of the National Recovery and Resilience Plan (PNRR) – “PNRR
+  Research” – CUP: E11I23000100001.
+references:
+  - type: conference-paper
+    authors:
+      - family-names: Giacomelli
+        given-names: Stefano
+      - family-names: Centofanti
+        given-names: Carlo
+      - family-names: Graziosi
+        given-names: Fabio
+      - family-names: Rinaldi
+        given-names: Claudia
+    title: "Design and Deployment of a Standard Framework for Audio Neural Networks Embedding Models"
+    collection-title: "2025 IEEE Symposium on Computers and Communications (ISCC)"
+    year: 2025
+    pages: "1-6"
+    doi: "10.1109/ISCC65549.2025.11326439"
+    publisher:
+      name: IEEE

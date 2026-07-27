@@ -15,14 +15,16 @@ def test_agent_skill_paths_resolve_to_canonical(repo_root: Path) -> None:
     assert (codex / "SKILL.md").resolve() == (claude / "SKILL.md").resolve()
 
 
-def test_skill_front_matter_mentions_phase00_boundary(repo_root: Path) -> None:
+def test_skill_front_matter_mentions_integration_boundary(repo_root: Path) -> None:
     text = (repo_root / "skills/audio-model-onboarding/SKILL.md").read_text()
     assert "project_spec.md" in text
-    assert "Phase 02 onboarding skill" in text
-    assert "Do not integrate a real model" in text
+    assert "onboarding skill" in text
+    assert "the user explicitly requested `MODE: integrate`" in text
+    assert "explicitly authorized production integration" in text
+    assert "never create a Git commit" in text
 
 
-def test_phase02_skill_defines_required_modes_and_links(repo_root: Path) -> None:
+def test_onboarding_skill_defines_required_modes_and_links(repo_root: Path) -> None:
     text = (repo_root / "skills/audio-model-onboarding/SKILL.md").read_text()
     for mode in ("analyze", "resolve-environment", "integrate", "verify", "card", "profile"):
         assert f"## `{mode}` Mode" in text
@@ -58,6 +60,9 @@ def test_phase02_skill_defines_required_modes_and_links(repo_root: Path) -> None
     ]:
         assert f"references/{name}" in text
         assert (repo_root / "skills/audio-model-onboarding/references" / name).exists()
+    for name in ("agent-request.md", "agent-response.md"):
+        assert f"templates/{name}" in text
+        assert (repo_root / "skills/audio-model-onboarding/templates" / name).exists()
 
 
 def test_agent_aliases_share_skill_bytes(repo_root: Path) -> None:

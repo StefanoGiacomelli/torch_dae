@@ -8,4 +8,8 @@ Treat `.torch-dae/` as ignored runtime state and never stage its contents. Each 
 
 Use `[B,C,T]` waveform inputs with `sample_rate` for public APIs, and represent optional valid lengths as `[B]`. Record licenses without making automatic legal blocking decisions.
 
-Do not use legacy backbone files. Defer profiling. Preserve unresolved facts explicitly, prefer primary upstream evidence, and do not begin real model onboarding in Phase 00.
+Do not use legacy backbone files. Defer profiling. Preserve unresolved facts explicitly and prefer
+primary upstream evidence.
+
+Do not begin a real model integration unless the user explicitly invokes the canonical
+`audio-model-onboarding` skill for a named model and workflow mode.

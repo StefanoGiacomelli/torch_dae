@@ -26,7 +26,7 @@ def test_deferred_model_commands_fail_truthfully() -> None:
     assert "model card not found" in result.output
     result = runner.invoke(app, ["model", "verify", "synthetic"])
     assert result.exit_code == 2
-    assert "belongs to Phase 03+" in result.output
+    assert "is not available in the control-plane CLI" in result.output
 
 
 def test_env_info_absent() -> None:

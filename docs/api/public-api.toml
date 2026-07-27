@@ -1,0 +1,151 @@
+schema_version = "1.0.0"
+description = "Canonical curated, model-agnostic Sphinx API manifest."
+
+[registry]
+symbols = [
+  { path = "torch_dae.ModelCardRegistry", display_name = "ModelCardRegistry", category = "registry", audience = "user", methods = ["list_cards", "get_card", "get_card_path", "get_model_class"], page = "api/registry.rst" },
+]
+
+[model_execution]
+symbols = [
+  { path = "torch_dae.core.model.AudioModelProtocol", display_name = "AudioModelProtocol", category = "model execution", audience = "integrator", methods = ["from_random", "from_pretrained", "load_checkpoint", "preprocess", "forward", "predict_probability", "available_embeddings", "compute_embedding"], page = "api/model-execution.rst" },
+  { path = "torch_dae.core.preprocessing.WaveformInputContract", display_name = "WaveformInputContract", category = "model execution", audience = "integrator", methods = [], page = "api/model-execution.rst" },
+]
+
+[outputs_and_embeddings]
+symbols = [
+  { path = "torch_dae.core.outputs.TensorLike", display_name = "TensorLike", category = "outputs and embeddings", audience = "integrator", methods = [], page = "api/outputs-embeddings.rst" },
+  { path = "torch_dae.core.outputs.AudioModelOutput", display_name = "AudioModelOutput", category = "outputs and embeddings", audience = "user", methods = [], page = "api/outputs-embeddings.rst" },
+  { path = "torch_dae.core.outputs.EmbeddingOutput", display_name = "EmbeddingOutput", category = "outputs and embeddings", audience = "user", methods = [], page = "api/outputs-embeddings.rst" },
+  { path = "torch_dae.core.outputs.PreprocessingOutput", display_name = "PreprocessingOutput", category = "outputs and embeddings", audience = "integrator", methods = [], page = "api/outputs-embeddings.rst" },
+  { path = "torch_dae.core.embeddings.EmbeddingSpec", display_name = "EmbeddingSpec", category = "outputs and embeddings", audience = "integrator", methods = [], page = "api/outputs-embeddings.rst" },
+]
+
+[capabilities]
+symbols = [
+  { path = "torch_dae.core.capabilities.Capability", display_name = "Capability", category = "capabilities", audience = "integrator", methods = ["require"], page = "api/capabilities.rst" },
+  { path = "torch_dae.core.capabilities.ModelCapabilities", display_name = "ModelCapabilities", category = "capabilities", audience = "integrator", methods = [], page = "api/capabilities.rst" },
+  { path = "torch_dae.core.errors.FeatureNotAvailableError", display_name = "FeatureNotAvailableError", category = "capabilities", audience = "user", methods = [], page = "api/capabilities.rst" },
+  { path = "torch_dae.core.errors.UnsupportedCapabilityError", display_name = "UnsupportedCapabilityError", category = "capabilities", audience = "user", methods = [], page = "api/capabilities.rst" },
+]
+
+[checkpoint_management]
+symbols = [
+  { path = "torch_dae.core.checkpoint.CheckpointSourceType", display_name = "CheckpointSourceType", category = "checkpoint management", audience = "integrator", methods = [], page = "api/checkpoints.rst" },
+  { path = "torch_dae.core.checkpoint.LicenseRecord", display_name = "LicenseRecord", category = "checkpoint management", audience = "integrator", methods = [], page = "api/checkpoints.rst" },
+  { path = "torch_dae.core.checkpoint.CheckpointSpec", display_name = "CheckpointSpec", category = "checkpoint management", audience = "integrator", methods = [], page = "api/checkpoints.rst" },
+  { path = "torch_dae.core.checkpoint.ResolvedCheckpoint", display_name = "ResolvedCheckpoint", category = "checkpoint management", audience = "user", methods = [], page = "api/checkpoints.rst" },
+  { path = "torch_dae.core.checkpoint.CheckpointMaterializationRecord", display_name = "CheckpointMaterializationRecord", category = "checkpoint management", audience = "developer", methods = [], page = "api/checkpoints.rst" },
+  { path = "torch_dae.core.checkpoint.CheckpointManager", display_name = "CheckpointManager", category = "checkpoint management", audience = "user", methods = ["ensure", "info", "remove"], page = "api/checkpoints.rst" },
+]
+
+[model_card_contracts]
+symbols = [
+  { path = "torch_dae.cards.models.ModelCardLifecycle", display_name = "ModelCardLifecycle", category = "model-card contracts", audience = "integrator", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.EvidenceStatus", display_name = "EvidenceStatus", category = "model-card contracts", audience = "integrator", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.IssueStatus", display_name = "IssueStatus", category = "model-card contracts", audience = "integrator", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.ProfilingStatus", display_name = "ProfilingStatus", category = "model-card contracts", audience = "integrator", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.EvidenceRecord", display_name = "EvidenceRecord", category = "model-card contracts", audience = "integrator", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.IssueRecord", display_name = "IssueRecord", category = "model-card contracts", audience = "integrator", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.Identity", display_name = "Identity", category = "model-card contracts", audience = "integrator", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.SourceRecord", display_name = "SourceRecord", category = "model-card contracts", audience = "integrator", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.Sources", display_name = "Sources", category = "model-card contracts", audience = "integrator", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.ScientificReference", display_name = "ScientificReference", category = "model-card contracts", audience = "user", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.Description", display_name = "Description", category = "model-card contracts", audience = "user", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.Tasks", display_name = "Tasks", category = "model-card contracts", audience = "user", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.DatasetRecord", display_name = "DatasetRecord", category = "model-card contracts", audience = "user", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.Datasets", display_name = "Datasets", category = "model-card contracts", audience = "user", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.MetricRecord", display_name = "MetricRecord", category = "model-card contracts", audience = "user", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.RecommendedEnvironment", display_name = "RecommendedEnvironment", category = "model-card contracts", audience = "integrator", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.Usage", display_name = "Usage", category = "model-card contracts", audience = "user", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.WaveformInput", display_name = "WaveformInput", category = "model-card contracts", audience = "integrator", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.OutputComponent", display_name = "OutputComponent", category = "model-card contracts", audience = "integrator", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.Outputs", display_name = "Outputs", category = "model-card contracts", audience = "integrator", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.EmbeddingsSection", display_name = "EmbeddingsSection", category = "model-card contracts", audience = "integrator", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.BooleanCapability", display_name = "BooleanCapability", category = "model-card contracts", audience = "integrator", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.CapabilitiesSection", display_name = "CapabilitiesSection", category = "model-card contracts", audience = "integrator", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.DeviceSupport", display_name = "DeviceSupport", category = "model-card contracts", audience = "user", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.ProfilingSection", display_name = "ProfilingSection", category = "model-card contracts", audience = "developer", methods = [], page = "api/model-cards.rst" },
+  { path = "torch_dae.cards.models.ModelCard", display_name = "ModelCard", category = "model-card contracts", audience = "user", methods = [], page = "api/model-cards.rst" },
+]
+
+[environment_specifications]
+symbols = [
+  { path = "torch_dae.environment.specification.SourceInstallationType", display_name = "SourceInstallationType", category = "environment specifications", audience = "integrator", methods = [], page = "api/environment-specifications.rst" },
+  { path = "torch_dae.environment.specification.PythonSpecification", display_name = "PythonSpecification", category = "environment specifications", audience = "integrator", methods = [], page = "api/environment-specifications.rst" },
+  { path = "torch_dae.environment.specification.PlatformSpecification", display_name = "PlatformSpecification", category = "environment specifications", audience = "integrator", methods = [], page = "api/environment-specifications.rst" },
+  { path = "torch_dae.environment.specification.OfficialPackageSource", display_name = "OfficialPackageSource", category = "environment specifications", audience = "integrator", methods = [], page = "api/environment-specifications.rst" },
+  { path = "torch_dae.environment.specification.PinnedGitSource", display_name = "PinnedGitSource", category = "environment specifications", audience = "integrator", methods = [], page = "api/environment-specifications.rst" },
+  { path = "torch_dae.environment.specification.VendoredAdaptationSource", display_name = "VendoredAdaptationSource", category = "environment specifications", audience = "integrator", methods = [], page = "api/environment-specifications.rst" },
+  { path = "torch_dae.environment.specification.EnvironmentVerificationSpec", display_name = "EnvironmentVerificationSpec", category = "environment specifications", audience = "integrator", methods = [], page = "api/environment-specifications.rst" },
+  { path = "torch_dae.environment.specification.EnvironmentSpecification", display_name = "EnvironmentSpecification", category = "environment specifications", audience = "integrator", methods = [], page = "api/environment-specifications.rst" },
+  { path = "torch_dae.environment.specification.EnvironmentSourcesManifest", display_name = "EnvironmentSourcesManifest", category = "environment specifications", audience = "integrator", methods = [], page = "api/environment-specifications.rst" },
+]
+
+[environment_lifecycle]
+symbols = [
+  { path = "torch_dae.environment.manager.InstalledSource", display_name = "InstalledSource", category = "environment lifecycle", audience = "developer", methods = [], page = "api/environment-lifecycle.rst" },
+  { path = "torch_dae.environment.manager.ResolvedEnvironment", display_name = "ResolvedEnvironment", category = "environment lifecycle", audience = "user", methods = [], page = "api/environment-lifecycle.rst" },
+  { path = "torch_dae.environment.manager.EnvironmentInfo", display_name = "EnvironmentInfo", category = "environment lifecycle", audience = "user", methods = [], page = "api/environment-lifecycle.rst" },
+  { path = "torch_dae.environment.manager.EnvironmentVerification", display_name = "EnvironmentVerification", category = "environment lifecycle", audience = "user", methods = [], page = "api/environment-lifecycle.rst" },
+  { path = "torch_dae.environment.manager.EnvironmentManager", display_name = "EnvironmentManager", category = "environment lifecycle", audience = "user", methods = ["from_repository_root", "specification_path", "load_specification", "load_sources_manifest", "fingerprint_for", "create", "ensure", "verify", "remove", "info", "run", "info_json"], page = "api/environment-lifecycle.rst" },
+]
+
+[runtime_verification]
+symbols = [
+  { path = "torch_dae.environment.verification.VerificationCheck", display_name = "VerificationCheck", category = "runtime verification", audience = "integrator", methods = [], page = "api/runtime-verification.rst" },
+  { path = "torch_dae.environment.verification.TensorDimension", display_name = "TensorDimension", category = "runtime verification", audience = "integrator", methods = [], page = "api/runtime-verification.rst" },
+  { path = "torch_dae.environment.verification.TensorObservation", display_name = "TensorObservation", category = "runtime verification", audience = "integrator", methods = [], page = "api/runtime-verification.rst" },
+  { path = "torch_dae.environment.verification.VerificationReport", display_name = "VerificationReport", category = "runtime verification", audience = "integrator", methods = [], page = "api/runtime-verification.rst" },
+]
+
+[onboarding_contracts]
+symbols = [
+  { path = "torch_dae.onboarding.contracts.EvidenceItemKind", display_name = "EvidenceItemKind", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.ClaimStatus", display_name = "ClaimStatus", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.OpenQuestionClassification", display_name = "OpenQuestionClassification", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.SourceStrategy", display_name = "SourceStrategy", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.RecommendedNextMode", display_name = "RecommendedNextMode", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.FailureClassification", display_name = "FailureClassification", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.CandidateTrialStatus", display_name = "CandidateTrialStatus", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.DependencyKind", display_name = "DependencyKind", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.EvidenceItem", display_name = "EvidenceItem", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.EvidenceBackedClaim", display_name = "EvidenceBackedClaim", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.ReportSection", display_name = "ReportSection", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.RepositoryIdentity", display_name = "RepositoryIdentity", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.VariantCandidate", display_name = "VariantCandidate", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.CheckpointCandidate", display_name = "CheckpointCandidate", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.SourceStrategyCandidate", display_name = "SourceStrategyCandidate", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.EmbeddingCandidate", display_name = "EmbeddingCandidate", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.OpenQuestion", display_name = "OpenQuestion", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.DecisionRecord", display_name = "DecisionRecord", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.DependencyEvidenceRecord", display_name = "DependencyEvidenceRecord", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.ConfidenceSummary", display_name = "ConfidenceSummary", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.AnalysisReport", display_name = "AnalysisReport", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.EnvironmentCandidate", display_name = "EnvironmentCandidate", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.EnvironmentCandidateGenerationResult", display_name = "EnvironmentCandidateGenerationResult", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.EnvironmentResolutionReport", display_name = "EnvironmentResolutionReport", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.SkillEvaluationScenario", display_name = "SkillEvaluationScenario", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+  { path = "torch_dae.onboarding.contracts.ScenarioInspectionResult", display_name = "ScenarioInspectionResult", category = "onboarding contracts", audience = "developer", methods = [], page = "api/onboarding-contracts.rst" },
+]
+
+[static_onboarding_inspection]
+symbols = [
+  { path = "torch_dae.onboarding.inspection.OnboardingInspectionError", display_name = "OnboardingInspectionError", category = "static onboarding inspection", audience = "developer", methods = [], page = "api/onboarding-inspection.rst" },
+  { path = "torch_dae.onboarding.inspection.InspectionBudget", display_name = "InspectionBudget", category = "static onboarding inspection", audience = "developer", methods = ["visit_file", "cached_text", "store_text"], page = "api/onboarding-inspection.rst" },
+  { path = "torch_dae.onboarding.inspection.inspect_repository", display_name = "inspect_repository", category = "static onboarding inspection", audience = "developer", methods = [], page = "api/onboarding-inspection.rst" },
+  { path = "torch_dae.onboarding.inspection.inspect_python_project", display_name = "inspect_python_project", category = "static onboarding inspection", audience = "developer", methods = [], page = "api/onboarding-inspection.rst" },
+  { path = "torch_dae.onboarding.inspection.inspect_dependencies", display_name = "inspect_dependencies", category = "static onboarding inspection", audience = "developer", methods = [], page = "api/onboarding-inspection.rst" },
+  { path = "torch_dae.onboarding.inspection.inspect_imports", display_name = "inspect_imports", category = "static onboarding inspection", audience = "developer", methods = [], page = "api/onboarding-inspection.rst" },
+  { path = "torch_dae.onboarding.inspection.inspect_model_candidates", display_name = "inspect_model_candidates", category = "static onboarding inspection", audience = "developer", methods = [], page = "api/onboarding-inspection.rst" },
+  { path = "torch_dae.onboarding.inspection.inspect_output_candidates", display_name = "inspect_output_candidates", category = "static onboarding inspection", audience = "developer", methods = [], page = "api/onboarding-inspection.rst" },
+  { path = "torch_dae.onboarding.inspection.inspect_checkpoints", display_name = "inspect_checkpoints", category = "static onboarding inspection", audience = "developer", methods = [], page = "api/onboarding-inspection.rst" },
+  { path = "torch_dae.onboarding.inspection.generate_environment_candidates", display_name = "generate_environment_candidates", category = "static onboarding inspection", audience = "developer", methods = [], page = "api/onboarding-inspection.rst" },
+  { path = "torch_dae.onboarding.inspection.classify_source_strategy", display_name = "classify_source_strategy", category = "static onboarding inspection", audience = "developer", methods = [], page = "api/onboarding-inspection.rst" },
+  { path = "torch_dae.onboarding.inspection.inspect_scenario_repository", display_name = "inspect_scenario_repository", category = "static onboarding inspection", audience = "developer", methods = [], page = "api/onboarding-inspection.rst" },
+]
+
+[report_rendering]
+symbols = [
+  { path = "torch_dae.onboarding.rendering.render_analysis_markdown", display_name = "render_analysis_markdown", category = "report rendering", audience = "developer", methods = [], page = "api/report-rendering.rst" },
+]

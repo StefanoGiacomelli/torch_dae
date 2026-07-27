@@ -1,4 +1,4 @@
-"""Shared CLI helpers for Phase 02 skill-local scripts."""
+"""Shared CLI helpers for onboarding workflow skill-local scripts."""
 
 from __future__ import annotations
 

@@ -1,34 +1,54 @@
 # Changelog
 
+All notable changes to this project are documented in this file.
+
 ## Unreleased
 
-- Implemented the Phase 02 canonical audio-model onboarding skill MVP with evidence-driven modes,
-  deterministic static inspection utilities, strict analysis/environment report contracts, templates,
-  synthetic scenario fixtures, schema generation, validation, and documentation.
-- Grounded Phase 02 synthetic evaluation in production-inspector observations, regenerated scenario
-  golden reports from concrete evidence, tightened source-strategy gates, strict environment
-  candidate output, dependency provenance, candidate evidence compatibility, and untrusted-repository
-  file handling.
-- Closed Phase 02 evidence corrections for exact official-package identity, `.github` evidence paths,
-  Conda range and CI matrix dependency records, Phase 01 diagnostic references, checkpoint-helper
-  provenance, shared inspection budgets, and local real-Git grounded evaluation.
-- Restricted verified upstream facts to authoritative upstream provenance, official-package identity
-  to package metadata or exact committed environment artifacts, checkpoint hashes to their observed
-  helper candidate, and CI dependency extraction to static matrix definitions.
-- Closed Phase 01 environment/checkpoint cache integrity gaps: backend-built local wheels,
-  sanitized model-environment subprocesses, Git source wheel metadata, installed wheel drift checks,
-  package-bundle ownership checks, checkpoint spec fingerprints, local offline acquisition, and
-  runtime command diagnostics.
-- Corrected Phase 01 card/environment identity handling, exact cross-document environment path
-  validation, local package content identity coverage, online Git checkout recovery, atomic Git clone
-  staging, wheel-cache metadata verification, and failed-materialization metadata.
-- Added shared sanitized runtime report sinks for environment commands, source commands, checkpoint
-  acquisition events, failed materialization metadata, real Git recovery coverage, response-closure
-  checks, interrupted-download cleanup, and cross-distribution package-bundle rejection.
-- Normalized expected checkpoint acquisition failures into typed errors with hash-validation,
-  offline-cache-miss, metadata-write, cache-finalization, cleanup, response-close, redaction, and
-  no-traceback CLI regression coverage.
-- Implemented Phase 01 environment materialization, source verification, checkpoint acquisition,
-  offline/cache policies, runtime metadata, CLI behavior, repository validation, and synthetic tests.
-- Added the Phase 00 repository scaffold.
-- Added strict typed contracts, schema generation, CLI skeleton, environment and checkpoint interfaces, registry support, shared skill links, and synthetic validation fixtures.
+### Repository foundation
+
+- Added the lightweight control-plane package, strict typed contracts, generated schemas, registry,
+  CLI structure, canonical skill links, synthetic fixtures, and repository safety rules.
+- Established checkpoint-specific model-card identity, canonical waveform inputs, explicit
+  capabilities, and ignored runtime state.
+
+### Environment and checkpoint management
+
+- Implemented reproducible environment specifications, materialization, verification, caching,
+  source strategies, offline behavior, and the environment CLI.
+- Implemented checkpoint acquisition, hashing, cache integrity, package-bundle ownership checks,
+  local/remote sources, typed failure handling, redacted diagnostics, and checkpoint CLI behavior.
+- Added backend-built local wheels, sanitized model-environment subprocesses, Git source recovery,
+  wheel metadata verification, cross-document identity validation, and failure cleanup.
+
+### Audio-model onboarding
+
+- Added the canonical evidence-grounded onboarding skill with static inspection, environment
+  candidate generation, analysis/report rendering, decision gates, source strategies, integration
+  planning, runtime verification planning, and model-card authoring.
+- Grounded synthetic scenario evaluations in production-inspector observations, including dependency,
+  checkpoint-helper, package identity, Git revision, source strategy, and embedding evidence.
+- Added explicit production integration prerequisites while keeping profiling reserved.
+
+### Validation and quality
+
+- Added strict dual Pydantic/JSON Schema validation, repository and skill validators, synthetic
+  behavioral checks, public-safety scans, CI, Codecov configuration, and local line/branch coverage
+  thresholds.
+- Added validation for new model cards, static wrapper entry points, committed environments,
+  verification reports, root dependency isolation, and forbidden binary assets.
+
+### Documentation and public metadata
+
+- Added public package metadata, Apache-2.0 licensing, citation metadata, contribution guidance,
+  typed-package marker, public README, and canonical agent request/response templates.
+- Documented environment management, checkpoint management, onboarding evidence, artifacts,
+  workflow boundaries, and development commands.
+- Added warning-clean Sphinx documentation with MyST Markdown, Furo, a curated API reference, and
+  NumPy-style public API docstrings.
+- Added Read the Docs configuration and contributor guidance for documentation maintenance.
+- Added PyPI Trusted Publishing on published GitHub Releases and manual TestPyPI publication, both
+  using OIDC without stored package-index credentials.
+- Added build-once release artifact validation, seven-day workflow artifacts, clean-wheel checks,
+  and wheel/source distributions attached to GitHub Releases.
+- Added software and IEEE citations, ORCID, research funding acknowledgement, and Apache NOTICE
+  metadata.

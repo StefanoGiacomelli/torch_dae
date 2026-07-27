@@ -2,7 +2,7 @@
   "$id": "https://torch-dae.local/schemas/embedding.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Model-independent embedding declaration.",
+  "description": "Declare one selectable model-independent embedding.\n\nAttributes\n----------\nschema_version\n    Contract version; currently ``1.0.0``.\nembedding_id, name, description\n    Stable identity and human-readable semantics.\nofficially_defined\n    Whether upstream material explicitly defines this representation.\ndefault\n    Whether this is the card's selected default embedding.\nnetwork_location, layout\n    Extraction location and ordered tensor-axis notation.\ndimension\n    Optional positive feature dimension.\ngranularity, temporal_hop_seconds\n    Sequence/frame scope and optional frame spacing in seconds.\npooling, projection, normalization, task_head_relation, dtype\n    Transform and representation properties.\nstatus\n    One of ``declared``, ``verified``, or ``unsupported``.\nselection_rationale, evidence_ids\n    Justification and references to supporting evidence.\n\nRaises\n------\npydantic.ValidationError\n    If identifiers, positive dimensions, positive hop duration, or allowed values are invalid.",
   "properties": {
     "default": {
       "title": "Default",

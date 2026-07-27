@@ -5,12 +5,12 @@ description: Analyze, resolve, integrate, verify, card, and profile PyTorch audi
 
 # audio-model-onboarding
 
-This is the canonical, agent-neutral Phase 02 onboarding skill for `torch-dae`. Treat
-`project_spec.md` as normative. Preserve it unless the user explicitly asks to edit the spec.
+This is the canonical, agent-neutral onboarding skill for `torch-dae`. Treat `project_spec.md` as
+normative. Preserve it unless the user explicitly asks to edit the spec.
 
 Codex and Claude entry points must resolve to this same directory. Do not create agent-specific
-scientific workflows. Do not integrate a real model, download a real checkpoint, add model runtime
-dependencies to the root environment, or start Phase 03.
+scientific workflows. Keep model runtime dependencies out of the root environment. Execute only the
+workflow mode explicitly requested by the user, and never create a Git commit.
 
 Before using any mode, read the relevant references:
 
@@ -27,6 +27,11 @@ Before using any mode, read the relevant references:
 - `references/lifecycle-and-decision-gates.md`
 - `references/failure-classification.md`
 - `references/synthetic-evaluation.md`
+
+Canonical request and response formats are available at:
+
+- `templates/agent-request.md`
+- `templates/agent-response.md`
 
 Use deterministic utilities under `scripts/` for evidence collection. They may collect, normalize,
 and validate static evidence; they do not replace scientific or architectural reasoning.
@@ -114,23 +119,25 @@ Optional inputs: target OS/architecture, manually supplied constraints, selected
 controlled trial results.
 
 Prerequisites: analyze-mode evidence is sufficient; user decisions affecting compatibility are
-resolved; Phase 01 environment contracts and CLI are available.
+resolved; environment contracts and CLI are available.
 
 Ordered procedure:
 
 1. Collect Python, PyTorch, TorchAudio, NumPy, build backend, source revision, CI, Docker, and import
    evidence.
 2. Generate ordered candidates using `scripts/generate_environment_candidates.py`.
-3. Trial only an explicitly selected evidence-motivated candidate in a Phase 01 managed environment.
+3. Trial only an explicitly selected evidence-motivated candidate in an isolated model-specific
+   environment.
 4. Classify every failure with `references/failure-classification.md`.
 5. On success, prepare `environments/<card-id>/environment.json`, `pyproject.toml`, `uv.lock`,
-   `sources.json`, and `verify_environment.py` using Phase 01 contracts and commands.
+   `sources.json`, and `verify_environment.py` using the committed environment contracts and
+   commands.
 
 Evidence requirements: candidate rationale, expected compatibility evidence, trial status, failure
 classification, diagnostics, unresolved risk, platform evidence, and exact commands.
 
-Generated outputs: environment-resolution report JSON, Phase 01 artifact draft paths, selected
-candidate record, failed-candidate diagnostics.
+Generated outputs: environment-resolution report JSON, environment artifact draft paths, selected
+candidate record, and failed-candidate diagnostics.
 
 User-decision gates: multiple source strategies, multiple meaningful compatibility tracks,
 unsupported platform, technical access/authentication blocker, license metadata issue, or
@@ -140,25 +147,27 @@ Failure conditions: all evidence-supported candidates exhausted, external blocke
 implementation, source build failure, missing wheels, incompatible checkpoint, or unsafe execution.
 
 Prohibited behavior: arbitrary Cartesian version search, hidden environment materialization, adding
-model dependencies to the root environment, or duplicating Phase 01 environment materialization.
+model dependencies to the root environment, or duplicating the environment subsystem.
 
-Completion criteria: selected candidate is verified through Phase 01 recreation and verification,
-lockfile is synchronized, source manifest is coherent, and artifact references agree.
+Completion criteria: selected candidate is verified through environment recreation and
+verification, the lockfile is synchronized, the source manifest is coherent, and artifact
+references agree.
 
 Next allowed lifecycle transition: `environment_resolved`.
 
 ## `integrate` Mode
 
-Purpose: define and, in future model phases, implement the project-side wrapper while preserving
-upstream semantics.
+Purpose: implement the project-side wrapper while preserving upstream semantics.
 
 Required inputs: analyzed report, resolved source strategy, resolved checkpoint strategy, selected
 variant, selected embedding default when required.
 
 Optional inputs: user target use, wrapper package path, adaptation notes.
 
-Prerequisites: no unresolved scientific choice that affects wrapper semantics; environment plan is
-available; Phase 03 has been explicitly started before production wrapper commits.
+Prerequisites: the user explicitly requested `MODE: integrate`; analysis is complete and reviewed;
+the source strategy, target model variant, target checkpoint, and model-specific environment
+strategy are resolved; the primary embedding is resolved or explicitly deferred by user decision;
+and the user explicitly authorized production integration.
 
 Ordered procedure:
 
@@ -167,27 +176,30 @@ Ordered procedure:
    deterministic behavior, and tests.
 2. Verify source-strategy rules in `references/source-strategy.md`.
 3. Preserve upstream inference semantics and document any deviation.
-4. In Phase 02, restrict execution to synthetic fixture plans.
+4. Add the wrapper, model-specific package code, committed environment and checkpoint
+   specifications, integration documentation, and tests needed for the selected model.
 
 Evidence requirements: source provenance, upstream forward semantics, preprocessing evidence,
 checkpoint compatibility evidence, selected embedding evidence, and user decisions.
 
-Generated outputs: integration plan; only synthetic wrapper examples may be created in Phase 02.
+Generated outputs: integration plan, wrapper and package code, committed specifications,
+documentation, and tests for the selected model.
 
 User-decision gates: non-equivalent wrapper behavior, multiple plausible embeddings, ambiguous
 preprocessing, unclear output semantics, or vendored adaptation scope.
 
 Failure conditions: source strategy unsupported, equivalence cannot be justified, required evidence
-missing, or Phase 03 production work requested implicitly.
+missing, integration prerequisites unresolved, or production integration not explicitly authorized.
 
-Prohibited behavior: production model wrapper commits in Phase 02, real checkpoint downloads,
-semantic reimplementation without provenance, or logits/task decisions mislabeled as embeddings.
+Prohibited behavior: adding model dependencies to the root project, committing checkpoint binaries,
+silently beginning verification or another workflow mode, creating a Git commit, semantic
+reimplementation without provenance, or presenting logits/task decisions as embeddings.
 
 Completion criteria: integration plan is reviewable, evidence-backed, and declares verification
 requirements.
 
-Next allowed lifecycle transition: none in Phase 02. `integrate` is a workflow mode, not a lifecycle
-state. Existing committed lifecycle states remain authoritative.
+Next allowed lifecycle transition: none. `integrate` is a workflow mode, not a lifecycle state.
+Existing committed lifecycle states remain authoritative.
 
 ## `verify` Mode
 
@@ -198,8 +210,8 @@ specification, expected outputs and embeddings.
 
 Optional inputs: accelerator targets, extra input cases, user target assertions.
 
-Prerequisites: environment verified, checkpoint available or explicitly unsupported, wrapper exists,
-and card-declared outputs/embeddings are evidence-backed.
+Prerequisites: environment verified, wrapper exists, the selected model and checkpoint are explicit,
+and card-declared outputs and embeddings are evidence-backed.
 
 Ordered procedure:
 
@@ -214,7 +226,7 @@ Ordered procedure:
 Evidence requirements: environment fingerprint, checkpoint hash, source revision, package identity,
 test inputs, observed outputs, embedding observations, warnings, failures, unsupported capabilities.
 
-Generated outputs: verification plan and, in a model phase, verification report JSON.
+Generated outputs: verification plan and verification report JSON.
 
 User-decision gates: unsupported capabilities, output/card mismatch, embedding/card mismatch,
 unsupported device behavior, or non-reproducible runtime observations.
@@ -222,8 +234,10 @@ unsupported device behavior, or non-reproducible runtime observations.
 Failure conditions: required runtime tests fail, card/report disagree, checkpoint cannot load,
 outputs/embeddings are missing, or environment is not verified.
 
-Prohibited behavior: lifecycle promotion from schema validity alone, profiling, fabricated runtime
-observations, or root-environment model execution.
+Prohibited behavior: acquiring any checkpoint other than the explicitly selected checkpoint,
+acquiring checkpoints outside the checkpoint subsystem, running the model outside its isolated
+environment, lifecycle promotion from schema validity alone, profiling, or fabricated runtime
+observations.
 
 Completion criteria: every card-declared output and embedding is observed and the report validates.
 
@@ -275,15 +289,15 @@ states beyond `project_spec.md`.
 
 Purpose: reserved future mode that may inspect eligibility for profiling.
 
-Required inputs: runtime-verified card and verification report, in a later project phase.
+Required inputs: runtime-verified card and verification report.
 
 Optional inputs: future profiling target platform and protocol.
 
-Prerequisites: none in Phase 02 because profiling is not implemented in Phase 02.
+Prerequisites: none because no profiling workflow has been implemented.
 
 Ordered procedure:
 
-1. Refuse profiling execution in Phase 02.
+1. Refuse profiling execution.
 2. List missing prerequisites when asked.
 3. Explain expected future inputs without producing profiling evidence.
 
@@ -292,10 +306,10 @@ created.
 
 Generated outputs: eligibility notes only.
 
-User-decision gates: future profiling protocol selection belongs to a later phase.
+User-decision gates: future profiling protocol selection remains unresolved.
 
 Failure conditions: any attempt to measure latency, memory, energy, MACs, FLOPs, or benchmark
-performance in Phase 02.
+performance.
 
 Prohibited behavior: latency measurement, memory profiling, energy measurement, MAC/FLOP
 calculation, computational characterization, benchmark reports, or lifecycle promotion to
@@ -303,4 +317,7 @@ calculation, computational characterization, benchmark reports, or lifecycle pro
 
 Completion criteria: profiling remains reserved and no fabricated profiling evidence exists.
 
-Next allowed lifecycle transition: none in Phase 02.
+Next allowed lifecycle transition: none.
+
+Profiling remains unavailable until a model is runtime_verified and a profiling workflow is
+explicitly implemented and invoked.

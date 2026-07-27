@@ -1,4 +1,4 @@
-"""Validate a Phase 02 technical-analysis report JSON file."""
+"""Validate a onboarding workflow technical-analysis report JSON file."""
 
 from __future__ import annotations
 

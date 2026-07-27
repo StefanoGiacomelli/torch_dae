@@ -36,7 +36,7 @@
   },
   "variants": [],
   "runtime_interface": {
-    "summary": "Runtime interface is not verified in Phase 02.",
+    "summary": "Runtime interface is not verified in onboarding workflow.",
     "claims": []
   },
   "preprocessing": {

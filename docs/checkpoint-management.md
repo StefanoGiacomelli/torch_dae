@@ -1,6 +1,6 @@
 # Checkpoint Management
 
-Phase 01 resolves a card checkpoint into ignored cache state:
+The checkpoint subsystem resolves a card checkpoint into ignored cache state:
 
 ```text
 .torch-dae/checkpoints/<checkpoint-id>/<sha256>/

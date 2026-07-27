@@ -76,7 +76,7 @@
       "type": "object"
     },
     "CheckpointSourceType": {
-      "description": "Supported checkpoint source variants.",
+      "description": "Enumerate supported checkpoint acquisition categories.\n\n``https`` streams a direct URL; ``github_release`` resolves a repository, tag, and filename;\n``huggingface`` resolves a repository, optional revision, and filename; ``package_bundle``\nreads a file from an exact installed package; and ``local_path`` copies a repository-relative\nfile. The enum selects validation and acquisition behavior.",
       "enum": [
         "https",
         "github_release",
@@ -90,7 +90,7 @@
     },
     "CheckpointSpec": {
       "additionalProperties": false,
-      "description": "Checkpoint specification for one concrete pretrained asset.",
+      "description": "Validate one concrete checkpoint source and loader contract.\n\nAttributes\n----------\nschema_version, checkpoint_id, source_type\n    Contract version, canonical asset identity, and acquisition category.\nurl, repository_id, package, package_version, revision, release_tag, filename, local_path\n    Source-specific location fields. Paths and filenames must be safe and repository-relative.\nexpected_sha256, observed_sha256\n    Optional lowercase hexadecimal SHA-256 values; when both exist they must agree.\nformat, loader\n    Serialization format and model-specific loader description.\nlicense\n    Informational license record.\n\nRaises\n------\npydantic.ValidationError\n    If required source fields are missing, contradictory fields are present, a path escapes the\n    repository, or hashes disagree.\n\nNotes\n-----\nValidation performs no network access and does not deserialize model weights.",
       "properties": {
         "checkpoint_id": {
           "minLength": 1,
@@ -454,7 +454,7 @@
     },
     "EmbeddingSpec": {
       "additionalProperties": false,
-      "description": "Model-independent embedding declaration.",
+      "description": "Declare one selectable model-independent embedding.\n\nAttributes\n----------\nschema_version\n    Contract version; currently ``1.0.0``.\nembedding_id, name, description\n    Stable identity and human-readable semantics.\nofficially_defined\n    Whether upstream material explicitly defines this representation.\ndefault\n    Whether this is the card's selected default embedding.\nnetwork_location, layout\n    Extraction location and ordered tensor-axis notation.\ndimension\n    Optional positive feature dimension.\ngranularity, temporal_hop_seconds\n    Sequence/frame scope and optional frame spacing in seconds.\npooling, projection, normalization, task_head_relation, dtype\n    Transform and representation properties.\nstatus\n    One of ``declared``, ``verified``, or ``unsupported``.\nselection_rationale, evidence_ids\n    Justification and references to supporting evidence.\n\nRaises\n------\npydantic.ValidationError\n    If identifiers, positive dimensions, positive hop duration, or allowed values are invalid.",
       "properties": {
         "default": {
           "title": "Default",
@@ -873,7 +873,7 @@
     },
     "LicenseRecord": {
       "additionalProperties": false,
-      "description": "Informational license metadata; never an automatic blocker.",
+      "description": "Record informational checkpoint-license evidence.\n\nAttributes\n----------\nname, url\n    Optional reported license name and source URL.\nstatus\n    Provenance status: officially reported, observed, inferred, unresolved, not reported, or\n    not applicable.\n\nNotes\n-----\nThis metadata never authorizes use and never blocks acquisition automatically.",
       "properties": {
         "name": {
           "anyOf": [
@@ -1775,7 +1775,7 @@
       }
     }
   ],
-  "description": "Complete checkpoint-specific model card contract.",
+  "description": "Validate the complete metadata for one checkpoint-specific integration.\n\nA card represents exactly one model-family, variant, and checkpoint tuple. Validation enforces\nlifecycle prerequisites, unique evidence identifiers, resolved evidence references, consistent\ncapabilities, repository-relative artifact paths, and the canonical waveform/output contracts.\n\nAttributes\n----------\ncard_id\n    Stable canonical identifier for this exact integration tuple.\ncard_status\n    Current lifecycle state. Later states require verified environment, checkpoint, runtime,\n    and profiling evidence as applicable.\nidentity\n    Model, variant, checkpoint, framework, and public wrapper identity.\ninput\n    Canonical waveform contract using ``[B,C,T]``, sample rate in hertz, and optional ``[B]``\n    valid lengths.\nembeddings\n    Declared embedding tensors, including exactly one default when embeddings are supported.\nevidence\n    Provenance records supporting material scientific and technical claims.\n\nRaises\n------\npydantic.ValidationError\n    If any field or cross-document lifecycle constraint is invalid.\n\nNotes\n-----\nLicense fields are informational. Constructing a card never imports a model runtime, downloads\na checkpoint, or materializes an environment.",
   "properties": {
     "architectural_profiling": {
       "$ref": "#/$defs/ProfilingSection"

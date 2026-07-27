@@ -1,4 +1,4 @@
-"""Render or validate deterministic Markdown for a Phase 02 analysis report."""
+"""Render or validate deterministic Markdown for a onboarding workflow analysis report."""
 
 from __future__ import annotations
 

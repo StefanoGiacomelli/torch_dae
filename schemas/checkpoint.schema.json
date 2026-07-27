@@ -1,7 +1,7 @@
 {
   "$defs": {
     "CheckpointSourceType": {
-      "description": "Supported checkpoint source variants.",
+      "description": "Enumerate supported checkpoint acquisition categories.\n\n``https`` streams a direct URL; ``github_release`` resolves a repository, tag, and filename;\n``huggingface`` resolves a repository, optional revision, and filename; ``package_bundle``\nreads a file from an exact installed package; and ``local_path`` copies a repository-relative\nfile. The enum selects validation and acquisition behavior.",
       "enum": [
         "https",
         "github_release",
@@ -15,7 +15,7 @@
     },
     "LicenseRecord": {
       "additionalProperties": false,
-      "description": "Informational license metadata; never an automatic blocker.",
+      "description": "Record informational checkpoint-license evidence.\n\nAttributes\n----------\nname, url\n    Optional reported license name and source URL.\nstatus\n    Provenance status: officially reported, observed, inferred, unresolved, not reported, or\n    not applicable.\n\nNotes\n-----\nThis metadata never authorizes use and never blocks acquisition automatically.",
       "properties": {
         "name": {
           "anyOf": [
@@ -267,7 +267,7 @@
       }
     }
   ],
-  "description": "Checkpoint specification for one concrete pretrained asset.",
+  "description": "Validate one concrete checkpoint source and loader contract.\n\nAttributes\n----------\nschema_version, checkpoint_id, source_type\n    Contract version, canonical asset identity, and acquisition category.\nurl, repository_id, package, package_version, revision, release_tag, filename, local_path\n    Source-specific location fields. Paths and filenames must be safe and repository-relative.\nexpected_sha256, observed_sha256\n    Optional lowercase hexadecimal SHA-256 values; when both exist they must agree.\nformat, loader\n    Serialization format and model-specific loader description.\nlicense\n    Informational license record.\n\nRaises\n------\npydantic.ValidationError\n    If required source fields are missing, contradictory fields are present, a path escapes the\n    repository, or hashes disagree.\n\nNotes\n-----\nValidation performs no network access and does not deserialize model weights.",
   "properties": {
     "checkpoint_id": {
       "minLength": 1,

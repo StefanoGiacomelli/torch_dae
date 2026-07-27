@@ -4,8 +4,10 @@ Collect checkpoint URLs, release assets, Hugging Face references, helper downloa
 resources, local paths, hashes, filenames, archive behavior, authentication needs, licenses, and
 variant mappings.
 
-Never download a real checkpoint in Phase 02 tests. Hidden helper functions should be identified as
-evidence, but the helper must not be executed in the root environment.
+Never download a real checkpoint during static analysis or synthetic evaluation. Hidden helper
+functions should be identified as evidence, but the helper must not be executed in the root
+environment. Controlled acquisition is allowed only in `verify` mode through the checkpoint
+subsystem for the explicitly selected model and checkpoint.
 
 Checkpoint candidates derived from helpers preserve `helper_symbol`, `expression_status`,
 `unresolved_components`, source file, complete URL, filename, and hash evidence. Literal URLs may

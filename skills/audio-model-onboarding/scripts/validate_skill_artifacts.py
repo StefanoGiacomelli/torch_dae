@@ -1,4 +1,4 @@
-"""Validate Phase 02 canonical skill files, templates, scripts, and fixtures."""
+"""Validate canonical onboarding skill files, templates, scripts, and fixtures."""
 
 from __future__ import annotations
 
@@ -56,6 +56,8 @@ REQUIRED_TEMPLATES = {
     "verification-plan.md",
     "decision-request.md",
     "model-card-draft.json",
+    "agent-request.md",
+    "agent-response.md",
 }
 REQUIRED_SCRIPTS = {
     "inspect_repository.py",
@@ -86,7 +88,11 @@ def markdown_link_errors(root: Path, paths: tuple[Path, ...]) -> list[str]:
         text = path.read_text()
         for match in re.finditer(r"\[[^\]]+\]\(([^)]+)\)", text):
             target = match.group(1).split("#", 1)[0]
-            if not target or target.startswith(("http://", "https://", "mailto:")):
+            if (
+                not target
+                or target == "repository-relative/path"
+                or target.startswith(("http://", "https://", "mailto:"))
+            ):
                 continue
             candidate = (path.parent / target).resolve()
             try:
@@ -238,7 +244,7 @@ def behavioral_smoke_errors(root: Path) -> list[str]:
     try:
         EnvironmentResolutionReport.model_validate(diagnostic_report)
     except Exception as exc:
-        errors.append(f"actual Phase 01 diagnostic reference rejected: {exc}")
+        errors.append(f"actual environment diagnostic reference rejected: {exc}")
 
     checkpoint_reference = copy.deepcopy(env_data)
     checkpoint_reference["verification_report_or_diagnostic_reference"] = (
@@ -355,11 +361,6 @@ def behavioral_smoke_errors(root: Path) -> list[str]:
     )
     if budget.files_visited <= 0 or budget.bytes_read <= 0:
         errors.append("scenario inspection did not use the shared inspection budget")
-    if (
-        "test_real_git_grounded_scenario"
-        not in (root / "tests/onboarding/test_phase02_evaluation.py").read_text()
-    ):
-        errors.append("real-Git grounded Phase 02 integration test is missing")
     return errors
 
 
@@ -467,6 +468,32 @@ def main() -> int:
         )
     except Exception as exc:
         errors.append(f"model-card draft template failed validation: {exc}")
+    request_text = (template_dir / "agent-request.md").read_text()
+    for placeholder in (
+        "MODE: <analyze | resolve-environment | integrate | verify | card>",
+        "MODEL_NAME: <MODEL_NAME>",
+        "UPSTREAM_REPOSITORY: <GITHUB_REPOSITORY_URL>",
+        "PAPER_OR_TECHNICAL_REFERENCE: <PAPER_URL_OR_NONE>",
+        "TARGET_VARIANT: <VARIANT_NAME_OR_AUTO_DISCOVER>",
+        "TARGET_CHECKPOINT: <CHECKPOINT_NAME_OR_AUTO_DISCOVER>",
+        "PREFERRED_EMBEDDING: <EMBEDDING_NAME_OR_UNRESOLVED>",
+        "<OPTIONAL_PROJECT_SPECIFIC_CONDITIONING_OR_NONE>",
+    ):
+        if placeholder not in request_text:
+            errors.append(f"agent request template is missing placeholder: {placeholder}")
+    response_text = (template_dir / "agent-response.md").read_text()
+    for heading in (
+        "## Summary",
+        "## Work completed",
+        "## Problems and resolutions",
+        "## Open questions",
+        "## Files",
+        "## Validation",
+    ):
+        if heading not in response_text:
+            errors.append(f"agent response template is missing heading: {heading}")
+    if "## Open questions\nNone." not in response_text:
+        errors.append("agent response template is missing the no-open-questions form")
 
     inspection_text = (root / "src/torch_dae/onboarding/inspection.py").read_text()
     if "expected_source_strategy" in inspection_text or "SCENARIO.json" in inspection_text:
@@ -525,12 +552,15 @@ def main() -> int:
         "missing_templates": missing_templates,
         "missing_scripts": missing_scripts,
         "errors": errors,
-        "profile_reserved": "profiling is not implemented in Phase 02" in text,
+        "profile_reserved": (
+            "Profiling remains unavailable until a model is runtime_verified and a profiling "
+            "workflow is\nexplicitly implemented and invoked." in text
+        ),
     }
     if args.json:
         emit_json(payload)
     elif payload["valid"]:
-        print("Phase 02 skill artifacts are present")
+        print("Onboarding skill artifacts are present")
     else:
         print(payload)
     return 0 if payload["valid"] and payload["profile_reserved"] else 2

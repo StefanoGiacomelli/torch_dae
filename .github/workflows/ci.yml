@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v9
+        with:
+          python-version: "3.12"
+      - run: uv lock --check
+      - run: uv sync --all-groups --frozen
+      - run: uv run ruff format --check
+      - run: uv run ruff check
+      - run: uv run mypy src scripts
+      - run: uv run python scripts/generate_schemas.py --check
+      - run: uv run python scripts/validate_repository.py
+      - run: uv run python skills/audio-model-onboarding/scripts/validate_skill_artifacts.py . --json
+      - run: uv run python -c "import torch_dae; import torch_dae.onboarding"
+
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@v9
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: uv sync --all-groups --frozen
+      - name: Verify matrix interpreter
+        run: >-
+          uv run python -c "import sys;
+          expected=tuple(map(int, '${{ matrix.python-version }}'.split('.')));
+          assert sys.version_info[:2] == expected, (sys.version, expected)"
+      - run: uv run pytest -q
+
+  coverage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v9
+        with:
+          python-version: "3.12"
+      - run: mkdir -p .torch-dae
+      - run: uv sync --all-groups --frozen
+      - run: |
+          uv run pytest -q \
+            --cov=torch_dae \
+            --cov-branch \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            --cov-report=json:.torch-dae/coverage-ci.json
+      - run: |
+          uv run python scripts/check_coverage.py \
+            .torch-dae/coverage-ci.json \
+            --min-line 85 \
+            --min-branch 70
+      - uses: codecov/codecov-action@v7
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
+        with:
+          use_oidc: true
+          files: coverage.xml
+          fail_ci_if_error: true
+
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v9
+        with:
+          python-version: "3.12"
+      - run: uv sync --all-groups --frozen
+      - run: uv run sphinx-build -W --keep-going -b html docs docs/_build/html
+      - uses: actions/upload-artifact@v5
+        with:
+          name: documentation-html
+          path: docs/_build/html
+          retention-days: 7
+
+  distribution:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v9
+        with:
+          python-version: "3.12"
+      - run: uv sync --all-groups --frozen
+      - run: uv run python -m build
+      - run: uv run python -m twine check dist/*
+      - uses: actions/upload-artifact@v5
+        with:
+          name: python-package-distributions
+          path: dist/
+          retention-days: 7

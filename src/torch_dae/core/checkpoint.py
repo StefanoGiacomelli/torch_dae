@@ -47,7 +47,13 @@ from torch_dae.environment.subprocess import CommandExecutor
 
 
 class CheckpointSourceType(StrEnum):
-    """Supported checkpoint source variants."""
+    """Enumerate supported checkpoint acquisition categories.
+
+    ``https`` streams a direct URL; ``github_release`` resolves a repository, tag, and filename;
+    ``huggingface`` resolves a repository, optional revision, and filename; ``package_bundle``
+    reads a file from an exact installed package; and ``local_path`` copies a repository-relative
+    file. The enum selects validation and acquisition behavior.
+    """
 
     HTTPS = "https"
     GITHUB_RELEASE = "github_release"
@@ -57,7 +63,20 @@ class CheckpointSourceType(StrEnum):
 
 
 class LicenseRecord(StrictBaseModel):
-    """Informational license metadata; never an automatic blocker."""
+    """Record informational checkpoint-license evidence.
+
+    Attributes
+    ----------
+    name, url
+        Optional reported license name and source URL.
+    status
+        Provenance status: officially reported, observed, inferred, unresolved, not reported, or
+        not applicable.
+
+    Notes
+    -----
+    This metadata never authorizes use and never blocks acquisition automatically.
+    """
 
     name: str | None = None
     url: HttpUrl | None = None
@@ -72,7 +91,31 @@ class LicenseRecord(StrictBaseModel):
 
 
 class CheckpointSpec(StrictBaseModel):
-    """Checkpoint specification for one concrete pretrained asset."""
+    """Validate one concrete checkpoint source and loader contract.
+
+    Attributes
+    ----------
+    schema_version, checkpoint_id, source_type
+        Contract version, canonical asset identity, and acquisition category.
+    url, repository_id, package, package_version, revision, release_tag, filename, local_path
+        Source-specific location fields. Paths and filenames must be safe and repository-relative.
+    expected_sha256, observed_sha256
+        Optional lowercase hexadecimal SHA-256 values; when both exist they must agree.
+    format, loader
+        Serialization format and model-specific loader description.
+    license
+        Informational license record.
+
+    Raises
+    ------
+    pydantic.ValidationError
+        If required source fields are missing, contradictory fields are present, a path escapes the
+        repository, or hashes disagree.
+
+    Notes
+    -----
+    Validation performs no network access and does not deserialize model weights.
+    """
 
     schema_version: Literal["1.0.0"]
     checkpoint_id: CanonicalId
@@ -171,7 +214,19 @@ class CheckpointSpec(StrictBaseModel):
 
 
 class ResolvedCheckpoint(StrictBaseModel):
-    """Resolved local checkpoint metadata."""
+    """Describe an integrity-checked local checkpoint.
+
+    Attributes
+    ----------
+    checkpoint_id
+        Canonical asset identifier.
+    sha256
+        Observed lowercase hexadecimal SHA-256 digest.
+    path
+        Local cached file path.
+    immutable
+        Whether the resolved cache identity is content-addressed and immutable.
+    """
 
     checkpoint_id: str
     sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
@@ -180,7 +235,25 @@ class ResolvedCheckpoint(StrictBaseModel):
 
 
 class CheckpointMaterializationRecord(StrictBaseModel):
-    """Strict runtime metadata for cached checkpoint assets."""
+    """Persist sanitized runtime metadata for a cached checkpoint.
+
+    Attributes
+    ----------
+    schema_version, checkpoint_id, source_type
+        Record schema and source identity.
+    source_description, resolved_url_or_location, filename
+        Sanitized acquisition description and stored filename.
+    sha256, size_bytes, acquired_at, cache_path
+        Observed integrity, byte count, timestamp, and runtime-relative cache location.
+    expected_sha256, observed_sha256
+        Hash evidence copied from the specification.
+    environment_id
+        Optional isolated environment used for package-bundle acquisition.
+    specification_fingerprint
+        SHA-256 identity of the canonical checkpoint specification.
+    command_log_references
+        Runtime-report references with secrets removed.
+    """
 
     schema_version: Literal["1.0.0"]
     checkpoint_id: CanonicalId
@@ -286,7 +359,25 @@ def checkpoint_cache_path(runtime_root: Path, checkpoint_id: str, sha256: str) -
 
 
 class CheckpointManager:
-    """Acquire, inspect, and remove checkpoint cache entries."""
+    """Acquire, inspect, and remove content-addressed checkpoint cache entries.
+
+    Parameters
+    ----------
+    repository_root
+        Repository containing model cards and ignored ``.torch-dae`` runtime state.
+    policy
+        Network, offline, timeout, and cache execution policy.
+    transport
+        Optional streaming HTTP transport.
+    executor
+        Optional managed subprocess executor.
+
+    Notes
+    -----
+    Cache entries live below ``.torch-dae/checkpoints/<checkpoint-id>/<sha256>``. Authentication
+    tokens are read only at acquisition boundaries and sanitized from reports. The manager does not
+    deserialize weights into a model.
+    """
 
     def __init__(
         self,
@@ -304,7 +395,35 @@ class CheckpointManager:
         self._report_sink: RuntimeReportSink | None = None
 
     def ensure(self, card_id: str) -> ResolvedCheckpoint:
-        """Resolve a card checkpoint into the uniform local cache."""
+        """Return a valid cache entry, acquiring it when necessary.
+
+        Parameters
+        ----------
+        card_id
+            Canonical model-card identifier whose checkpoint specification is used.
+
+        Returns
+        -------
+        ResolvedCheckpoint
+            Integrity-checked, content-addressed local asset.
+
+        Raises
+        ------
+        CheckpointNotFoundError
+            If the card identifier is invalid, missing, or its asset cannot be found.
+        OfflineResourceUnavailableError
+            If offline policy forbids acquisition and no valid cached entry exists.
+        CheckpointHashMismatchError
+            If acquired bytes disagree with expected or observed SHA-256 evidence.
+        CheckpointAcquisitionError
+            If transport, package extraction, or cache installation fails.
+
+        Notes
+        -----
+        Remote bodies are streamed to temporary runtime state, hashed, and atomically installed.
+        Valid cached content is reused offline. Sanitized runtime reports are written under
+        ``.torch-dae/reports/checkpoints``.
+        """
 
         from torch_dae.core.registry import ModelCardRegistry
 
@@ -374,7 +493,28 @@ class CheckpointManager:
                 return self._from_package_bundle(card_id, spec)
 
     def info(self, card_id: str) -> dict[str, object]:
-        """Inspect checkpoint specification and cache state without acquisition."""
+        """Inspect a checkpoint specification and local cache without acquisition.
+
+        Parameters
+        ----------
+        card_id
+            Canonical model-card identifier.
+
+        Returns
+        -------
+        dict
+            Card and checkpoint identifiers, source type, declared hashes, and cache entries with
+            path, digest, and validity.
+
+        Raises
+        ------
+        CheckpointNotFoundError
+            If ``card_id`` is invalid or absent.
+
+        Notes
+        -----
+        The method reads and hashes local cache files but performs no download or model import.
+        """
 
         from torch_dae.core.registry import ModelCardRegistry
 
@@ -409,7 +549,28 @@ class CheckpointManager:
         }
 
     def remove(self, card_id: str) -> None:
-        """Remove only cache state for the requested card checkpoint."""
+        """Remove runtime cache state for one card's checkpoint.
+
+        Parameters
+        ----------
+        card_id
+            Canonical model-card identifier.
+
+        Returns
+        -------
+        None
+            The matching runtime cache tree is absent on return.
+
+        Raises
+        ------
+        CheckpointNotFoundError
+            If ``card_id`` is invalid or absent.
+
+        Notes
+        -----
+        Removal is idempotent. It never edits the model card, source asset, environment, or
+        committed metadata.
+        """
 
         from torch_dae.core.registry import ModelCardRegistry
 

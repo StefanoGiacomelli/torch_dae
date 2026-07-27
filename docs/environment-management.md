@@ -1,6 +1,6 @@
 # Environment Management
 
-Phase 01 materializes model-specific environments from committed card references under
+The environment subsystem materializes model-specific environments from committed card references under
 `environments/<card-id>/`. The committed inputs are `environment.json`, `pyproject.toml`, `uv.lock`,
 `sources.json`, and `verify_environment.py`.
 
@@ -38,10 +38,11 @@ torch-dae env remove <card-id>
 It fails clearly on cache misses. `--no-python-downloads` prevents uv-managed Python downloads; offline
 mode implies it.
 
-The local `torch-dae` package is installed into model environments as a cached non-editable wheel
-built with `uv build --wheel` and the root build backend. The package identity always includes a
-content digest over `pyproject.toml`, the configured project README, every regular file under
-`src/torch_dae/` including Python modules, package data, and vendored files, plus packaging
+The local `torch-deepaudioembedding` distribution is installed into model environments as a cached
+non-editable wheel while retaining the `torch_dae` import package and `torch-dae` console command.
+The wheel is built with `uv build --wheel` and the root build backend. The package identity always
+includes a content digest over `pyproject.toml`, the configured project README, every regular file
+under `src/torch_dae/` including Python modules, package data, and vendored files, plus packaging
 configuration files when present. Clean Git states use `git:<HEAD>:content:<digest>`; dirty,
 staged, unstaged, untracked, and pre-commit states use `content:<digest>`.
 
@@ -75,7 +76,7 @@ references before being moved under `.failed`. Reports redact authorization head
 token-like arguments, credential-bearing URLs, and secret environment-variable values. Logs are
 sanitized runtime state and must not be committed.
 
-The Phase 01 integration tests exercise real local Git clone, exact detached checkout, archive,
+The environment and checkpoint integration tests exercise real local Git clone, exact detached checkout, archive,
 wheel build, install, isolated import, offline reuse, dirty-cache online recovery, dirty-cache offline
 failure without mutation, wrong-HEAD recovery, wrong-remote recovery, and corrupt source-wheel
 metadata repair/failure behavior.
@@ -83,4 +84,4 @@ metadata repair/failure behavior.
 Shell activation is optional; the authoritative execution path is `env run` or the returned
 `python_executable` from `EnvironmentManager.ensure()`.
 
-No real audio model is integrated in Phase 01.
+No real audio model is currently integrated.

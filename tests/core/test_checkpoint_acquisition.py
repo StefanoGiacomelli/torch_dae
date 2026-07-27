@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.environment.test_phase01_materialization import write_phase01_repo
+from tests.environment.test_environment_materialization import write_synthetic_repository
 from torch_dae.core import checkpoint as checkpoint_module
 from torch_dae.core.checkpoint import (
     CheckpointManager,
@@ -140,10 +140,8 @@ def update_checkpoint(root: Path, checkpoint: dict[str, object]) -> None:
     path.write_text(json.dumps(card, indent=2))
 
 
-def test_phase01_local_checkpoint_cache(
-    tmp_path: Path, repo_root: Path, valid_fixture_dir: Path
-) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+def test_local_checkpoint_cache(tmp_path: Path, repo_root: Path, valid_fixture_dir: Path) -> None:
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     resolved = CheckpointManager(tmp_path).ensure(card_id)
     assert resolved.path.is_file()
     assert resolved.sha256 == hashlib.sha256(b"synthetic checkpoint bytes\n").hexdigest()
@@ -161,19 +159,19 @@ def test_phase01_local_checkpoint_cache(
     assert not resolved.path.exists()
 
 
-def test_phase01_remote_checkpoint_cache_hit_and_offline(
+def test_remote_checkpoint_cache_hit_and_offline(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     payload = b"remote synthetic bytes"
     sha = hashlib.sha256(payload).hexdigest()
     update_checkpoint(
         tmp_path,
         {
             "schema_version": "1.0.0",
-            "checkpoint_id": "phase01-remote-checkpoint",
+            "checkpoint_id": "synthetic-remote-checkpoint",
             "source_type": "https",
             "url": "https://example.invalid/checkpoint.bin",
             "filename": "checkpoint.bin",
@@ -201,22 +199,22 @@ def test_phase01_remote_checkpoint_cache_hit_and_offline(
     assert offline.transport.calls == []
 
 
-def test_phase01_checkpoint_spec_fingerprint_reacquires_changed_local_source(
+def test_checkpoint_spec_fingerprint_reacquires_changed_local_source(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     first = CheckpointManager(tmp_path).ensure(card_id)
-    replacement = tmp_path / "tests/fixtures/phase01/checkpoint-replacement.bin"
+    replacement = tmp_path / "tests/fixtures/environment_runtime/checkpoint-replacement.bin"
     replacement.write_bytes(b"replacement checkpoint bytes\n")
     update_checkpoint(
         tmp_path,
         {
             "schema_version": "1.0.0",
-            "checkpoint_id": "phase01-synthetic-checkpoint",
+            "checkpoint_id": "synthetic-checkpoint",
             "source_type": "local_path",
-            "local_path": "tests/fixtures/phase01/checkpoint-replacement.bin",
+            "local_path": "tests/fixtures/environment_runtime/checkpoint-replacement.bin",
             "format": "binary",
             "loader": "manual",
             "license": {"status": "not_applicable"},
@@ -227,17 +225,17 @@ def test_phase01_checkpoint_spec_fingerprint_reacquires_changed_local_source(
     assert second.sha256 != first.sha256
 
 
-def test_phase01_checkpoint_spec_fingerprint_reacquires_changed_remote_source(
+def test_checkpoint_spec_fingerprint_reacquires_changed_remote_source(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     payload = b"same remote bytes"
     sha = hashlib.sha256(payload).hexdigest()
     checkpoint = {
         "schema_version": "1.0.0",
-        "checkpoint_id": "phase01-remote-checkpoint",
+        "checkpoint_id": "synthetic-remote-checkpoint",
         "source_type": "https",
         "url": "https://example.invalid/one.bin",
         "filename": "checkpoint.bin",
@@ -261,7 +259,7 @@ def test_phase01_checkpoint_spec_fingerprint_reacquires_changed_remote_source(
     ("source_type", "token_name"),
     [("github_release", "GITHUB_TOKEN"), ("huggingface", "HF_TOKEN")],
 )
-def test_phase01_hosted_checkpoint_sources_use_fake_transport_and_optional_auth(
+def test_hosted_checkpoint_sources_use_fake_transport_and_optional_auth(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
@@ -269,12 +267,12 @@ def test_phase01_hosted_checkpoint_sources_use_fake_transport_and_optional_auth(
     source_type: str,
     token_name: str,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     payload = f"{source_type} bytes".encode()
     sha = hashlib.sha256(payload).hexdigest()
     common: dict[str, object] = {
         "schema_version": "1.0.0",
-        "checkpoint_id": f"phase01-{source_type}-checkpoint",
+        "checkpoint_id": f"synthetic-{source_type}-checkpoint",
         "source_type": source_type,
         "repository_id": "owner/repo",
         "filename": "checkpoint.bin",
@@ -296,17 +294,17 @@ def test_phase01_hosted_checkpoint_sources_use_fake_transport_and_optional_auth(
     assert transport.calls[0][1]["Authorization"] == "Bearer secret-token"
 
 
-def test_phase01_remote_checkpoint_hash_mismatch(
+def test_remote_checkpoint_hash_mismatch(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     update_checkpoint(
         tmp_path,
         {
             "schema_version": "1.0.0",
-            "checkpoint_id": "phase01-mismatch-checkpoint",
+            "checkpoint_id": "synthetic-mismatch-checkpoint",
             "source_type": "https",
             "url": "https://example.invalid/checkpoint.bin",
             "filename": "checkpoint.bin",
@@ -319,9 +317,9 @@ def test_phase01_remote_checkpoint_hash_mismatch(
     with pytest.raises(CheckpointHashMismatchError):
         CheckpointManager(tmp_path, transport=FakeTransport(b"different")).ensure(card_id)
     assert not (
-        tmp_path / ".torch-dae/checkpoints/.downloads/phase01-mismatch-checkpoint.download"
+        tmp_path / ".torch-dae/checkpoints/.downloads/synthetic-mismatch-checkpoint.download"
     ).exists()
-    reports = report_payloads_for_checkpoint(tmp_path, "phase01-mismatch-checkpoint")
+    reports = report_payloads_for_checkpoint(tmp_path, "synthetic-mismatch-checkpoint")
     hash_report = single_report(reports, "hash-validation")
     assert hash_report["status"] == "failed"
     assert hash_report["failure_classification"] == "expected_hash_mismatch"
@@ -333,21 +331,21 @@ def test_phase01_remote_checkpoint_hash_mismatch(
     ("status_code", "expected_exception"),
     [(200, None), (404, CheckpointNotFoundError)],
 )
-def test_phase01_remote_response_is_closed_for_success_and_http_failure(
+def test_remote_response_is_closed_for_success_and_http_failure(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
     status_code: int,
     expected_exception: type[Exception] | None,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     payload = b"remote close bytes"
     sha = hashlib.sha256(payload).hexdigest()
     update_checkpoint(
         tmp_path,
         {
             "schema_version": "1.0.0",
-            "checkpoint_id": f"phase01-close-{status_code}",
+            "checkpoint_id": f"synthetic-close-{status_code}",
             "source_type": "https",
             "url": "https://example.invalid/checkpoint.bin",
             "filename": "checkpoint.bin",
@@ -369,17 +367,17 @@ def test_phase01_remote_response_is_closed_for_success_and_http_failure(
 
 
 @pytest.mark.parametrize("hash_field", ["expected_sha256", "observed_sha256"])
-def test_phase01_remote_response_is_closed_for_hash_mismatch(
+def test_remote_response_is_closed_for_hash_mismatch(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
     hash_field: str,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     payload = b"remote mismatch bytes"
     checkpoint = {
         "schema_version": "1.0.0",
-        "checkpoint_id": f"phase01-{hash_field}-mismatch",
+        "checkpoint_id": f"synthetic-{hash_field}-mismatch",
         "source_type": "https",
         "url": "https://example.invalid/checkpoint.bin",
         "filename": "checkpoint.bin",
@@ -393,31 +391,31 @@ def test_phase01_remote_response_is_closed_for_hash_mismatch(
     with pytest.raises(CheckpointHashMismatchError):
         CheckpointManager(tmp_path, transport=ObservableTransport(200, body)).ensure(card_id)
     assert body.closed_observed
-    reports = report_payloads_for_checkpoint(tmp_path, f"phase01-{hash_field}-mismatch")
+    reports = report_payloads_for_checkpoint(tmp_path, f"synthetic-{hash_field}-mismatch")
     hash_report = single_report(reports, "hash-validation")
     assert hash_report["status"] == "failed"
     assert hash_report["failure_classification"] == hash_field.replace("sha256", "hash_mismatch")
     assert hash_report["actual_sha256"] == hashlib.sha256(payload).hexdigest()
     assert not list(
-        (tmp_path / f".torch-dae/checkpoints/phase01-{hash_field}-mismatch").glob(
+        (tmp_path / f".torch-dae/checkpoints/synthetic-{hash_field}-mismatch").glob(
             "*/checkpoint-materialization.json"
         )
     )
 
 
-def test_phase01_interrupted_remote_read_cleans_partial_state_and_reports_failure(
+def test_interrupted_remote_read_cleans_partial_state_and_reports_failure(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     monkeypatch.setenv("GITHUB_TOKEN", "secret-token")
     update_checkpoint(
         tmp_path,
         {
             "schema_version": "1.0.0",
-            "checkpoint_id": "phase01-interrupted-checkpoint",
+            "checkpoint_id": "synthetic-interrupted-checkpoint",
             "source_type": "github_release",
             "repository_id": "owner/repo",
             "release_tag": "v1.0.0",
@@ -433,14 +431,16 @@ def test_phase01_interrupted_remote_read_cleans_partial_state_and_reports_failur
     assert isinstance(exc_info.value.__cause__, OSError)
 
     assert body.closed_observed
-    assert not list((tmp_path / ".torch-dae/checkpoints/.downloads").glob("phase01-interrupted*"))
+    assert not list((tmp_path / ".torch-dae/checkpoints/.downloads").glob("synthetic-interrupted*"))
     assert not list(
-        (tmp_path / ".torch-dae/checkpoints/phase01-interrupted-checkpoint").glob(
+        (tmp_path / ".torch-dae/checkpoints/synthetic-interrupted-checkpoint").glob(
             "*/checkpoint-materialization.json"
         )
     )
     reports = sorted(
-        (tmp_path / ".torch-dae/reports/checkpoints/phase01-interrupted-checkpoint").glob("*.json")
+        (tmp_path / ".torch-dae/reports/checkpoints/synthetic-interrupted-checkpoint").glob(
+            "*.json"
+        )
     )
     assert reports
     payload = "\n".join(path.read_text() for path in reports)
@@ -459,19 +459,19 @@ def test_phase01_interrupted_remote_read_cleans_partial_state_and_reports_failur
     assert stream_report["byte_count"] == len(b"partial bytes")
 
 
-def test_phase01_transport_open_oserror_is_typed_reported_and_redacted(
+def test_transport_open_oserror_is_typed_reported_and_redacted(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     monkeypatch.setenv("GITHUB_TOKEN", "secret-token")
     update_checkpoint(
         tmp_path,
         {
             "schema_version": "1.0.0",
-            "checkpoint_id": "phase01-open-error-checkpoint",
+            "checkpoint_id": "synthetic-open-error-checkpoint",
             "source_type": "github_release",
             "repository_id": "owner/repo",
             "release_tag": "v1.0.0",
@@ -487,7 +487,7 @@ def test_phase01_transport_open_oserror_is_typed_reported_and_redacted(
             transport=FailingOpenTransport(OSError("Authorization: Bearer secret-token")),
         ).ensure(card_id)
     assert isinstance(exc_info.value.__cause__, OSError)
-    reports = report_payloads_for_checkpoint(tmp_path, "phase01-open-error-checkpoint")
+    reports = report_payloads_for_checkpoint(tmp_path, "synthetic-open-error-checkpoint")
     serialized = json.dumps(reports)
     assert "secret-token" not in serialized
     assert "redacted secret" in serialized
@@ -496,7 +496,7 @@ def test_phase01_transport_open_oserror_is_typed_reported_and_redacted(
     assert open_report["failure_classification"] == "OSError"
 
 
-def test_phase01_urllib_transport_urlerror_is_typed_and_sanitized(
+def test_urllib_transport_urlerror_is_typed_and_sanitized(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("GITHUB_TOKEN", "secret-token")
@@ -516,7 +516,7 @@ def test_phase01_urllib_transport_urlerror_is_typed_and_sanitized(
     assert "redacted secret" in str(exc_info.value)
 
 
-def test_phase01_urllib_transport_httperror_closes_body(
+def test_urllib_transport_httperror_closes_body(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     body = ObservableBody(b"")
@@ -541,19 +541,19 @@ def test_phase01_urllib_transport_httperror_closes_body(
     assert body.closed_observed
 
 
-def test_phase01_successful_response_close_failure_is_reported_and_typed(
+def test_successful_response_close_failure_is_reported_and_typed(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     payload = b"close failure bytes"
     sha = hashlib.sha256(payload).hexdigest()
     update_checkpoint(
         tmp_path,
         {
             "schema_version": "1.0.0",
-            "checkpoint_id": "phase01-close-failure-checkpoint",
+            "checkpoint_id": "synthetic-close-failure-checkpoint",
             "source_type": "https",
             "url": "https://example.invalid/checkpoint.bin",
             "filename": "checkpoint.bin",
@@ -569,24 +569,24 @@ def test_phase01_successful_response_close_failure_is_reported_and_typed(
     assert isinstance(exc_info.value.__cause__, OSError)
     assert body.closed_observed
     close_report = single_report(
-        report_payloads_for_checkpoint(tmp_path, "phase01-close-failure-checkpoint"),
+        report_payloads_for_checkpoint(tmp_path, "synthetic-close-failure-checkpoint"),
         "response-close",
     )
     assert close_report["status"] == "failed"
     assert close_report["failure_classification"] == "OSError"
 
 
-def test_phase01_failed_response_close_does_not_mask_stream_error(
+def test_failed_response_close_does_not_mask_stream_error(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     update_checkpoint(
         tmp_path,
         {
             "schema_version": "1.0.0",
-            "checkpoint_id": "phase01-stream-and-close-failure",
+            "checkpoint_id": "synthetic-stream-and-close-failure",
             "source_type": "https",
             "url": "https://example.invalid/checkpoint.bin",
             "filename": "checkpoint.bin",
@@ -602,22 +602,22 @@ def test_phase01_failed_response_close_does_not_mask_stream_error(
     assert "download stream failed" in str(exc_info.value)
     operations = {
         report["operation"]
-        for report in report_payloads_for_checkpoint(tmp_path, "phase01-stream-and-close-failure")
+        for report in report_payloads_for_checkpoint(tmp_path, "synthetic-stream-and-close-failure")
     }
     assert {"remote-stream", "response-close", "failure-cleanup"}.issubset(operations)
 
 
-def test_phase01_offline_checkpoint_miss(
+def test_offline_checkpoint_miss(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     update_checkpoint(
         tmp_path,
         {
             "schema_version": "1.0.0",
-            "checkpoint_id": "phase01-offline-remote-checkpoint",
+            "checkpoint_id": "synthetic-offline-remote-checkpoint",
             "source_type": "https",
             "url": "https://example.invalid/checkpoint.bin",
             "filename": "checkpoint.bin",
@@ -629,19 +629,19 @@ def test_phase01_offline_checkpoint_miss(
     )
     with pytest.raises(OfflineResourceUnavailableError):
         CheckpointManager(tmp_path, policy=ExecutionPolicy(offline=True)).ensure(card_id)
-    reports = report_payloads_for_checkpoint(tmp_path, "phase01-offline-remote-checkpoint")
+    reports = report_payloads_for_checkpoint(tmp_path, "synthetic-offline-remote-checkpoint")
     lookup_report = single_report(reports, "offline-cache-lookup")
     assert lookup_report["status"] == "failed"
     assert lookup_report["failure_classification"] == "offline_cache_miss"
 
 
-def test_phase01_local_copy_failure_is_typed_reported_and_cleans_tmp(
+def test_local_copy_failure_is_typed_reported_and_cleans_tmp(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
 
     def fail_copy(source: Path, destination: Path) -> None:
         raise PermissionError("copy denied")
@@ -650,25 +650,23 @@ def test_phase01_local_copy_failure_is_typed_reported_and_cleans_tmp(
     with pytest.raises(CheckpointAcquisitionError) as exc_info:
         CheckpointManager(tmp_path).ensure(card_id)
     assert isinstance(exc_info.value.__cause__, PermissionError)
-    reports = report_payloads_for_checkpoint(tmp_path, "phase01-synthetic-checkpoint")
+    reports = report_payloads_for_checkpoint(tmp_path, "synthetic-checkpoint")
     copy_report = single_report(reports, "local-path-copy", status="failed")
     assert copy_report["failure_classification"] == "PermissionError"
+    assert not list((tmp_path / ".torch-dae/checkpoints/synthetic-checkpoint").glob("*/.*.tmp"))
     assert not list(
-        (tmp_path / ".torch-dae/checkpoints/phase01-synthetic-checkpoint").glob("*/.*.tmp")
-    )
-    assert not list(
-        (tmp_path / ".torch-dae/checkpoints/phase01-synthetic-checkpoint").glob(
+        (tmp_path / ".torch-dae/checkpoints/synthetic-checkpoint").glob(
             "*/checkpoint-materialization.json"
         )
     )
 
 
-def test_phase01_cache_finalize_failure_is_typed_reported_and_cleans_tmp(
+def test_cache_finalize_failure_is_typed_reported_and_cleans_tmp(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
 
     class ReplaceFailureManager(CheckpointManager):
         def _replace_file(self, source: Path, target: Path) -> None:
@@ -677,22 +675,20 @@ def test_phase01_cache_finalize_failure_is_typed_reported_and_cleans_tmp(
     with pytest.raises(CheckpointAcquisitionError) as exc_info:
         ReplaceFailureManager(tmp_path).ensure(card_id)
     assert isinstance(exc_info.value.__cause__, PermissionError)
-    reports = report_payloads_for_checkpoint(tmp_path, "phase01-synthetic-checkpoint")
+    reports = report_payloads_for_checkpoint(tmp_path, "synthetic-checkpoint")
     finalize_report = single_report(reports, "cache-finalize", status="failed")
     assert finalize_report["failure_classification"] == "PermissionError"
     assert "failure-cleanup" in {report["operation"] for report in reports}
-    assert not list(
-        (tmp_path / ".torch-dae/checkpoints/phase01-synthetic-checkpoint").glob("*/.*.tmp")
-    )
+    assert not list((tmp_path / ".torch-dae/checkpoints/synthetic-checkpoint").glob("*/.*.tmp"))
 
 
-def test_phase01_metadata_write_failure_removes_incomplete_cache_entry_and_reports(
+def test_metadata_write_failure_removes_incomplete_cache_entry_and_reports(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
 
     def fail_metadata(path: Path, data: object) -> None:
         raise PermissionError("metadata denied")
@@ -701,7 +697,7 @@ def test_phase01_metadata_write_failure_removes_incomplete_cache_entry_and_repor
     with pytest.raises(CheckpointAcquisitionError) as exc_info:
         CheckpointManager(tmp_path).ensure(card_id)
     assert isinstance(exc_info.value.__cause__, PermissionError)
-    reports = report_payloads_for_checkpoint(tmp_path, "phase01-synthetic-checkpoint")
+    reports = report_payloads_for_checkpoint(tmp_path, "synthetic-checkpoint")
     metadata_report = single_report(reports, "metadata-write")
     assert metadata_report["status"] == "failed"
     assert metadata_report["failure_classification"] == "PermissionError"
@@ -709,20 +705,20 @@ def test_phase01_metadata_write_failure_removes_incomplete_cache_entry_and_repor
     assert CheckpointManager(tmp_path).info(card_id)["cached"] == []
 
 
-def test_phase01_package_bundle_malformed_lookup_is_typed_and_reported(
+def test_package_bundle_malformed_lookup_is_typed_and_reported(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     update_checkpoint(
         tmp_path,
         {
             "schema_version": "1.0.0",
-            "checkpoint_id": "phase01-package-json-checkpoint",
+            "checkpoint_id": "synthetic-package-json-checkpoint",
             "source_type": "package_bundle",
-            "package": "torch-dae",
+            "package": "torch-deepaudioembedding",
             "package_version": "0.1.0",
             "filename": "torch_dae/__init__.py",
             "format": "python",
@@ -755,41 +751,41 @@ def test_phase01_package_bundle_malformed_lookup_is_typed_and_reported(
         ).ensure(card_id)
     assert isinstance(exc_info.value.__cause__, json.JSONDecodeError)
     report = single_report(
-        report_payloads_for_checkpoint(tmp_path, "phase01-package-json-checkpoint"),
+        report_payloads_for_checkpoint(tmp_path, "synthetic-package-json-checkpoint"),
         "package-bundle-lookup",
         status="failed",
     )
     assert report["failure_classification"] == "JSONDecodeError"
 
 
-def test_phase01_offline_local_checkpoint_first_acquisition(
+def test_offline_local_checkpoint_first_acquisition(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     resolved = CheckpointManager(tmp_path, policy=ExecutionPolicy(offline=True)).ensure(card_id)
     assert resolved.path.is_file()
 
 
 @pytest.mark.integration
-def test_phase01_package_bundle_checkpoint_uses_owned_distribution_file_offline(
+def test_package_bundle_checkpoint_uses_owned_distribution_file_offline(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("UV_CACHE_DIR", str(tmp_path.parent / f"{tmp_path.name}-uv-cache"))
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     package_file = tmp_path / "src/torch_dae/__init__.py"
     sha = hashlib.sha256(package_file.read_bytes()).hexdigest()
     update_checkpoint(
         tmp_path,
         {
             "schema_version": "1.0.0",
-            "checkpoint_id": "phase01-package-bundle-checkpoint",
+            "checkpoint_id": "synthetic-package-bundle-checkpoint",
             "source_type": "package_bundle",
-            "package": "torch-dae",
+            "package": "torch-deepaudioembedding",
             "package_version": "0.1.0",
             "filename": "torch_dae/__init__.py",
             "expected_sha256": sha,
@@ -815,7 +811,7 @@ def test_phase01_package_bundle_checkpoint_uses_owned_distribution_file_offline(
         ("torch_dae/__init__.py", "9.9.9"),
     ],
 )
-def test_phase01_package_bundle_rejects_missing_resource_or_version(
+def test_package_bundle_rejects_missing_resource_or_version(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
@@ -824,14 +820,14 @@ def test_phase01_package_bundle_rejects_missing_resource_or_version(
     version: str,
 ) -> None:
     monkeypatch.setenv("UV_CACHE_DIR", str(tmp_path.parent / f"{tmp_path.name}-uv-cache"))
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     update_checkpoint(
         tmp_path,
         {
             "schema_version": "1.0.0",
-            "checkpoint_id": "phase01-package-bundle-checkpoint",
+            "checkpoint_id": "synthetic-package-bundle-checkpoint",
             "source_type": "package_bundle",
-            "package": "torch-dae",
+            "package": "torch-deepaudioembedding",
             "package_version": version,
             "filename": filename,
             "format": "python",
@@ -847,13 +843,13 @@ def test_phase01_package_bundle_rejects_missing_resource_or_version(
 
 
 @pytest.mark.integration
-def test_phase01_package_bundle_rejects_file_owned_by_other_distribution(
+def test_package_bundle_rejects_file_owned_by_other_distribution(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     env_root = tmp_path / "two-dist-env"
     subprocess.run(
         ["uv", "venv", str(env_root), "--python", sys.executable],
@@ -883,7 +879,7 @@ def test_phase01_package_bundle_rejects_file_owned_by_other_distribution(
         tmp_path,
         {
             "schema_version": "1.0.0",
-            "checkpoint_id": "phase01-cross-distribution-checkpoint",
+            "checkpoint_id": "synthetic-cross-distribution-checkpoint",
             "source_type": "package_bundle",
             "package": "distribution-a",
             "package_version": "0.1.0",
@@ -916,7 +912,7 @@ def test_phase01_package_bundle_rejects_file_owned_by_other_distribution(
         CheckpointManager(tmp_path, policy=ExecutionPolicy(offline=True)).ensure(card_id)
 
 
-def test_phase01_remote_url_construction(valid_fixture_dir: Path) -> None:
+def test_remote_url_construction(valid_fixture_dir: Path) -> None:
     github = CheckpointSpec.model_validate_json(
         (valid_fixture_dir / "checkpoint.github_release.json").read_text()
     )
@@ -929,12 +925,12 @@ def test_phase01_remote_url_construction(valid_fixture_dir: Path) -> None:
     assert "/resolve/" in huggingface_url(huggingface)
 
 
-def test_phase01_optional_auth_absent(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_optional_auth_absent(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("TORCH_DAE_MISSING_TOKEN", raising=False)
     assert optional_auth_header("TORCH_DAE_MISSING_TOKEN") == {}
 
 
-def test_phase01_checkpoint_expected_observed_disagreement_fails(
+def test_checkpoint_expected_observed_disagreement_fails(
     valid_fixture_dir: Path,
 ) -> None:
     data = json.loads((valid_fixture_dir / "checkpoint.local_path.json").read_text())
@@ -944,13 +940,13 @@ def test_phase01_checkpoint_expected_observed_disagreement_fails(
         CheckpointSpec.model_validate(data)
 
 
-def test_phase01_checkpoint_info_ignores_invalid_cache_entries(
+def test_checkpoint_info_ignores_invalid_cache_entries(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
-    root = tmp_path / ".torch-dae/checkpoints/phase01-synthetic-checkpoint"
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
+    root = tmp_path / ".torch-dae/checkpoints/synthetic-checkpoint"
     (root / "not-a-sha").mkdir(parents=True)
     corrupt = "1" * 64
     (root / corrupt).mkdir()

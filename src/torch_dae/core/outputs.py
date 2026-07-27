@@ -8,7 +8,17 @@ from typing import Any, Protocol
 
 
 class TensorLike(Protocol):
-    """Structural tensor placeholder used without importing PyTorch."""
+    """Minimal structural tensor type used by the model-agnostic control plane.
+
+    Attributes
+    ----------
+    shape
+        Runtime-specific shape object. Public contracts describe its axes separately.
+
+    Notes
+    -----
+    No numerical, dtype, device, gradient, or mutation behavior is implied.
+    """
 
     @property
     def shape(self) -> object:
@@ -17,7 +27,25 @@ class TensorLike(Protocol):
 
 @dataclass(frozen=True)
 class AudioModelOutput:
-    """Native differentiable model output contract; implemented in Phase 00."""
+    """Carry native forward outputs without constraining a tensor runtime.
+
+    Attributes
+    ----------
+    primary
+        Integration-defined primary result.
+    tensors
+        Named differentiable tensor outputs.
+    lengths
+        Optional valid output lengths, normally one value per batch item.
+    metadata
+        Non-tensor descriptive values.
+    native_output
+        Optional unmodified upstream return object.
+
+    Notes
+    -----
+    The model card, rather than this container, defines ranks, layouts, units, and semantics.
+    """
 
     primary: object
     tensors: Mapping[str, TensorLike]
@@ -28,7 +56,28 @@ class AudioModelOutput:
 
 @dataclass(frozen=True)
 class EmbeddingOutput:
-    """Embedding output contract; tensors remain model-runtime objects."""
+    """Carry one selected embedding and its temporal metadata.
+
+    Attributes
+    ----------
+    embedding_id
+        Identifier matching an :class:`~torch_dae.core.embeddings.EmbeddingSpec`.
+    tensor
+        Runtime tensor whose axes are described by ``layout``.
+    layout
+        Ordered dimension labels such as ``B,D`` or ``B,T,D``.
+    lengths
+        Optional valid output-frame lengths shaped ``[B]``.
+    timestamps
+        Optional time coordinates in implementation-declared units.
+    metadata
+        Additional non-tensor values.
+
+    Notes
+    -----
+    No fixed embedding shape is assumed. Batch, temporal, and feature axes are declared per
+    embedding and verified at runtime.
+    """
 
     embedding_id: str
     tensor: TensorLike
@@ -40,7 +89,25 @@ class EmbeddingOutput:
 
 @dataclass(frozen=True)
 class PreprocessingOutput:
-    """Model-native preprocessing output for waveform, feature, token, or mapping inputs."""
+    """Carry the model-native result of canonical waveform preprocessing.
+
+    Attributes
+    ----------
+    model_input
+        Object consumed by the wrapper's forward implementation.
+    sample_rate
+        Effective sampling frequency in hertz after any allowed resampling.
+    valid_lengths
+        Optional valid lengths in the model-input domain.
+    tensors
+        Named intermediate tensor-like values.
+    metadata
+        Preprocessing decisions and other non-tensor values.
+
+    Notes
+    -----
+    This immutable container performs no preprocessing itself.
+    """
 
     model_input: object
     sample_rate: int

@@ -13,8 +13,8 @@ are ignored. Invalid declarations remain available as diagnostics but do not aff
 selection, constraint merging, conflicts, unpinned classification, or principal dependencies.
 
 Use `generate_environment_candidates.py` to produce ordered unverified candidates. Do not run an
-arbitrary Cartesian search. Trial only explicitly selected candidates and use Phase 01 environment
-APIs and CLI to materialize or verify environments.
+arbitrary Cartesian search. Trial only explicitly selected candidates and use the environment APIs
+and CLI to materialize or verify isolated model-specific environments.
 
 Successful resolution may prepare `environments/<card-id>/environment.json`, `pyproject.toml`,
 `uv.lock`, `sources.json`, and `verify_environment.py`.

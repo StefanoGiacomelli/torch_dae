@@ -16,7 +16,7 @@ Static evidence was inspected; architecture remains candidate-level.
 
 ## Runtime Interface
 
-Runtime interface is not verified in Phase 02.
+Runtime interface is not verified in onboarding workflow.
 
 ## Preprocessing
 

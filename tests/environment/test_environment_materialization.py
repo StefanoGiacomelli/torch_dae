@@ -18,11 +18,11 @@ from torch_dae.environment.manager import EnvironmentManager
 from torch_dae.environment.policy import ExecutionPolicy
 
 
-def write_phase01_repo(root: Path, repo_root: Path, valid_fixture_dir: Path) -> str:
-    card_id = "phase01-synthetic-card"
-    environment_id = "phase01-synthetic-shared-environment"
+def write_synthetic_repository(root: Path, repo_root: Path, valid_fixture_dir: Path) -> str:
+    card_id = "synthetic-environment-card"
+    environment_id = "synthetic-shared-environment"
     version = ".".join(str(part) for part in sys.version_info[:3])
-    (root / "project_spec.md").write_text("synthetic Phase 01 test repository\n")
+    (root / "project_spec.md").write_text("synthetic environment and checkpoint test repository\n")
     shutil.copy2(repo_root / "pyproject.toml", root / "pyproject.toml")
     shutil.copy2(repo_root / "README.md", root / "README.md")
     shutil.copy2(repo_root / "uv.lock", root / "uv.lock")
@@ -32,7 +32,7 @@ def write_phase01_repo(root: Path, repo_root: Path, valid_fixture_dir: Path) -> 
         (repo_root / "schemas/model-card.schema.json").read_text()
     )
     (root / "model_cards/synthetic").mkdir(parents=True)
-    checkpoint = root / "tests/fixtures/phase01/checkpoint.bin"
+    checkpoint = root / "tests/fixtures/environment_runtime/checkpoint.bin"
     checkpoint.parent.mkdir(parents=True)
     checkpoint.write_bytes(b"synthetic checkpoint bytes\n")
     card = json.loads((valid_fixture_dir / "model-card.analyzed.json").read_text())
@@ -45,9 +45,9 @@ def write_phase01_repo(root: Path, repo_root: Path, valid_fixture_dir: Path) -> 
     }
     card["checkpoint"] = {
         "schema_version": "1.0.0",
-        "checkpoint_id": "phase01-synthetic-checkpoint",
+        "checkpoint_id": "synthetic-checkpoint",
         "source_type": "local_path",
-        "local_path": "tests/fixtures/phase01/checkpoint.bin",
+        "local_path": "tests/fixtures/environment_runtime/checkpoint.bin",
         "format": "binary",
         "loader": "manual",
         "license": {"status": "not_applicable"},
@@ -96,7 +96,7 @@ import torch_dae.environment
 
 assert "PYTHONPATH" not in os.environ
 assert "PYTHONHOME" not in os.environ
-assert metadata.version("torch-dae") == "0.1.0"
+assert metadata.version("torch-deepaudioembedding") == "0.1.0"
 scripts = pathlib.Path(sysconfig.get_path("scripts"))
 assert (scripts / "torch-dae").exists()
 pyvenv = pathlib.Path(os.environ["TORCH_DAE_ENVIRONMENT_ROOT"]) / "pyvenv.cfg"
@@ -121,14 +121,14 @@ print("synthetic verification passed")
         ("spec-verify-other-card", "verification script path"),
     ],
 )
-def test_phase01_environment_load_rejects_cross_document_path_mismatch(
+def test_environment_load_rejects_cross_document_path_mismatch(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
     mutation: str,
     message: str,
 ) -> None:
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     card_path = tmp_path / "model_cards/synthetic/card.json"
     environment_path = tmp_path / f"environments/{card_id}/environment.json"
     card = json.loads(card_path.read_text())
@@ -156,7 +156,7 @@ def test_phase01_environment_load_rejects_cross_document_path_mismatch(
 
 
 @pytest.mark.integration
-def test_phase01_environment_lifecycle(
+def test_environment_lifecycle(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
@@ -168,18 +168,18 @@ def test_phase01_environment_lifecycle(
     (hostile / "torch_dae/__init__.py").write_text("raise RuntimeError('host leak')\n")
     monkeypatch.setenv("PYTHONPATH", str(hostile))
     monkeypatch.setenv("PYTHONHOME", "/definitely/not/pythonhome")
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     manager = EnvironmentManager(
         tmp_path,
         policy=ExecutionPolicy(command_timeout_seconds=120, download_timeout_seconds=120),
     )
     resolved = manager.ensure(card_id)
-    assert resolved.environment_id == "phase01-synthetic-shared-environment"
+    assert resolved.environment_id == "synthetic-shared-environment"
     assert resolved.model_card_id == card_id
     assert resolved.root == tmp_path / ".torch-dae/environments" / card_id / resolved.fingerprint
     assert resolved.python_executable.exists()
     assert not (tmp_path / f"environments/{card_id}/.venv").exists()
-    assert resolved.installed_packages["torch-dae"] == "0.1.0"
+    assert resolved.installed_packages["torch-deepaudioembedding"] == "0.1.0"
     metadata = resolved.root / "lib/python{}.{}".format(*sys.version_info[:2])
     assert metadata.exists()
     materialization = json.loads((resolved.root / "torch-dae-materialization.json").read_text())
@@ -209,7 +209,7 @@ def test_phase01_environment_lifecycle(
                 "torch_dae.cards.models, torch_dae.environment; "
                 "assert 'PYTHONPATH' not in os.environ; "
                 "assert 'PYTHONHOME' not in os.environ; "
-                "assert m.version('torch-dae') == '0.1.0'; "
+                "assert m.version('torch-deepaudioembedding') == '0.1.0'; "
                 "assert pathlib.Path(torch_dae.__file__).is_relative_to("
                 "pathlib.Path(os.environ['VIRTUAL_ENV']).resolve()); "
                 "print('inside')"
@@ -234,14 +234,14 @@ def test_phase01_environment_lifecycle(
 
 
 @pytest.mark.integration
-def test_phase01_offline_environment_reuse(
+def test_offline_environment_reuse(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("UV_CACHE_DIR", str(tmp_path.parent / f"{tmp_path.name}-uv-cache"))
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     EnvironmentManager(tmp_path).ensure(card_id)
     offline = EnvironmentManager(tmp_path, policy=ExecutionPolicy(offline=True))
     assert offline.ensure(card_id).valid
@@ -260,7 +260,7 @@ def test_phase01_offline_environment_reuse(
         "malformed-wheel-json",
     ],
 )
-def test_phase01_environment_verify_detects_installed_integrity_drift(
+def test_environment_verify_detects_installed_integrity_drift(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
@@ -268,7 +268,7 @@ def test_phase01_environment_verify_detects_installed_integrity_drift(
     drift: str,
 ) -> None:
     monkeypatch.setenv("UV_CACHE_DIR", str(tmp_path.parent / f"{tmp_path.name}-uv-cache"))
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     manager = EnvironmentManager(tmp_path, policy=ExecutionPolicy(command_timeout_seconds=120))
     resolved = manager.ensure(card_id)
     if drift == "modify-package-file":
@@ -277,7 +277,7 @@ def test_phase01_environment_verify_detects_installed_integrity_drift(
             ["python", "-c", "import torch_dae; print(torch_dae.__file__)"],
         ).stdout.strip()
         Path(location).write_text("# modified after materialization\n")
-        expected = "installed wheel file drifted|local torch-dae import check failed"
+        expected = "installed wheel file drifted|local torch-deepaudioembedding import check failed"
     elif drift == "remove-dist-info":
         site_packages = Path(
             manager.run(
@@ -285,35 +285,38 @@ def test_phase01_environment_verify_detects_installed_integrity_drift(
                 [
                     "python",
                     "-c",
-                    "import importlib.metadata as m; print(m.distribution('torch-dae')._path)",
+                    "import importlib.metadata as m; "
+                    "print(m.distribution('torch-deepaudioembedding')._path)",
                 ],
             ).stdout.strip()
         )
         shutil.rmtree(site_packages)
-        expected = "torch-dae is not installed"
+        expected = "torch-deepaudioembedding is not installed"
     else:
-        wheel_cache_dir = next((tmp_path / ".torch-dae/source-builds/torch-dae").glob("*"))
+        wheel_cache_dir = next(
+            (tmp_path / ".torch-dae/source-builds/torch-deepaudioembedding").glob("*")
+        )
         if drift == "replace-wheel":
             next(wheel_cache_dir.glob("*.whl")).write_bytes(b"not a wheel")
         elif drift == "remove-wheel-json":
             (wheel_cache_dir / "wheel.json").unlink()
         else:
             (wheel_cache_dir / "wheel.json").write_text("{bad json")
-        expected = "local torch-dae wheel cache metadata is missing or invalid"
+        expected = "local torch-deepaudioembedding wheel cache metadata is missing or invalid"
     with pytest.raises(EnvironmentVerificationError, match=expected):
         manager.verify(card_id)
     assert resolved.root.exists()
 
 
 @pytest.mark.integration
-def test_phase01_environment_materialization_logs_failed_command_with_redaction(
+def test_environment_materialization_logs_failed_command_with_redaction(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("UV_CACHE_DIR", str(tmp_path.parent / f"{tmp_path.name}-uv-cache"))
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     (tmp_path / f"environments/{card_id}/verify_environment.py").write_text(
         """
 from __future__ import annotations
@@ -338,14 +341,14 @@ raise SystemExit(7)
 
 
 @pytest.mark.integration
-def test_phase01_failed_uv_sync_metadata_references_reports(
+def test_failed_uv_sync_metadata_references_reports(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("UV_CACHE_DIR", str(tmp_path.parent / f"{tmp_path.name}-uv-cache"))
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     (tmp_path / f"environments/{card_id}/uv.lock").write_text("not a uv lock\n")
 
     with pytest.raises(ExternalCommandError):
@@ -359,14 +362,14 @@ def test_phase01_failed_uv_sync_metadata_references_reports(
 
 
 @pytest.mark.integration
-def test_phase01_failed_git_clone_metadata_references_reports(
+def test_failed_git_clone_metadata_references_reports(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("UV_CACHE_DIR", str(tmp_path.parent / f"{tmp_path.name}-uv-cache"))
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     write_git_source_manifest(tmp_path, card_id, str(tmp_path / "missing-upstream"), "b" * 40)
 
     with pytest.raises(ExternalCommandError):
@@ -380,14 +383,14 @@ def test_phase01_failed_git_clone_metadata_references_reports(
 
 
 @pytest.mark.integration
-def test_phase01_failed_git_wheel_build_metadata_references_reports(
+def test_failed_git_wheel_build_metadata_references_reports(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("UV_CACHE_DIR", str(tmp_path.parent / f"{tmp_path.name}-uv-cache"))
-    card_id = write_phase01_repo(tmp_path, repo_root, valid_fixture_dir)
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     upstream = tmp_path / "bad-upstream"
     upstream.mkdir()
     (upstream / "pyproject.toml").write_text(
@@ -428,7 +431,7 @@ version = "0.1.0"
 
 
 @pytest.mark.integration
-def test_phase01_local_wheel_backend_build_is_reproducible(
+def test_local_wheel_backend_build_is_reproducible(
     tmp_path: Path,
     repo_root: Path,
     valid_fixture_dir: Path,
@@ -439,7 +442,7 @@ def test_phase01_local_wheel_backend_build_is_reproducible(
     shas: list[str] = []
     for root in roots:
         root.mkdir()
-        write_phase01_repo(root, repo_root, valid_fixture_dir)
+        write_synthetic_repository(root, repo_root, valid_fixture_dir)
         manager = EnvironmentManager(root, policy=ExecutionPolicy(command_timeout_seconds=120))
         wheel, sha = manager._build_local_wheel(local_package_identity(root))
         assert wheel.is_file()
@@ -465,7 +468,7 @@ def write_git_source_manifest(root: Path, card_id: str, url: str, revision: str)
     env_dir = root / "environments" / card_id
     sources = {
         "schema_version": "1.0.0",
-        "environment_id": "phase01-synthetic-shared-environment",
+        "environment_id": "synthetic-shared-environment",
         "sources": [
             {
                 "source_id": "git-source",

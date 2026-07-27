@@ -81,7 +81,7 @@
   "$id": "https://torch-dae.local/schemas/environment.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Committed model-specific environment specification.",
+  "description": "Validate the committed inputs for one isolated model environment.\n\nAttributes\n----------\nenvironment_id\n    Canonical identifier for the environment definition.\nmodel_card_id\n    Card whose model-family, variant, and checkpoint this environment supports.\npython\n    Declared version constraint and the exact resolved Python version.\nplatforms\n    Reported, expected-compatible, and verified platform evidence.\nlockfile\n    Repository-relative path to the complete dependency lock.\nproject_file\n    Repository-relative path to the environment project metadata.\nsources_file\n    Repository-relative path to the canonical source manifest.\nverification\n    Committed verification-script reference.\n\nRaises\n------\npydantic.ValidationError\n    If a path escapes the repository, an identity is malformed, or the resolved Python version\n    violates its declared constraint.\n\nNotes\n-----\nValidation reads no runtime state and does not create the environment.",
   "properties": {
     "dependency_manager": {
       "const": "uv",

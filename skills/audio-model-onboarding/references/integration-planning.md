@@ -6,4 +6,7 @@ behavior, waveform scaling, padding/truncation, valid lengths, forward signature
 normalization, task capabilities, embeddings, device movement, evaluation mode, deterministic
 behavior, tests, and errors.
 
-Phase 02 may create synthetic examples only. Production wrappers belong to Phase 03 or later.
+Production integration is permitted only in an explicitly requested `integrate` mode after analysis
+review, source/variant/checkpoint/embedding decisions, environment strategy resolution, and explicit
+user authorization. Integration must remain scoped to the selected model and must not start
+verification, add root model dependencies, commit checkpoints, or create a Git commit.

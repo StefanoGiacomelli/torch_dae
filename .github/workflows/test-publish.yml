@@ -1,0 +1,75 @@
+name: Publish to TestPyPI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  validate-build-and-publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/torch-deepaudioembedding
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v9
+        with:
+          python-version: "3.12"
+      - name: Read project version
+        id: project-version
+        run: >-
+          python -c "import pathlib,tomllib;
+          value=tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'];
+          print(f'value={value}')" >> "$GITHUB_OUTPUT"
+      - run: uv sync --all-groups --frozen
+      - run: uv run python scripts/check_release_version.py --current
+      - run: uv run ruff format --check
+      - run: uv run ruff check
+      - run: uv run mypy src scripts
+      - run: |
+          mkdir -p .torch-dae
+          uv run pytest -q \
+            --cov=torch_dae \
+            --cov-branch \
+            --cov-report=term-missing \
+            --cov-report=json:.torch-dae/coverage-testpypi.json
+          uv run python scripts/check_coverage.py \
+            .torch-dae/coverage-testpypi.json \
+            --min-line 85 \
+            --min-branch 70
+      - run: uv run python scripts/generate_schemas.py --check
+      - run: uv run python scripts/validate_repository.py
+      - run: uv run python skills/audio-model-onboarding/scripts/validate_skill_artifacts.py . --json
+      - run: uv run sphinx-build -W --keep-going -b html docs docs/_build/html
+      - name: Build distributions once
+        run: uv run python -m build
+      - run: uv run python -m twine check dist/*
+      - name: Validate built distribution versions
+        env:
+          PROJECT_VERSION: ${{ steps.project-version.outputs.value }}
+        run: >-
+          uv run python -c "import pathlib;
+          version=__import__('os').environ['PROJECT_VERSION'];
+          names=[path.name for path in pathlib.Path('dist').iterdir()];
+          assert names and all(version in name for name in names), names"
+      - name: Verify the built wheel in a clean environment
+        env:
+          PROJECT_VERSION: ${{ steps.project-version.outputs.value }}
+        run: |
+          python -m venv "$RUNNER_TEMP/torch-dae-wheel-check"
+          "$RUNNER_TEMP/torch-dae-wheel-check/bin/python" -m pip install dist/*.whl
+          "$RUNNER_TEMP/torch-dae-wheel-check/bin/python" -c \
+            "import importlib.metadata, os; import torch_dae; import torch_dae.onboarding; assert importlib.metadata.version('torch-deepaudioembedding') == os.environ['PROJECT_VERSION']"
+      - uses: actions/upload-artifact@v5
+        with:
+          name: python-package-distributions
+          path: dist/
+          retention-days: 7
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/

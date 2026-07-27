@@ -1,9 +1,35 @@
 [project]
-name = "torch-dae"
+name = "torch-deepaudioembedding"
 version = "0.1.0"
-description = "Control-plane contracts for PyTorch audio model onboarding."
+description = "torch-dae: an AI skill-based framework for Audio Embedding Models"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [
+  { name = "Stefano Giacomelli", email = "stefano.giacomelli@graduate.univaq.it" },
+]
+keywords = [
+  "audio",
+  "audio embeddings",
+  "computational auditory scene analysis",
+  "deep learning",
+  "model onboarding",
+  "pytorch",
+  "research software",
+]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Multimedia :: Sound/Audio",
+  "Typing :: Typed",
+]
 dependencies = [
   "jsonschema>=4.25.0",
   "packaging>=26.0",
@@ -12,8 +38,21 @@ dependencies = [
   "typer>=0.16.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/StefanoGiacomelli/torch_dae"
+Repository = "https://github.com/StefanoGiacomelli/torch_dae"
+Issues = "https://github.com/StefanoGiacomelli/torch_dae/issues"
+Documentation = "https://torch-dae.readthedocs.io/en/latest/"
+
 [project.scripts]
 torch-dae = "torch_dae.cli.main:app"
+
+[project.optional-dependencies]
+docs = [
+  "furo>=2024.8,<2026",
+  "myst-parser>=4,<5",
+  "sphinx>=8.2,<9",
+]
 
 [dependency-groups]
 dev = [
@@ -22,12 +61,22 @@ dev = [
   "mypy>=1.17.0",
   "pytest>=8.4.0",
   "pytest-cov>=6.2.0",
+  "pyyaml>=6,<7",
   "ruff>=0.12.0",
+  "twine>=6.1,<7",
+]
+docs = [
+  "furo>=2024.8,<2026",
+  "myst-parser>=4,<5",
+  "sphinx>=8.2,<9",
 ]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/torch_dae"]
 
 [tool.ruff]
 line-length = 100

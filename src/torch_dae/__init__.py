@@ -1,6 +1,6 @@
 """Root control-plane package for torch-dae.
 
-Phase 00 exposes contracts and registry helpers without importing PyTorch.
+repository foundation exposes contracts and registry helpers without importing PyTorch.
 """
 
 from torch_dae.core.registry import ModelCardRegistry

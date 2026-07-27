@@ -1,6 +1,6 @@
 # Onboarding Artifacts
 
-Phase 02 introduces strict machine-readable contracts for technical analysis reports,
+The onboarding workflow provides strict machine-readable contracts for technical analysis reports,
 environment-candidate generation results, and environment-resolution reports. Schemas are generated
 through `scripts/generate_schemas.py`; do not hand-edit generated schemas.
 
@@ -13,6 +13,8 @@ Skill templates live under `skills/audio-model-onboarding/templates/`:
 - `verification-plan.md`
 - `decision-request.md`
 - `model-card-draft.json`
+- `agent-request.md`
+- `agent-response.md`
 
 Deterministic utilities live under `skills/audio-model-onboarding/scripts/` and operate on local
 synthetic repositories without executing upstream code or contacting public services.
@@ -39,7 +41,7 @@ Committed production artifacts remain governed by existing repository contracts:
 `model_cards/`, environments under `environments/`, and verification reports under
 `verification_reports/`. Runtime state, checkpoints, reports, materialized environments, and
 coverage JSON remain under ignored `.torch-dae/`.
-Phase 02 environment-resolution reports may reference committed verification reports as
-`verification_reports/<card-id>/<report>.json` or Phase 01 diagnostics relative to `.torch-dae` as
+Environment-resolution reports may reference committed verification reports as
+`verification_reports/<card-id>/<report>.json` or environment diagnostics relative to `.torch-dae` as
 `reports/environments/<card-id>/<fingerprint>/<report>.json`; checkpoint and source report paths are
 not valid environment-promotion references.

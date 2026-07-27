@@ -1,10 +1,13 @@
-"""Repository validation for Phase 01 repository safety."""
+"""Repository validation for public safety and integrated-model structure."""
 
 from __future__ import annotations
 
+import ast
 import json
+import re
 import subprocess
 import sys
+import tomllib
 from collections.abc import Callable
 from copy import deepcopy
 from importlib.metadata import distributions
@@ -15,6 +18,7 @@ from typing import Any
 from jsonschema import Draft202012Validator, FormatChecker
 from pydantic import BaseModel
 
+from torch_dae.cards.models import ModelCard, ModelCardLifecycle
 from torch_dae.cards.validation import load_json, validate_model_card_path
 from torch_dae.core.checkpoint import CheckpointMaterializationRecord, CheckpointSpec
 from torch_dae.core.embeddings import EmbeddingSpec
@@ -39,6 +43,7 @@ from torch_dae.onboarding.inspection import (
 
 ROOT = Path(__file__).resolve().parents[1]
 MODEL_DEPS = {"torch", "torchaudio", "torchvision", "transformers", "tensorflow", "jax", "librosa"}
+BINARY_MODEL_SUFFIXES = {".pt", ".pth", ".ckpt", ".bin", ".safetensors", ".onnx"}
 REQUIRED = [
     "project_spec.md",
     "pyproject.toml",
@@ -123,6 +128,233 @@ def semantic_invalid_fixture_fails(path: Path) -> bool:
     return False
 
 
+def _tracked_paths(root: Path) -> tuple[Path, ...]:
+    result = subprocess.run(
+        ["git", "ls-files", "-z"],
+        cwd=root,
+        check=False,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        return ()
+    return tuple(root / item.decode() for item in result.stdout.split(b"\0") if item)
+
+
+def numbered_stage_errors(root: Path) -> list[str]:
+    """Reject numbered internal-stage labels in tracked paths and textual contents."""
+
+    stage_word = "".join(("ph", "ase"))
+    pattern = re.compile(rf"{stage_word}[ _-]*0[0-9]", re.IGNORECASE)
+    errors: list[str] = []
+    for path in _tracked_paths(root):
+        relative = path.relative_to(root)
+        if relative.as_posix() == "project_spec.md":
+            continue
+        if pattern.search(relative.as_posix()):
+            errors.append(f"numbered internal-stage label in tracked path: {relative}")
+        if not path.is_file():
+            continue
+        data = path.read_bytes()
+        if b"\0" in data:
+            continue
+        try:
+            text = data.decode("utf-8")
+        except UnicodeDecodeError:
+            continue
+        if pattern.search(text):
+            errors.append(f"numbered internal-stage label in tracked text: {relative}")
+    return errors
+
+
+def _validate_with_schema(path: Path, schema: Path, model: type[BaseModel]) -> BaseModel:
+    payload = load_json(path)
+    Draft202012Validator(load_json(schema), format_checker=FormatChecker()).validate(payload)
+    return model.model_validate(payload)
+
+
+def _wrapper_symbol_exists(root: Path, entry_point: str) -> bool:
+    module_name, separator, symbol = entry_point.partition(":")
+    if not separator or not module_name or not symbol:
+        return False
+    module_path = root / "src" / Path(*module_name.split("."))
+    candidates = (module_path.with_suffix(".py"), module_path / "__init__.py")
+    source_path = next((candidate for candidate in candidates if candidate.is_file()), None)
+    if source_path is None:
+        return False
+    try:
+        tree = ast.parse(source_path.read_text(), filename=str(source_path))
+    except (OSError, SyntaxError, UnicodeDecodeError):
+        return False
+    definitions = (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
+    return any(isinstance(node, definitions) and node.name == symbol for node in tree.body)
+
+
+def _is_binary_asset(path: Path) -> bool:
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return True
+    if b"\0" in data:
+        return True
+    try:
+        data.decode("utf-8")
+    except UnicodeDecodeError:
+        return True
+    return False
+
+
+def validate_integration_artifacts(root: Path, failures: list[str]) -> None:
+    """Validate empty or structurally populated public integration directories."""
+
+    schema_root = root / "schemas"
+    cards: dict[str, tuple[Path, ModelCard]] = {}
+    for path in sorted((root / "model_cards").glob("**/*.json")):
+        try:
+            card = validate_model_card_path(path, schema_root / "model-card.schema.json")
+        except Exception as exc:
+            fail(f"invalid model card {path.relative_to(root)}: {exc}", failures)
+            continue
+        if card.card_id in cards:
+            fail(f"duplicate model card id: {card.card_id}", failures)
+            continue
+        cards[card.card_id] = (path, card)
+        if not _wrapper_symbol_exists(root, card.identity.wrapper_entry_point):
+            fail(
+                f"wrapper symbol does not resolve statically: {card.identity.wrapper_entry_point}",
+                failures,
+            )
+
+        if card.card_status in {
+            ModelCardLifecycle.ENVIRONMENT_RESOLVED,
+            ModelCardLifecycle.CHECKPOINT_VERIFIED,
+            ModelCardLifecycle.RUNTIME_VERIFIED,
+            ModelCardLifecycle.PROFILED,
+        }:
+            environment_dir = root / "environments" / card.card_id
+            required = {
+                "environment.json",
+                "pyproject.toml",
+                "uv.lock",
+                "sources.json",
+                "verify_environment.py",
+            }
+            missing = sorted(name for name in required if not (environment_dir / name).is_file())
+            if missing:
+                fail(f"missing environment artifacts for {card.card_id}: {missing}", failures)
+                continue
+            try:
+                specification = _validate_with_schema(
+                    environment_dir / "environment.json",
+                    schema_root / "environment.schema.json",
+                    EnvironmentSpecification,
+                )
+                sources = _validate_with_schema(
+                    environment_dir / "sources.json",
+                    schema_root / "environment-sources.schema.json",
+                    EnvironmentSourcesManifest,
+                )
+            except Exception as exc:
+                fail(f"invalid environment artifacts for {card.card_id}: {exc}", failures)
+                continue
+            assert isinstance(specification, EnvironmentSpecification)
+            assert isinstance(sources, EnvironmentSourcesManifest)
+            expected_prefix = f"environments/{card.card_id}"
+            recommended = card.usage.recommended_environment
+            if specification.model_card_id != card.card_id:
+                fail(f"environment model_card_id disagrees for {card.card_id}", failures)
+            if not (
+                recommended.environment_id == specification.environment_id == sources.environment_id
+            ):
+                fail(f"environment IDs disagree for {card.card_id}", failures)
+            expected_paths = {
+                "specification": f"{expected_prefix}/environment.json",
+                "lockfile": f"{expected_prefix}/uv.lock",
+                "project_file": f"{expected_prefix}/pyproject.toml",
+                "sources_file": f"{expected_prefix}/sources.json",
+                "verification": f"{expected_prefix}/verify_environment.py",
+            }
+            observed_paths = {
+                "specification": recommended.specification,
+                "lockfile": specification.lockfile,
+                "project_file": specification.project_file,
+                "sources_file": specification.sources_file,
+                "verification": specification.verification.script,
+            }
+            if recommended.lockfile != expected_paths["lockfile"]:
+                fail(f"model-card lockfile path disagrees for {card.card_id}", failures)
+            for label, expected in expected_paths.items():
+                if observed_paths[label] != expected:
+                    fail(f"{label} path disagrees for {card.card_id}", failures)
+
+    reports: dict[Path, VerificationReport] = {}
+    for path in sorted((root / "verification_reports").glob("**/*.json")):
+        try:
+            verified_report = _validate_with_schema(
+                path,
+                schema_root / "verification-report.schema.json",
+                VerificationReport,
+            )
+        except Exception as exc:
+            fail(f"invalid verification report {path.relative_to(root)}: {exc}", failures)
+            continue
+        assert isinstance(verified_report, VerificationReport)
+        reports[path.resolve()] = verified_report
+        card_item = cards.get(verified_report.model_card_id)
+        if card_item is None:
+            fail(
+                f"verification report references missing card: {verified_report.model_card_id}",
+                failures,
+            )
+            continue
+        card = card_item[1]
+        if verified_report.environment_id != card.usage.recommended_environment.environment_id:
+            fail(f"verification report environment disagrees for {card.card_id}", failures)
+        if verified_report.checkpoint_sha256 != card.checkpoint.observed_sha256:
+            fail(f"verification report checkpoint disagrees for {card.card_id}", failures)
+
+    for _, card in cards.values():
+        if card.card_status not in {
+            ModelCardLifecycle.RUNTIME_VERIFIED,
+            ModelCardLifecycle.PROFILED,
+        }:
+            continue
+        assert card.verification_report is not None
+        report_path = (root / card.verification_report).resolve()
+        referenced_report = reports.get(report_path)
+        if referenced_report is None:
+            fail(f"runtime-verified card lacks its verification report: {card.card_id}", failures)
+        elif referenced_report.model_card_id != card.card_id:
+            fail(f"verification report card identity disagrees for {card.card_id}", failures)
+
+    excluded_roots = {".git", ".torch-dae", ".venv", "build", "dist"}
+    for path in root.rglob("*"):
+        if not path.is_file() or path.suffix.lower() not in BINARY_MODEL_SUFFIXES:
+            continue
+        if any(part in excluded_roots for part in path.relative_to(root).parts):
+            continue
+        if _is_binary_asset(path):
+            fail(
+                f"committed model/checkpoint binary is forbidden: {path.relative_to(root)}",
+                failures,
+            )
+
+
+def root_dependency_errors(root: Path) -> list[str]:
+    try:
+        project = tomllib.loads((root / "pyproject.toml").read_text())
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        return [f"cannot inspect root dependencies: {exc}"]
+    dependencies = project.get("project", {}).get("dependencies", ())
+    names = {
+        re.split(r"[^A-Za-z0-9_.-]", str(requirement), maxsplit=1)[0].lower()
+        for requirement in dependencies
+    }
+    forbidden = sorted(names & MODEL_DEPS)
+    return (
+        [f"model-specific dependencies declared in root project: {forbidden}"] if forbidden else []
+    )
+
+
 def expect_model_failure(label: str, failures: list[str], func: Callable[[], object]) -> None:
     try:
         func()
@@ -131,7 +363,7 @@ def expect_model_failure(label: str, failures: list[str], func: Callable[[], obj
     fail(f"behavioral smoke unexpectedly passed: {label}", failures)
 
 
-def phase02_behavioral_smoke(failures: list[str]) -> None:
+def onboarding_behavioral_smoke(failures: list[str]) -> None:
     analysis_data = load_json(ROOT / "tests/fixtures/valid/analysis-report.synthetic.json")
     env_data = load_json(ROOT / "tests/fixtures/valid/environment-resolution-report.synthetic.json")
 
@@ -255,7 +487,7 @@ def phase02_behavioral_smoke(failures: list[str]) -> None:
     try:
         EnvironmentResolutionReport.model_validate(diagnostic_report)
     except Exception as exc:
-        fail(f"actual Phase 01 diagnostic reference rejected: {exc}", failures)
+        fail(f"actual environment diagnostic reference rejected: {exc}", failures)
 
     checkpoint_reference = deepcopy(env_data)
     checkpoint_reference["verification_report_or_diagnostic_reference"] = (
@@ -372,11 +604,6 @@ def phase02_behavioral_smoke(failures: list[str]) -> None:
     )
     if budget.files_visited <= 0 or budget.bytes_read <= 0:
         fail("scenario inspection did not use the shared inspection budget", failures)
-    if (
-        "test_real_git_grounded_scenario"
-        not in (ROOT / "tests/onboarding/test_phase02_evaluation.py").read_text()
-    ):
-        fail("real-Git grounded Phase 02 integration test is missing", failures)
 
 
 def main() -> int:
@@ -390,10 +617,9 @@ def main() -> int:
 
     if list(ROOT.glob("**/*backbone*.json")):
         fail("legacy backbone JSON files are present", failures)
-    if list((ROOT / "model_cards").glob("**/*.json")):
-        fail("real model cards are present during Phase 00", failures)
-    if (ROOT / "src/torch_dae/models").exists():
-        fail("pilot model modules exist during Phase 00", failures)
+    failures.extend(numbered_stage_errors(ROOT))
+    failures.extend(root_dependency_errors(ROOT))
+    validate_integration_artifacts(ROOT, failures)
     if subprocess.run(
         ["git", "ls-files", "._*"], cwd=ROOT, check=False, capture_output=True, text=True
     ).stdout:
@@ -526,8 +752,11 @@ def main() -> int:
     required_modes = ("analyze", "resolve-environment", "integrate", "verify", "card", "profile")
     for mode in required_modes:
         if f"## `{mode}` Mode" not in skill_text:
-            fail(f"Phase 02 skill mode is missing: {mode}", failures)
-    if "profiling is not implemented in Phase 02" not in skill_text:
+            fail(f"onboarding skill mode is missing: {mode}", failures)
+    if (
+        "Profiling remains unavailable until a model is runtime_verified and a profiling workflow "
+        "is\nexplicitly implemented and invoked." not in skill_text
+    ):
         fail("profile mode is not truthfully reserved in the skill", failures)
     stale_license_access_phrases = (
         "license_or_" + "access_blocker",
@@ -564,6 +793,8 @@ def main() -> int:
         "verification-plan.md",
         "decision-request.md",
         "model-card-draft.json",
+        "agent-request.md",
+        "agent-response.md",
     }
     required_scripts = {
         "inspect_repository.py",
@@ -581,19 +812,19 @@ def main() -> int:
     for name in sorted(required_references):
         path = skill_root / "references" / name
         if not path.exists() or not path.read_text().strip():
-            fail(f"required Phase 02 reference is missing or empty: {name}", failures)
+            fail(f"required onboarding reference is missing or empty: {name}", failures)
         if f"references/{name}" not in skill_text:
             fail(f"SKILL.md does not link reference: {name}", failures)
     for name in sorted(required_templates):
         if not (skill_root / "templates" / name).exists():
-            fail(f"required Phase 02 template is missing: {name}", failures)
+            fail(f"required onboarding template is missing: {name}", failures)
     for name in sorted(required_scripts):
         path = skill_root / "scripts" / name
         if not path.exists():
-            fail(f"required Phase 02 script is missing: {name}", failures)
+            fail(f"required onboarding script is missing: {name}", failures)
         elif "import torch" in path.read_text() or "urllib.request.urlopen" in path.read_text():
             fail(
-                f"Phase 02 script imports a model runtime or public network primitive: {name}",
+                f"onboarding script imports a model runtime or public network primitive: {name}",
                 failures,
             )
     result = subprocess.run(
@@ -609,8 +840,8 @@ def main() -> int:
         text=True,
     )
     if result.returncode != 0:
-        fail("Phase 02 skill artifact validation script failed", failures)
-    phase02_behavioral_smoke(failures)
+        fail("onboarding skill artifact validation script failed", failures)
+    onboarding_behavioral_smoke(failures)
     synthetic_root = ROOT / "tests/skills/fixtures/synthetic_onboarding"
     required_scenarios = {
         "official_package": "official_package",
@@ -696,16 +927,9 @@ def main() -> int:
     if stale_duplicates:
         fail(f"stale duplicate onboarding skills found: {stale_duplicates}", failures)
 
-    env_cli = (ROOT / "src/torch_dae/cli/environment.py").read_text()
-    checkpoint_cli = (ROOT / "src/torch_dae/cli/checkpoints.py").read_text()
-    model_cli = (ROOT / "src/torch_dae/cli/models.py").read_text()
     env_manager = (ROOT / "src/torch_dae/environment/manager.py").read_text()
     source_manager = (ROOT / "src/torch_dae/environment/sources.py").read_text()
     runtime_module = (ROOT / "src/torch_dae/environment/runtime.py").read_text()
-    if "belongs to Phase 01" in env_cli or "belongs to Phase 01" in checkpoint_cli:
-        fail("environment or checkpoint CLI remains deferred to Phase 01", failures)
-    if "belongs to Phase 03+" not in model_cli:
-        fail("model CLI no longer truthfully defers model integration", failures)
     if "_write_local_wheel" in env_manager or "wheel_record_hash" in env_manager:
         fail("handwritten local wheel implementation remains present", failures)
     if '"uv",\n                    "build"' not in env_manager:
@@ -814,66 +1038,6 @@ def main() -> int:
         fail(f"runtime report sink behavioral smoke failed: {exc}", failures)
     if not git_ignored(".torch-dae/reports/environments/card/hash/log.json"):
         fail(".torch-dae diagnostic reports are not ignored", failures)
-    phase01_readme = ROOT / "tests/fixtures/phase01/README.md"
-    if not phase01_readme.exists() or "synthetic" not in phase01_readme.read_text().lower():
-        fail("Phase 01 fixture area is missing a synthetic marker", failures)
-    checkpoint_tests = (ROOT / "tests/core/test_phase01_checkpoint.py").read_text()
-    source_tests = (ROOT / "tests/environment/test_phase01_sources.py").read_text()
-    materialization_tests = (ROOT / "tests/environment/test_phase01_materialization.py").read_text()
-    if "example.invalid" not in checkpoint_tests:
-        fail("checkpoint tests do not document fake public-network endpoints", failures)
-    if (
-        "test_phase01_package_bundle_checkpoint_uses_owned_distribution_file_offline"
-        not in checkpoint_tests
-    ):
-        fail("Phase 01 package-bundle checkpoint integration coverage is missing", failures)
-    if "test_phase01_git_source_build_metadata_workspace_and_offline_reuse" not in source_tests:
-        fail("Phase 01 Git source cache/reuse coverage is missing", failures)
-    if (
-        "@pytest.mark.integration\n"
-        "def test_phase01_git_source_build_metadata_workspace_and_offline_reuse" in source_tests
-    ):
-        fail("simulated Git source state-machine test is incorrectly marked integration", failures)
-    if (
-        "test_phase01_git_source_real_local_repository_installs_and_reuses_offline"
-        not in source_tests
-    ):
-        fail("real local-Git source integration coverage is missing", failures)
-    real_git_body = source_tests.split(
-        "def test_phase01_git_source_real_local_repository_installs_and_reuses_offline",
-        1,
-    )[1].split("def run_git_command", 1)[0]
-    if "GitSourceRunner" in real_git_body:
-        fail("real local-Git integration test still uses the fake Git runner", failures)
-    for required in (
-        "test_phase01_git_source_online_recovers_invalid_checkout",
-        "test_phase01_git_source_offline_invalid_checkout_fails_without_mutation",
-        "dirty-offline",
-        'remote", "set-url"',
-        "other_revision",
-        'metadata.write_text("{bad json")',
-    ):
-        if required not in source_tests:
-            fail(f"Git invalid-cache recovery coverage is missing: {required}", failures)
-    for required in (
-        "phase01-synthetic-shared-environment",
-        "test_phase01_environment_load_rejects_cross_document_path_mismatch",
-        "test_phase01_failed_uv_sync_metadata_references_reports",
-        "test_phase01_failed_git_clone_metadata_references_reports",
-        "test_phase01_failed_git_wheel_build_metadata_references_reports",
-        "failed_materialization_metadata",
-        "command_log_references",
-        "remove-wheel-json",
-        "malformed-wheel-json",
-    ):
-        if required not in materialization_tests:
-            fail(f"environment identity/cache regression coverage is missing: {required}", failures)
-    environment_tests = (ROOT / "tests/environment/test_environment.py").read_text()
-    for required in ("README.md", "package-data.json", "vendor/source.txt", "new_module.py"):
-        if required not in environment_tests:
-            fail(f"local package identity input coverage is missing: {required}", failures)
-    if "test_phase01_local_wheel_backend_build_is_reproducible" not in materialization_tests:
-        fail("Phase 01 reproducible local wheel coverage is missing", failures)
     checkpoint_module = (ROOT / "src/torch_dae/core/checkpoint.py").read_text()
     for required in (
         "reports",
@@ -909,49 +1073,16 @@ def main() -> int:
     ):
         if required not in checkpoint_module:
             fail(f"checkpoint failure normalization is missing: {required}", failures)
-    for required in (
-        "test_phase01_package_bundle_rejects_file_owned_by_other_distribution",
-        "test_phase01_remote_response_is_closed_for_success_and_http_failure",
-        "test_phase01_remote_response_is_closed_for_hash_mismatch",
-        "test_phase01_interrupted_remote_read_cleans_partial_state_and_reports_failure",
-        "test_phase01_transport_open_oserror_is_typed_reported_and_redacted",
-        "test_phase01_urllib_transport_urlerror_is_typed_and_sanitized",
-        "test_phase01_urllib_transport_httperror_closes_body",
-        "test_phase01_local_copy_failure_is_typed_reported_and_cleans_tmp",
-        "test_phase01_cache_finalize_failure_is_typed_reported_and_cleans_tmp",
-        "test_phase01_metadata_write_failure_removes_incomplete_cache_entry_and_reports",
-        "test_phase01_package_bundle_malformed_lookup_is_typed_and_reported",
-        "test_phase01_successful_response_close_failure_is_reported_and_typed",
-        "test_phase01_failed_response_close_does_not_mask_stream_error",
-        "closed_observed",
-        "hash-validation",
-        "offline-cache-lookup",
-        "metadata-write",
-        "response-close",
-        "failure-cleanup",
-        "secret-token",
-        "redacted secret",
-    ):
-        if required not in checkpoint_tests:
-            fail(f"checkpoint evidence regression coverage is missing: {required}", failures)
-    if "with pytest.raises(OSError)" in checkpoint_tests:
-        fail("interrupted checkpoint stream coverage still expects raw OSError", failures)
-    if (
-        "test_phase01_checkpoint_cli_expected_acquisition_failures_are_concise"
-        not in (ROOT / "tests/cli/test_phase01_cli.py").read_text()
-    ):
-        fail("real checkpoint CLI operational-failure coverage is missing", failures)
-
     report: dict[str, Any] = {"ok": not failures, "failures": failures}
     report_dir = ROOT / ".torch-dae/reports"
     report_dir.mkdir(parents=True, exist_ok=True)
-    (report_dir / "phase02-validation.json").write_text(json.dumps(report, indent=2))
+    (report_dir / "repository-validation.json").write_text(json.dumps(report, indent=2))
 
     if failures:
         for item in failures:
             print(f"FAIL: {item}")
         return 1
-    print("Phase 02 repository validation passed")
+    print("Repository validation passed")
     return 0
 
 

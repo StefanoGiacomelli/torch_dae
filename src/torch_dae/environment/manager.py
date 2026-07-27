@@ -62,11 +62,23 @@ from torch_dae.environment.subprocess import CommandExecutor, ManagedProcessResu
 
 COMPLETE_MARKER = ".torch-dae-complete"
 MATERIALIZATION_JSON = "torch-dae-materialization.json"
+DISTRIBUTION_NAME = "torch-deepaudioembedding"
+CONSOLE_COMMAND = "torch-dae"
 
 
 @dataclass(frozen=True)
 class InstalledSource:
-    """Installed source metadata for a resolved environment."""
+    """Describe one source installed in a resolved environment.
+
+    Attributes
+    ----------
+    source_id
+        Identifier from the committed source manifest.
+    location
+        Sanitized installed location or package identity.
+    revision
+        Optional immutable source revision.
+    """
 
     source_id: str
     location: str
@@ -75,7 +87,23 @@ class InstalledSource:
 
 @dataclass(frozen=True)
 class ResolvedEnvironment:
-    """Materialized environment metadata."""
+    """Describe a verified isolated environment materialization.
+
+    Attributes
+    ----------
+    environment_id, model_card_id
+        Committed environment and checkpoint-specific card identities.
+    root, python_executable
+        Runtime-only environment directory and its interpreter.
+    fingerprint
+        SHA-256 identity of all materialization inputs.
+    python_version, platform
+        Observed interpreter version and canonical platform tag.
+    installed_packages, installed_sources
+        Verified package inventory and source materializations.
+    valid
+        Whether verification succeeded.
+    """
 
     environment_id: str
     model_card_id: str
@@ -91,7 +119,19 @@ class ResolvedEnvironment:
 
 @dataclass(frozen=True)
 class EnvironmentInfo:
-    """Read-only local-state inspection."""
+    """Summarize committed and runtime environment state without mutation.
+
+    Attributes
+    ----------
+    model_card_id, specification_path, specification_exists
+        Requested identity and committed specification state.
+    fingerprint, expected_path, materialized
+        Current expected runtime identity, location, and existence.
+    status, verification_status
+        Normalized state and diagnostic detail.
+    stale_fingerprints
+        Other runtime fingerprints retained for the same card.
+    """
 
     model_card_id: str
     specification_path: Path
@@ -106,7 +146,19 @@ class EnvironmentInfo:
 
 @dataclass(frozen=True)
 class EnvironmentVerification:
-    """Environment verification result."""
+    """Report the result of verifying one expected environment.
+
+    Attributes
+    ----------
+    model_card_id
+        Checkpoint-specific card identity.
+    passed
+        Whether every integrity and verification check succeeded.
+    details
+        Sanitized human-readable result.
+    status
+        Stable state such as ``valid``, ``missing``, ``incomplete``, ``stale``, or ``invalid``.
+    """
 
     model_card_id: str
     passed: bool
@@ -142,7 +194,30 @@ def discover_repository_root(start: Path | None = None) -> Path:
 
 
 class EnvironmentManager:
-    """Create, verify, inspect, remove, and run model-specific environments."""
+    """Manage isolated, fingerprinted environments for checkpoint-specific cards.
+
+    Parameters
+    ----------
+    repository_root
+        Root containing ``project_spec.md``, model cards, and committed environment inputs.
+    policy
+        Optional execution policy controlling network access, cache use, and subprocess behavior.
+    executor
+        Optional command executor, primarily for controlled testing.
+
+    Attributes
+    ----------
+    repository_root
+        Resolved repository root.
+    runtime_root
+        Ignored ``.torch-dae`` directory used for materialized environments and reports.
+
+    Notes
+    -----
+    Methods that create, ensure, verify, run, or remove environments have local filesystem and
+    subprocess side effects. Construction alone performs neither materialization nor network access.
+    Model-specific packages are installed only inside the selected isolated environment.
+    """
 
     def __init__(
         self,
@@ -163,10 +238,45 @@ class EnvironmentManager:
         *,
         policy: ExecutionPolicy | None = None,
     ) -> EnvironmentManager:
+        """Construct a manager after discovering the repository root.
+
+        Parameters
+        ----------
+        start
+            Starting directory, or the current working directory when omitted.
+        policy
+            Optional execution policy.
+
+        Returns
+        -------
+        EnvironmentManager
+            Manager rooted at the nearest ancestor containing ``project_spec.md``.
+
+        Raises
+        ------
+        FileNotFoundError
+            If no repository root can be discovered.
+        """
         return cls(discover_repository_root(start), policy=policy)
 
     def specification_path(self, model_card_id: str) -> Path:
-        """Return the committed environment specification path for `model_card_id`."""
+        """Return the canonical committed specification path.
+
+        Parameters
+        ----------
+        model_card_id
+            Canonical checkpoint-specific card identifier.
+
+        Returns
+        -------
+        pathlib.Path
+            ``environments/<model_card_id>/environment.json`` below the repository.
+
+        Raises
+        ------
+        ValueError
+            If the identifier is invalid or path containment fails.
+        """
 
         ensure_canonical_id(model_card_id)
         return contained_path(
@@ -174,7 +284,27 @@ class EnvironmentManager:
         )
 
     def load_specification(self, model_card_id: str) -> EnvironmentSpecification:
-        """Load and validate the committed environment specification."""
+        """Load the committed environment specification.
+
+        Parameters
+        ----------
+        model_card_id
+            Canonical checkpoint-specific card identifier.
+
+        Returns
+        -------
+        EnvironmentSpecification
+            Validated JSON contract.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the specification is absent.
+        pydantic.ValidationError
+            If its fields or invariants are invalid.
+        EnvironmentIdentityMismatchError
+            If its ``model_card_id`` differs from the request.
+        """
 
         path = self.specification_path(model_card_id)
         specification = EnvironmentSpecification.model_validate_json(path.read_text())
@@ -187,7 +317,27 @@ class EnvironmentManager:
     def load_sources_manifest(
         self, specification: EnvironmentSpecification
     ) -> EnvironmentSourcesManifest:
-        """Load and validate the source manifest referenced by `specification`."""
+        """Load the source manifest referenced by a specification.
+
+        Parameters
+        ----------
+        specification
+            Validated environment definition containing a repository-relative ``sources_file``.
+
+        Returns
+        -------
+        EnvironmentSourcesManifest
+            Validated, duplicate-free source definitions.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the referenced file is absent.
+        pydantic.ValidationError
+            If the manifest is invalid.
+        EnvironmentIdentityMismatchError
+            If manifest and specification environment identities differ.
+        """
 
         path = contained_path(self.repository_root, specification.sources_file)
         if not path.exists():
@@ -200,7 +350,30 @@ class EnvironmentManager:
         return manifest
 
     def fingerprint_for(self, specification: EnvironmentSpecification) -> str:
-        """Calculate the expected fingerprint for `specification`."""
+        """Calculate the deterministic environment fingerprint.
+
+        Parameters
+        ----------
+        specification
+            Validated committed environment definition.
+
+        Returns
+        -------
+        str
+            Lowercase hexadecimal SHA-256 of canonical specification JSON, lockfile digest,
+            canonical source-manifest JSON, resolved Python, platform, and local package identity.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the lockfile or source manifest is absent.
+        EnvironmentIdentityMismatchError
+            If source-manifest identity differs from the specification.
+
+        Notes
+        -----
+        The local package identity hashes build inputs and uses the clean Git commit when available.
+        """
 
         lock_path = contained_path(self.repository_root, specification.lockfile)
         if not lock_path.exists():
@@ -216,7 +389,31 @@ class EnvironmentManager:
         return calculate_environment_fingerprint(inputs)
 
     def create(self, model_card_id: str) -> ResolvedEnvironment:
-        """Create the current fingerprint target and fail if any target state exists."""
+        """Materialize the current fingerprint only when no target exists.
+
+        Parameters
+        ----------
+        model_card_id
+            Card with verified committed environment references.
+
+        Returns
+        -------
+        ResolvedEnvironment
+            Newly created and verified isolated environment.
+
+        Raises
+        ------
+        EnvironmentAlreadyExistsError
+            If the current fingerprint target already exists.
+        EnvironmentMaterializationError
+            If inputs, dependency synchronization, source installation, or verification fail.
+
+        Notes
+        -----
+        This method creates runtime files, builds and installs a local wheel, may use the network
+        according to policy, executes subprocesses, and writes sanitized reports. A failed target is
+        moved beneath ignored ``.failed`` runtime state.
+        """
 
         inputs = self._load_inputs_for_card(model_card_id)
         target = materialization_path(self.runtime_root, model_card_id, inputs.fingerprint)
@@ -225,7 +422,28 @@ class EnvironmentManager:
         return self._materialize(inputs, target)
 
     def ensure(self, model_card_id: str) -> ResolvedEnvironment:
-        """Reuse a valid environment or create/rebuild the current fingerprint target."""
+        """Reuse a valid current environment or rebuild it.
+
+        Parameters
+        ----------
+        model_card_id
+            Card with verified committed environment references.
+
+        Returns
+        -------
+        ResolvedEnvironment
+            Existing verified state or a newly materialized replacement.
+
+        Raises
+        ------
+        EnvironmentMaterializationError
+            If committed inputs are inconsistent or rebuilding fails.
+
+        Notes
+        -----
+        Unlike :meth:`create`, invalid target state is removed before reconstruction. Separate
+        fingerprints are isolated, but no cross-process lock is implemented.
+        """
 
         inputs = self._load_inputs_for_card(model_card_id)
         target = materialization_path(self.runtime_root, model_card_id, inputs.fingerprint)
@@ -237,7 +455,29 @@ class EnvironmentManager:
         return self._materialize(inputs, target)
 
     def verify(self, model_card_id: str) -> EnvironmentVerification:
-        """Verify the current expected materialization without mutation."""
+        """Verify the current fingerprint without rebuilding it.
+
+        Parameters
+        ----------
+        model_card_id
+            Canonical checkpoint-specific card identifier.
+
+        Returns
+        -------
+        EnvironmentVerification
+            Successful verification result.
+
+        Raises
+        ------
+        EnvironmentVerificationError
+            If state is missing, incomplete, stale, internally inconsistent, or fails its committed
+            verification script.
+
+        Notes
+        -----
+        Verification reads files and runs inspection commands and the committed verification
+        script; it does not install, remove, or repair environment state.
+        """
 
         inputs = self._load_inputs_for_card(model_card_id)
         target = materialization_path(self.runtime_root, model_card_id, inputs.fingerprint)
@@ -247,7 +487,23 @@ class EnvironmentManager:
         return verification
 
     def remove(self, model_card_id: str) -> None:
-        """Remove all local environment materializations for one card."""
+        """Remove every runtime environment materialization for one card.
+
+        Parameters
+        ----------
+        model_card_id
+            Canonical checkpoint-specific card identifier.
+
+        Raises
+        ------
+        EnvironmentMaterializationError
+            If the identifier is invalid.
+
+        Notes
+        -----
+        Removal is idempotent and limited to ``.torch-dae/environments/<model_card_id>``. Committed
+        specifications, lockfiles, cards, checkpoints, and reports are not removed.
+        """
 
         try:
             ensure_canonical_id(model_card_id)
@@ -260,7 +516,27 @@ class EnvironmentManager:
             shutil.rmtree(root)
 
     def info(self, model_card_id: str) -> EnvironmentInfo:
-        """Inspect committed and local environment state without mutation."""
+        """Inspect committed inputs and local materialization state.
+
+        Parameters
+        ----------
+        model_card_id
+            Canonical checkpoint-specific card identifier.
+
+        Returns
+        -------
+        EnvironmentInfo
+            Expected fingerprint, path, status, and stale fingerprint summary.
+
+        Raises
+        ------
+        EnvironmentMaterializationError
+            If the identifier or committed inputs are invalid.
+
+        Notes
+        -----
+        A missing specification is represented in the result rather than raised.
+        """
 
         try:
             specification_path = self.specification_path(model_card_id)
@@ -306,7 +582,32 @@ class EnvironmentManager:
         )
 
     def run(self, model_card_id: str, command: list[str]) -> ManagedProcessResult:
-        """Ensure the environment and execute `command` inside it without shell activation."""
+        """Ensure an environment and run an argument vector inside it.
+
+        Parameters
+        ----------
+        model_card_id
+            Canonical checkpoint-specific card identifier.
+        command
+            Nonempty executable-and-arguments list; no shell parsing is performed.
+
+        Returns
+        -------
+        ManagedProcessResult
+            Exit code and sanitized captured output from the managed subprocess.
+
+        Raises
+        ------
+        ValueError
+            If ``command`` is empty.
+        EnvironmentMaterializationError
+            If the environment cannot be ensured.
+
+        Notes
+        -----
+        ``VIRTUAL_ENV`` and ``PATH`` target the isolated environment. The command may have arbitrary
+        side effects permitted by the operating system; a nonzero exit is returned, not raised.
+        """
 
         if not command:
             raise ValueError("command must not be empty")
@@ -327,7 +628,23 @@ class EnvironmentManager:
         )
 
     def info_json(self, model_card_id: str) -> str:
-        """Return JSON for CLI output."""
+        """Serialize :meth:`info` for deterministic CLI output.
+
+        Parameters
+        ----------
+        model_card_id
+            Canonical checkpoint-specific card identifier.
+
+        Returns
+        -------
+        str
+            Indented JSON with sorted object keys and stringified paths.
+
+        Raises
+        ------
+        EnvironmentMaterializationError
+            If inspection of committed inputs fails.
+        """
 
         info = self.info(model_card_id)
         return json.dumps(
@@ -616,7 +933,7 @@ class EnvironmentManager:
 import platform
 import sys
 if platform.python_implementation() != "CPython":
-    raise SystemExit("only CPython is supported in Phase 01")
+    raise SystemExit("only CPython is supported in environment and checkpoint")
 print(".".join(str(part) for part in sys.version_info[:3]))
 """.strip()
         result = self.executor.run(
@@ -682,7 +999,10 @@ print(".".join(str(part) for part in sys.version_info[:3]))
 
     def _build_local_wheel(self, package_identity: str) -> tuple[Path, str]:
         path_identity = hashlib.sha256(package_identity.encode()).hexdigest()
-        wheel_dir = contained_path(self.runtime_root / "source-builds/torch-dae", path_identity)
+        wheel_dir = contained_path(
+            self.runtime_root / f"source-builds/{DISTRIBUTION_NAME}",
+            path_identity,
+        )
         metadata = wheel_dir / "wheel.json"
         wheel, record = self._valid_local_wheel_cache(wheel_dir, package_identity)
         if wheel is not None and record is not None:
@@ -693,10 +1013,14 @@ print(".".join(str(part) for part in sys.version_info[:3]))
         self._build_local_wheel_with_backend(wheel_dir)
         wheel = valid_single_wheel(wheel_dir)
         if wheel is None:
-            raise EnvironmentMaterializationError("local torch-dae wheel build produced no wheel")
+            raise EnvironmentMaterializationError(
+                f"local {DISTRIBUTION_NAME} wheel build produced no wheel"
+            )
         distribution, version = wheel_distribution_metadata(wheel)
-        if canonicalize_name(distribution) != "torch-dae":
-            raise EnvironmentMaterializationError("local wheel distribution is not torch-dae")
+        if canonicalize_name(distribution) != DISTRIBUTION_NAME:
+            raise EnvironmentMaterializationError(
+                f"local wheel distribution is not {DISTRIBUTION_NAME}"
+            )
         sha = sha256_file(wheel)
         source_date_epoch = self._source_date_epoch()
         record = LocalWheelCacheRecord(
@@ -738,8 +1062,8 @@ print(".".join(str(part) for part in sys.version_info[:3]))
             return None, None
         if (
             record.package_identity != package_identity
-            or canonicalize_name(record.distribution_name) != "torch-dae"
-            or canonicalize_name(distribution) != "torch-dae"
+            or canonicalize_name(record.distribution_name) != DISTRIBUTION_NAME
+            or canonicalize_name(distribution) != DISTRIBUTION_NAME
             or record.distribution_name != distribution
             or record.distribution_version != version
             or record.distribution_version != self._project_version()
@@ -856,10 +1180,13 @@ print(".".join(str(part) for part in sys.version_info[:3]))
                 inputs.card_id, False, "Python version mismatch", "invalid"
             )
         packages = installed_distributions(python_executable, self.executor)
-        local = packages.get("torch-dae")
+        local = packages.get(DISTRIBUTION_NAME)
         if local is None:
             return EnvironmentVerification(
-                inputs.card_id, False, "torch-dae is not installed", "invalid"
+                inputs.card_id,
+                False,
+                f"{DISTRIBUTION_NAME} is not installed",
+                "invalid",
             )
         check = self.executor.run(
             ["uv", "pip", "check", "--python", str(python_executable), *self.policy.uv_flags()],
@@ -894,7 +1221,7 @@ print(".".join(str(part) for part in sys.version_info[:3]))
         record: EnvironmentMaterializationRecord,
     ) -> str | None:
         wheel_dir = contained_path(
-            self.runtime_root / "source-builds/torch-dae",
+            self.runtime_root / f"source-builds/{DISTRIBUTION_NAME}",
             hashlib.sha256(inputs.package_identity.encode()).hexdigest(),
         )
         local_wheel, local_record = self._valid_local_wheel_cache(
@@ -902,19 +1229,19 @@ print(".".join(str(part) for part in sys.version_info[:3]))
             inputs.package_identity,
         )
         if local_wheel is None or local_record is None:
-            return "local torch-dae wheel cache metadata is missing or invalid"
+            return f"local {DISTRIBUTION_NAME} wheel cache metadata is missing or invalid"
         if (
             record.local_package_wheel_sha256 is None
             or sha256_file(local_wheel) != record.local_package_wheel_sha256
             or local_record.wheel_sha256 != record.local_package_wheel_sha256
         ):
-            return "local torch-dae wheel cache hash mismatch"
+            return f"local {DISTRIBUTION_NAME} wheel cache hash mismatch"
         error = verify_installed_wheel(
             local_wheel,
             target,
             python_executable,
             self.executor,
-            expected_distribution="torch-dae",
+            expected_distribution=DISTRIBUTION_NAME,
         )
         if error is not None:
             return error
@@ -927,8 +1254,8 @@ print(".".join(str(part) for part in sys.version_info[:3]))
             ).values()
         }
         recorded = {item.normalized_name: item.version for item in record.installed_packages}
-        if installed.get("torch-dae") != recorded.get("torch-dae"):
-            return "installed torch-dae package inventory drifted"
+        if installed.get(DISTRIBUTION_NAME) != recorded.get(DISTRIBUTION_NAME):
+            return f"installed {DISTRIBUTION_NAME} package inventory drifted"
         source_records = {item.source_id: item for item in record.installed_sources}
         for source in inputs.sources_manifest.sources:
             source_record = source_records.get(source.source_id)
@@ -988,7 +1315,7 @@ print(".".join(str(part) for part in sys.version_info[:3]))
                 distribution_info = installed_distribution_info(
                     python_executable,
                     self.executor,
-                    "torch-dae",
+                    DISTRIBUTION_NAME,
                 )
                 for relative, expected_hash in source_record.file_hashes.items():
                     path = contained_path(self.repository_root, relative)
@@ -1175,9 +1502,9 @@ def verify_installed_wheel(
                     return f"installed wheel file drifted: {name}"
     except Exception as exc:
         return f"wheel integrity inspection failed: {exc}"
-    if "torch-dae" in info.console_scripts and not (info.scripts / "torch-dae").is_file():
-        return "console script is missing: torch-dae"
-    if canonicalize_name(distribution) == "torch-dae":
+    if CONSOLE_COMMAND in info.console_scripts and not (info.scripts / CONSOLE_COMMAND).is_file():
+        return f"console script is missing: {CONSOLE_COMMAND}"
+    if canonicalize_name(distribution) == DISTRIBUTION_NAME:
         import_check = executor.run(
             [
                 str(python_executable),
@@ -1186,7 +1513,7 @@ def verify_installed_wheel(
                     "import sys; "
                     "import importlib.metadata as m; "
                     "import torch_dae, torch_dae.cards.models, torch_dae.environment; "
-                    "assert m.version('torch-dae') == sys.argv[1]"
+                    f"assert m.version('{DISTRIBUTION_NAME}') == sys.argv[1]"
                 ),
                 version,
             ],
@@ -1196,7 +1523,7 @@ def verify_installed_wheel(
             check=False,
         )
         if import_check.returncode != 0:
-            return "local torch-dae import check failed"
+            return f"local {DISTRIBUTION_NAME} import check failed"
     return None
 
 

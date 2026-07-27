@@ -442,7 +442,7 @@
     },
     "EvidenceItem": {
       "additionalProperties": false,
-      "description": "Atomic evidence item used by Phase 02 reports.",
+      "description": "Record one atomic source of onboarding evidence.\n\nAttributes\n----------\nevidence_id\n    Canonical identifier referenced by report claims and candidates.\nkind\n    Evidence source category.\nclaim_status\n    Whether the item is reported, observed, inferred, unresolved, or unsupported.\ndescription\n    Concise statement of what the source establishes.\nsource_file\n    Optional safe repository-relative upstream path.\nsource_line_or_symbol\n    Optional stable line range or program symbol.\nurl\n    Optional authoritative external source.\nrevision\n    Optional immutable source revision.\nrationale\n    Required justification where the evidence status represents inference.\n\nRaises\n------\npydantic.ValidationError\n    If paths, versions, provenance combinations, or inference rationale are invalid.",
       "properties": {
         "claim_status": {
           "$ref": "#/$defs/ClaimStatus"
@@ -584,7 +584,7 @@
       "type": "string"
     },
     "FailureClassification": {
-      "description": "Environment-resolution failure classifications required by Phase 02.",
+      "description": "Stable classifications for observed environment-resolution failures.\n\nThese values preserve the cause of a failed or blocked trial without relying on raw tool output.\nDiagnostics may accompany a classification, but should remain sanitized and evidence-backed.",
       "enum": [
         "python_constraint",
         "dependency_conflict",
@@ -833,7 +833,7 @@
       "type": "object"
     },
     "SourceStrategy": {
-      "description": "Source strategy decisions evaluated by the onboarding workflow.",
+      "description": "Supported implementation-source decisions.\n\nValues distinguish an official package, a pinned official repository, a minimal vendored\nadaptation, a proven external implementation, and an unsupported or non-equivalent source.\nSelection requires explicit evidence; enum ordering does not imply preference.",
       "enum": [
         "official_package",
         "pinned_official_git_repository",
@@ -951,7 +951,7 @@
   "$id": "https://torch-dae.local/schemas/analysis-report.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Machine-readable Phase 02 technical analysis report.",
+  "description": "Represent the evidence-grounded output of static analysis mode.\n\nThe report records repository and scientific identity, architecture and runtime claims,\nvariants, checkpoint and embedding candidates, dependencies, source strategies, open questions,\ndecisions, and confidence counts. All claim references must resolve to a unique evidence item.\n\nNotes\n-----\nAn analysis report is not proof of runtime compatibility. Creating or validating it does not\nexecute upstream code, install dependencies, or download checkpoints.\n\nRaises\n------\npydantic.ValidationError\n    If identities are duplicated, evidence references are unresolved, confidence counts are\n    inconsistent, or a claim overstates its evidence.",
   "properties": {
     "architecture": {
       "$ref": "#/$defs/ReportSection"

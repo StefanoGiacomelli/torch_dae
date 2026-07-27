@@ -281,7 +281,7 @@
   "issues": [
     {
       "issue_id": "synthetic-no-real-model",
-      "kind": "phase00_fixture",
+      "kind": "synthetic_fixture",
       "status": "not_applicable",
       "description": "This is not a real model card.",
       "impact": "Used only for tests."

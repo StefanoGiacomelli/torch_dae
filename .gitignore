@@ -8,9 +8,17 @@ __pycache__/
 .ruff_cache/
 build/
 dist/
+docs/_build/
 .coverage
+.coverage.*
 coverage.xml
+coverage.json
 htmlcov/
 .DS_Store
+._*
+*.swp
+*~
+.env
+.env.*
 .idea/
 .vscode/

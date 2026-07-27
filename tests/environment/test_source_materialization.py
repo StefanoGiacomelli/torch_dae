@@ -122,7 +122,7 @@ name = "synthetic-package"
 version = "1.2.3"
 """.lstrip()
     )
-    wheel = root / "local-wheel/torch_dae-0.1.0-py3-none-any.whl"
+    wheel = root / "local-wheel/torch_deepaudioembedding-0.1.0-py3-none-any.whl"
     wheel.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(wheel, "w") as archive:
         archive.writestr("torch_dae/vendor/synthetic.py", b"VALUE = 1\n")
@@ -141,7 +141,7 @@ version = "1.2.3"
     )
 
 
-def test_phase01_package_source_verifies_lock_and_installed_distribution(tmp_path: Path) -> None:
+def test_package_source_verifies_lock_and_installed_distribution(tmp_path: Path) -> None:
     manifest = EnvironmentSourcesManifest.model_validate(
         {
             "schema_version": "1.0.0",
@@ -165,7 +165,7 @@ def test_phase01_package_source_verifies_lock_and_installed_distribution(tmp_pat
     assert records[0].version == "1.2.3"
 
 
-def test_phase01_vendored_source_hashes_declared_files(tmp_path: Path) -> None:
+def test_vendored_source_hashes_declared_files(tmp_path: Path) -> None:
     vendored = tmp_path / "src/torch_dae/vendor/synthetic.py"
     vendored.parent.mkdir(parents=True)
     vendored.write_text("VALUE = 1\n")
@@ -191,7 +191,7 @@ def test_phase01_vendored_source_hashes_declared_files(tmp_path: Path) -> None:
     assert records[0].file_hashes["src/torch_dae/vendor/synthetic.py"]
 
 
-def test_phase01_git_source_offline_cache_miss_fails(tmp_path: Path) -> None:
+def test_git_source_offline_cache_miss_fails(tmp_path: Path) -> None:
     manifest = EnvironmentSourcesManifest.model_validate(
         {
             "schema_version": "1.0.0",
@@ -213,7 +213,7 @@ def test_phase01_git_source_offline_cache_miss_fails(tmp_path: Path) -> None:
         manager.materialize(manifest, source_context(tmp_path))
 
 
-def test_phase01_git_source_build_metadata_workspace_and_offline_reuse(
+def test_git_source_build_metadata_workspace_and_offline_reuse(
     tmp_path: Path,
 ) -> None:
     url = "file:///tmp/synthetic-git-source"
@@ -276,7 +276,7 @@ def test_phase01_git_source_build_metadata_workspace_and_offline_reuse(
         {"initial_url": "file:///tmp/wrong-origin"},
     ],
 )
-def test_phase01_git_source_online_recovers_invalid_checkout(
+def test_git_source_online_recovers_invalid_checkout(
     tmp_path: Path,
     runner_kwargs: dict[str, str],
 ) -> None:
@@ -312,7 +312,7 @@ def test_phase01_git_source_online_recovers_invalid_checkout(
     assert any(command[:2] == ("git", "clone") for command in runner.commands)
 
 
-def test_phase01_git_source_offline_invalid_checkout_fails_without_mutation(tmp_path: Path) -> None:
+def test_git_source_offline_invalid_checkout_fails_without_mutation(tmp_path: Path) -> None:
     url = "file:///tmp/synthetic-git-source"
     revision = "b" * 40
     checkout = tmp_path / ".torch-dae/repositories/git-source" / revision
@@ -347,7 +347,7 @@ def test_phase01_git_source_offline_invalid_checkout_fails_without_mutation(tmp_
 
 
 @pytest.mark.integration
-def test_phase01_git_source_real_local_repository_installs_and_reuses_offline(
+def test_git_source_real_local_repository_installs_and_reuses_offline(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -410,7 +410,7 @@ version = "0.1.0"
     python_executable = env_root / "bin/python"
     lock = tmp_path / "uv.lock"
     lock.write_text("version = 1\nrevision = 3\n")
-    local_wheel = tmp_path / "local-wheel/torch_dae-0.1.0-py3-none-any.whl"
+    local_wheel = tmp_path / "local-wheel/torch_deepaudioembedding-0.1.0-py3-none-any.whl"
     local_wheel.parent.mkdir(parents=True)
     make_distribution_wheel(local_wheel)
     context = SourceContext(
@@ -565,7 +565,7 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
 """
 
 
-def test_phase01_package_source_rejects_lock_mismatch(tmp_path: Path) -> None:
+def test_package_source_rejects_lock_mismatch(tmp_path: Path) -> None:
     manifest = EnvironmentSourcesManifest.model_validate(
         {
             "schema_version": "1.0.0",
@@ -588,7 +588,7 @@ def test_phase01_package_source_rejects_lock_mismatch(tmp_path: Path) -> None:
         )
 
 
-def test_phase01_package_source_rejects_installed_mismatch(tmp_path: Path) -> None:
+def test_package_source_rejects_installed_mismatch(tmp_path: Path) -> None:
     manifest = EnvironmentSourcesManifest.model_validate(
         {
             "schema_version": "1.0.0",
@@ -612,7 +612,7 @@ def test_phase01_package_source_rejects_installed_mismatch(tmp_path: Path) -> No
         SourceManager(executor=CommandExecutor(InventoryRunner())).materialize(manifest, context)
 
 
-def test_phase01_vendored_source_rejects_missing_file_and_empty_notes(tmp_path: Path) -> None:
+def test_vendored_source_rejects_missing_file_and_empty_notes(tmp_path: Path) -> None:
     base = {
         "schema_version": "1.0.0",
         "environment_id": "card",

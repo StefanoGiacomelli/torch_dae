@@ -5,12 +5,20 @@ class TorchDaeError(Exception):
     """Base error for torch-dae."""
 
 
-class NotImplementedInPhaseError(TorchDaeError):
-    """Raised when a public interface is intentionally deferred."""
+class FeatureNotAvailableError(TorchDaeError):
+    """Indicate that a visible public operation is intentionally unavailable.
+
+    This error distinguishes an explicit placeholder from an unexpected runtime failure. Callers
+    may present its message directly as a concise capability explanation.
+    """
 
 
 class UnsupportedCapabilityError(TorchDaeError):
-    """Raised when a model lacks a requested declared capability."""
+    """Indicate that a requested operation is unsupported by a model integration.
+
+    The exception concerns a capability declared by the checkpoint-specific model card, such as
+    probability or embedding output. It does not imply that package dependencies are missing.
+    """
 
 
 class MissingModelRuntimeDependencyError(TorchDaeError):

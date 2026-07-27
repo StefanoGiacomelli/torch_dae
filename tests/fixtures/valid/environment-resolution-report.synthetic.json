@@ -77,15 +77,15 @@
   ],
   "selected_candidate_id": "candidate-1",
   "unresolved_risks": [],
-  "phase01_artifact_paths": [
+  "environment_artifact_paths": [
     "environments/synthetic/environment.json",
     "environments/synthetic/pyproject.toml",
     "environments/synthetic/uv.lock",
     "environments/synthetic/sources.json",
     "environments/synthetic/verify_environment.py"
   ],
-  "phase01_materialization_succeeded": true,
-  "phase01_verification_succeeded": true,
+  "environment_materialization_succeeded": true,
+  "environment_verification_succeeded": true,
   "environment_fingerprint": "0000000000000000000000000000000000000000000000000000000000000000",
   "verification_report_or_diagnostic_reference": "reports/environments/synthetic/0000000000000000000000000000000000000000000000000000000000000000/verification-script-00000000000000000000000000000000.json",
   "next_lifecycle_status": "environment_resolved"

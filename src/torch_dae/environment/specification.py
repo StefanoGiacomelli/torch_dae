@@ -122,7 +122,37 @@ class EnvironmentVerificationSpec(StrictBaseModel):
 
 
 class EnvironmentSpecification(StrictBaseModel):
-    """Committed model-specific environment specification."""
+    """Validate the committed inputs for one isolated model environment.
+
+    Attributes
+    ----------
+    environment_id
+        Canonical identifier for the environment definition.
+    model_card_id
+        Card whose model-family, variant, and checkpoint this environment supports.
+    python
+        Declared version constraint and the exact resolved Python version.
+    platforms
+        Reported, expected-compatible, and verified platform evidence.
+    lockfile
+        Repository-relative path to the complete dependency lock.
+    project_file
+        Repository-relative path to the environment project metadata.
+    sources_file
+        Repository-relative path to the canonical source manifest.
+    verification
+        Committed verification-script reference.
+
+    Raises
+    ------
+    pydantic.ValidationError
+        If a path escapes the repository, an identity is malformed, or the resolved Python version
+        violates its declared constraint.
+
+    Notes
+    -----
+    Validation reads no runtime state and does not create the environment.
+    """
 
     schema_version: Literal["1.0.0"]
     environment_id: CanonicalId

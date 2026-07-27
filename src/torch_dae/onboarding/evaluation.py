@@ -1,4 +1,4 @@
-"""Deterministic validation harness for synthetic Phase 02 skill outputs."""
+"""Deterministic validation harness for synthetic onboarding workflow skill outputs."""
 
 from __future__ import annotations
 

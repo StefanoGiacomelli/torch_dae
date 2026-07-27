@@ -1,4 +1,4 @@
-"""Deterministic static inspection helpers for Phase 02 synthetic onboarding."""
+"""Deterministic static inspection helpers for onboarding workflow synthetic onboarding."""
 
 from __future__ import annotations
 
@@ -86,7 +86,14 @@ SUPPORTED_SYMLINK_ARTIFACTS = {
 
 
 class OnboardingInspectionError(ValueError):
-    """Expected static-inspection failure with a user-safe message."""
+    """Signal a bounded, user-safe static-inspection failure.
+
+    Notes
+    -----
+    Typical causes are unsafe paths, unsupported symlinks, malformed static files, and exceeded
+    file or byte budgets. The exception does not wrap arbitrary upstream execution because the
+    inspectors never import or execute inspected project code.
+    """
 
 
 @dataclass(frozen=True)
@@ -101,7 +108,24 @@ class StaticFile:
 
 @dataclass
 class InspectionBudget:
-    """Per-operation inspection budget and file-content cache."""
+    """Bound file traversal and cache decoded text during one inspection.
+
+    Attributes
+    ----------
+    maximum_total_files
+        Maximum distinct files that may be visited.
+    maximum_total_inspected_bytes
+        Maximum total bytes charged across distinct paths.
+    maximum_single_file_bytes
+        Maximum size of any inspected file.
+    files_visited, bytes_read
+        Current counters.
+
+    Notes
+    -----
+    Reusing one instance across inspectors shares both limits and cached text. Cache bookkeeping is
+    in memory and deterministic; it creates no filesystem state.
+    """
 
     maximum_total_files: int = DEFAULT_MAX_TOTAL_FILES
     maximum_total_inspected_bytes: int = DEFAULT_MAX_TOTAL_BYTES
@@ -113,6 +137,20 @@ class InspectionBudget:
     _text_cache: dict[str, str] = field(default_factory=dict)
 
     def visit_file(self, key: str, size_bytes: int) -> None:
+        """Charge one contained file against the inspection budget.
+
+        Parameters
+        ----------
+        key
+            Stable path key; repeated visits are charged only once.
+        size_bytes
+            Nonnegative file size in bytes.
+
+        Raises
+        ------
+        OnboardingInspectionError
+            If the single-file, total-file, or total-byte limit would be exceeded.
+        """
         if key not in self._visited_paths:
             if self.files_visited + 1 > self.maximum_total_files:
                 raise OnboardingInspectionError("inspection limit exceeded: maximum total files")
@@ -129,9 +167,34 @@ class InspectionBudget:
             self.bytes_read += size_bytes
 
     def cached_text(self, key: str) -> str | None:
+        """Return cached decoded text for ``key``.
+
+        Parameters
+        ----------
+        key
+            Stable path key.
+
+        Returns
+        -------
+        str or None
+            Previously stored text, or ``None`` when absent.
+        """
         return self._text_cache.get(key)
 
     def store_text(self, key: str, text: str) -> None:
+        """Store decoded file text in the in-memory cache.
+
+        Parameters
+        ----------
+        key
+            Stable path key.
+        text
+            Decoded content.
+
+        Notes
+        -----
+        Budget charging is performed separately by :meth:`visit_file`.
+        """
         self._text_cache[key] = text
 
 
@@ -233,7 +296,30 @@ def iter_static_files(
 
 
 def inspect_repository(root: Path, *, budget: InspectionBudget | None = None) -> dict[str, Any]:
-    """Return a deterministic repository inventory."""
+    """Build a deterministic, static repository inventory.
+
+    Parameters
+    ----------
+    root
+        Existing directory to inspect without following unsafe symlinks.
+    budget
+        Optional shared file and byte budget.
+
+    Returns
+    -------
+    dict
+        Sorted files, directories, documentation, licenses, dependency artifacts, checkpoint-like
+        files, archives, and test directories.
+
+    Raises
+    ------
+    OnboardingInspectionError
+        If the root, a path, symlink, stat operation, or budget is unsafe.
+
+    Notes
+    -----
+    The function reads metadata and selected text only; it executes no upstream code.
+    """
 
     budget = budget or InspectionBudget()
     files = iter_static_files(root, budget=budget)
@@ -257,7 +343,30 @@ def inspect_repository(root: Path, *, budget: InspectionBudget | None = None) ->
 
 
 def inspect_python_project(root: Path, *, budget: InspectionBudget | None = None) -> dict[str, Any]:
-    """Extract packaging metadata without executing project code."""
+    """Extract Python packaging and environment metadata statically.
+
+    Parameters
+    ----------
+    root
+        Existing project directory.
+    budget
+        Optional shared inspection budget.
+
+    Returns
+    -------
+    dict
+        Parsed ``pyproject.toml``, setup metadata, requirement and environment files, supported
+        lockfiles, source roots, and source-strategy observations.
+
+    Raises
+    ------
+    OnboardingInspectionError
+        If an input is unsafe, malformed, or exceeds the budget.
+
+    Notes
+    -----
+    ``setup.py`` is parsed as an AST; it is never executed.
+    """
 
     root = repository_root(root)
     budget = budget or InspectionBudget()
@@ -295,7 +404,26 @@ def inspect_python_project(root: Path, *, budget: InspectionBudget | None = None
 
 
 def inspect_dependencies(root: Path, *, budget: InspectionBudget | None = None) -> dict[str, Any]:
-    """Inspect dependency declarations and AST imports."""
+    """Normalize dependency declarations and compare them with static imports.
+
+    Parameters
+    ----------
+    root
+        Existing project directory.
+    budget
+        Optional shared inspection budget.
+
+    Returns
+    -------
+    dict
+        Python constraint, normalized evidence records, unpinned declarations, AST imports,
+        framework imports, and recognizable API compatibility risks.
+
+    Raises
+    ------
+    OnboardingInspectionError
+        If files are unsafe, malformed, unreadable, or exceed the budget.
+    """
 
     root = repository_root(root)
     budget = budget or InspectionBudget()
@@ -424,7 +552,29 @@ def inspect_dependencies(root: Path, *, budget: InspectionBudget | None = None) 
 
 
 def inspect_imports(root: Path, *, budget: InspectionBudget | None = None) -> dict[str, Any]:
-    """Parse Python sources for imports and framework API references."""
+    """Parse Python ASTs for imports and attribute references.
+
+    Parameters
+    ----------
+    root
+        Existing project directory.
+    budget
+        Optional shared inspection budget.
+
+    Returns
+    -------
+    dict
+        Sorted package names, recognized runtime frameworks, and per-file import/API references.
+
+    Raises
+    ------
+    OnboardingInspectionError
+        If Python syntax, path safety, reading, or budgets prevent inspection.
+
+    Notes
+    -----
+    Modules are not imported and attribute references are candidates, not semantic proof.
+    """
 
     file_results: list[dict[str, Any]] = []
     all_imports: set[str] = set()
@@ -468,7 +618,24 @@ def inspect_imports(root: Path, *, budget: InspectionBudget | None = None) -> di
 def inspect_model_candidates(
     root: Path, *, budget: InspectionBudget | None = None
 ) -> dict[str, Any]:
-    """Identify static model, factory, loader, and preprocessing candidates."""
+    """Identify model-class and model-related function candidates from ASTs.
+
+    Parameters
+    ----------
+    root
+        Existing project directory.
+    budget
+        Optional shared inspection budget.
+
+    Returns
+    -------
+    dict
+        Deterministically ordered class and function candidates with source paths and symbols.
+
+    Notes
+    -----
+    Name and base-class heuristics do not establish model semantics or runtime compatibility.
+    """
 
     candidates: list[dict[str, Any]] = []
     root = repository_root(root)
@@ -508,7 +675,25 @@ def inspect_model_candidates(
 def inspect_output_candidates(
     root: Path, *, budget: InspectionBudget | None = None
 ) -> dict[str, Any]:
-    """Identify forward returns and potential tensor names without validating semantics."""
+    """Identify forward-return keys and possible representation names.
+
+    Parameters
+    ----------
+    root
+        Existing project directory.
+    budget
+        Optional shared inspection budget.
+
+    Returns
+    -------
+    dict
+        Sorted candidate return keys and assignment names.
+
+    Notes
+    -----
+    Results are deliberately marked as candidates; the inspector does not infer tensor shapes,
+    embedding meaning, or output correctness.
+    """
 
     outputs: list[dict[str, Any]] = []
     embedding_words = ("embedding", "feature", "latent", "pooled", "logit", "classifier")
@@ -553,7 +738,25 @@ def inspect_output_candidates(
 
 
 def inspect_checkpoints(root: Path, *, budget: InspectionBudget | None = None) -> dict[str, Any]:
-    """Identify checkpoint-like paths, URLs, hashes, and helper functions."""
+    """Associate static checkpoint paths, URLs, hashes, and helper expressions.
+
+    Parameters
+    ----------
+    root
+        Existing project directory.
+    budget
+        Optional shared inspection budget.
+
+    Returns
+    -------
+    dict
+        Deterministically ordered local files, resolved URL candidates, SHA-256 literals, and
+        helper-function candidates, including unresolved expression components.
+
+    Notes
+    -----
+    No URL is fetched and no checkpoint is opened or deserialized.
+    """
 
     candidates: list[dict[str, Any]] = []
     root = repository_root(root)
@@ -600,7 +803,37 @@ def generate_environment_candidates(
     external_pytorch_root: Path | None = None,
     budget: InspectionBudget | None = None,
 ) -> dict[str, Any]:
-    """Convert dependency evidence into ordered, unverified compatibility candidates."""
+    """Generate ordered, unverified environment candidates from static evidence.
+
+    Parameters
+    ----------
+    root
+        Existing project directory.
+    target_platform
+        Optional platform label recorded on the result.
+    external_pytorch_root
+        Optional explicitly supplied implementation repository used only for comparative static
+        inspection.
+    budget
+        Optional shared inspection budget.
+
+    Returns
+    -------
+    dict
+        JSON-compatible :class:`EnvironmentCandidateGenerationResult`.
+
+    Raises
+    ------
+    OnboardingInspectionError
+        If static inputs are unsafe or exceed limits.
+    pydantic.ValidationError
+        If generated evidence references or candidate invariants are inconsistent.
+
+    Notes
+    -----
+    Candidate ordering is deterministic. It does not install dependencies, resolve a lockfile, or
+    prove compatibility.
+    """
 
     root = repository_root(root)
     budget = budget or InspectionBudget()
@@ -740,7 +973,8 @@ def generate_environment_candidates(
                 trial_command_plan=(
                     "Prepare environments/<card-id>/pyproject.toml using selected pinned versions.",
                     "Run uv lock inside the model-specific environment artifact directory.",
-                    "Use torch-dae env ensure <card-id> after Phase 01 artifacts are committed.",
+                    "Use torch-dae env ensure <card-id> after the environment and checkpoint "
+                    "artifacts are committed.",
                 ),
             )
         )
@@ -772,7 +1006,27 @@ def classify_source_strategy(
     external_pytorch_root: Path | None = None,
     budget: InspectionBudget | None = None,
 ) -> dict[str, Any]:
-    """Assess source-strategy evidence without selecting an official strategy."""
+    """Assess supported source strategies without silently selecting one.
+
+    Parameters
+    ----------
+    root
+        Existing upstream repository directory.
+    external_pytorch_root
+        Optional explicit alternative implementation for static framework comparison.
+    budget
+        Optional shared inspection budget.
+
+    Returns
+    -------
+    dict
+        Packaging, revision, framework, officiality, vendoring, equivalence, and candidate evidence.
+
+    Notes
+    -----
+    Package metadata does not prove officiality, and a second implementation does not prove
+    semantic equivalence. Ambiguous viable strategies therefore retain a decision requirement.
+    """
 
     root = repository_root(root)
     budget = budget or InspectionBudget()
@@ -1379,7 +1633,36 @@ def inspect_scenario_repository(
     external_pytorch_root: Path | None = None,
     budget: InspectionBudget | None = None,
 ) -> ScenarioInspectionResult:
-    """Run production inspectors and package their observations for evaluation."""
+    """Run all production inspectors for one grounded synthetic scenario.
+
+    Parameters
+    ----------
+    scenario_root
+        Existing offline fixture or synthetic repository directory.
+    scenario_id
+        Canonical identifier stored in the result.
+    external_pytorch_root
+        Optional explicit alternative implementation directory.
+    budget
+        Optional shared budget spanning every nested inspector.
+
+    Returns
+    -------
+    ScenarioInspectionResult
+        Validated inventory, packaging, dependency, import, model, output, checkpoint, source, and
+        environment-candidate observations.
+
+    Raises
+    ------
+    OnboardingInspectionError
+        If inspection is unsafe or exceeds its shared budget.
+    pydantic.ValidationError
+        If ``scenario_id`` or generated contracts are invalid.
+
+    Notes
+    -----
+    The orchestration is deterministic, static, offline, and does not execute upstream code.
+    """
 
     root = repository_root(scenario_root)
     budget = budget or InspectionBudget()

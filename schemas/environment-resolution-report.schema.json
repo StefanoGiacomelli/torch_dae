@@ -28,7 +28,7 @@
     },
     "EnvironmentCandidate": {
       "additionalProperties": false,
-      "description": "Evidence-motivated compatibility candidate; not a verified environment.",
+      "description": "Describe one evidence-motivated environment compatibility candidate.\n\nAttributes\n----------\ncandidate_id\n    Stable identifier within an environment-resolution report.\nreason_for_selection\n    Evidence-backed explanation for trying this candidate.\npython_version\n    Optional exact interpreter version proposed for the isolated environment.\ninstallation_strategy\n    Selected source installation strategy.\nexpected_compatibility_evidence\n    Evidence identifiers supporting the candidate.\ntrial_status\n    Observed state; defaults to ``not_attempted``.\nfailure_classification\n    Normalized cause when a trial fails or is blocked.\nuncertainty\n    Known remaining compatibility uncertainty.\n\nWarnings\n--------\nCandidate creation is predictive and has no execution side effects. Only a successful controlled\ntrial and verification may establish compatibility.",
       "properties": {
         "candidate_id": {
           "minLength": 1,
@@ -313,7 +313,7 @@
     },
     "EvidenceItem": {
       "additionalProperties": false,
-      "description": "Atomic evidence item used by Phase 02 reports.",
+      "description": "Record one atomic source of onboarding evidence.\n\nAttributes\n----------\nevidence_id\n    Canonical identifier referenced by report claims and candidates.\nkind\n    Evidence source category.\nclaim_status\n    Whether the item is reported, observed, inferred, unresolved, or unsupported.\ndescription\n    Concise statement of what the source establishes.\nsource_file\n    Optional safe repository-relative upstream path.\nsource_line_or_symbol\n    Optional stable line range or program symbol.\nurl\n    Optional authoritative external source.\nrevision\n    Optional immutable source revision.\nrationale\n    Required justification where the evidence status represents inference.\n\nRaises\n------\npydantic.ValidationError\n    If paths, versions, provenance combinations, or inference rationale are invalid.",
       "properties": {
         "claim_status": {
           "$ref": "#/$defs/ClaimStatus"
@@ -455,7 +455,7 @@
       "type": "string"
     },
     "FailureClassification": {
-      "description": "Environment-resolution failure classifications required by Phase 02.",
+      "description": "Stable classifications for observed environment-resolution failures.\n\nThese values preserve the cause of a failed or blocked trial without relying on raw tool output.\nDiagnostics may accompany a classification, but should remain sanitized and evidence-backed.",
       "enum": [
         "python_constraint",
         "dependency_conflict",
@@ -563,7 +563,7 @@
       "type": "string"
     },
     "SourceStrategy": {
-      "description": "Source strategy decisions evaluated by the onboarding workflow.",
+      "description": "Supported implementation-source decisions.\n\nValues distinguish an official package, a pinned official repository, a minimal vendored\nadaptation, a proven external implementation, and an unsupported or non-equivalent source.\nSelection requires explicit evidence; enum ordering does not imply preference.",
       "enum": [
         "official_package",
         "pinned_official_git_repository",
@@ -579,7 +579,7 @@
   "$id": "https://torch-dae.local/schemas/environment-resolution-report.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Structured output from resolve-environment mode.",
+  "description": "Represent the complete output of environment-resolution mode.\n\nAttributes\n----------\nordered_candidates\n    Compatibility candidates in the evidence-supported trial order.\nattempted_candidates\n    Candidate identifiers actually tried in isolated runtime state.\nselected_candidate_id\n    Candidate selected after observed validation, if any.\nenvironment_artifact_paths\n    Repository-relative committed inputs created for a resolved environment.\nenvironment_fingerprint\n    SHA-256 identity of a successfully materialized environment.\nenvironment_verification_succeeded\n    Whether the committed verification procedure passed.\n\nRaises\n------\npydantic.ValidationError\n    If candidate or evidence references are unresolved, outcomes contradict their diagnostics,\n    or lifecycle advancement lacks successful materialization and verification.",
   "properties": {
     "analysis_report_id": {
       "anyOf": [
@@ -611,6 +611,16 @@
       "title": "Created At",
       "type": "string"
     },
+    "environment_artifact_paths": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+        "type": "string"
+      },
+      "title": "Environment Artifact Paths",
+      "type": "array"
+    },
     "environment_fingerprint": {
       "anyOf": [
         {
@@ -624,6 +634,16 @@
       ],
       "default": null,
       "title": "Environment Fingerprint"
+    },
+    "environment_materialization_succeeded": {
+      "default": false,
+      "title": "Environment Materialization Succeeded",
+      "type": "boolean"
+    },
+    "environment_verification_succeeded": {
+      "default": false,
+      "title": "Environment Verification Succeeded",
+      "type": "boolean"
     },
     "evidence_items": {
       "default": [],
@@ -660,26 +680,6 @@
       },
       "title": "Ordered Candidates",
       "type": "array"
-    },
-    "phase01_artifact_paths": {
-      "default": [],
-      "items": {
-        "minLength": 1,
-        "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
-        "type": "string"
-      },
-      "title": "Phase01 Artifact Paths",
-      "type": "array"
-    },
-    "phase01_materialization_succeeded": {
-      "default": false,
-      "title": "Phase01 Materialization Succeeded",
-      "type": "boolean"
-    },
-    "phase01_verification_succeeded": {
-      "default": false,
-      "title": "Phase01 Verification Succeeded",
-      "type": "boolean"
     },
     "report_id": {
       "minLength": 1,

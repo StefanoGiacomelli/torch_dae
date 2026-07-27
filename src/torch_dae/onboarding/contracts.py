@@ -1,4 +1,4 @@
-"""Strict Phase 02 onboarding artifact contracts."""
+"""Strict onboarding artifact contracts."""
 
 from __future__ import annotations
 
@@ -88,7 +88,12 @@ class OpenQuestionClassification(StrEnum):
 
 
 class SourceStrategy(StrEnum):
-    """Source strategy decisions evaluated by the onboarding workflow."""
+    """Supported implementation-source decisions.
+
+    Values distinguish an official package, a pinned official repository, a minimal vendored
+    adaptation, a proven external implementation, and an unsupported or non-equivalent source.
+    Selection requires explicit evidence; enum ordering does not imply preference.
+    """
 
     OFFICIAL_PACKAGE = "official_package"
     PINNED_OFFICIAL_GIT_REPOSITORY = "pinned_official_git_repository"
@@ -109,7 +114,11 @@ class RecommendedNextMode(StrEnum):
 
 
 class FailureClassification(StrEnum):
-    """Environment-resolution failure classifications required by Phase 02."""
+    """Stable classifications for observed environment-resolution failures.
+
+    These values preserve the cause of a failed or blocked trial without relying on raw tool output.
+    Diagnostics may accompany a classification, but should remain sanitized and evidence-backed.
+    """
 
     PYTHON_CONSTRAINT = "python_constraint"
     DEPENDENCY_CONFLICT = "dependency_conflict"
@@ -155,7 +164,34 @@ ONBOARDING_EVIDENCE_PATH_PATTERN = r"[A-Za-z0-9.][A-Za-z0-9._/-]*"
 
 
 class EvidenceItem(StrictBaseModel):
-    """Atomic evidence item used by Phase 02 reports."""
+    """Record one atomic source of onboarding evidence.
+
+    Attributes
+    ----------
+    evidence_id
+        Canonical identifier referenced by report claims and candidates.
+    kind
+        Evidence source category.
+    claim_status
+        Whether the item is reported, observed, inferred, unresolved, or unsupported.
+    description
+        Concise statement of what the source establishes.
+    source_file
+        Optional safe repository-relative upstream path.
+    source_line_or_symbol
+        Optional stable line range or program symbol.
+    url
+        Optional authoritative external source.
+    revision
+        Optional immutable source revision.
+    rationale
+        Required justification where the evidence status represents inference.
+
+    Raises
+    ------
+    pydantic.ValidationError
+        If paths, versions, provenance combinations, or inference rationale are invalid.
+    """
 
     evidence_id: CanonicalId
     kind: EvidenceItemKind
@@ -425,7 +461,23 @@ class ConfidenceSummary(StrictBaseModel):
 
 
 class AnalysisReport(StrictBaseModel):
-    """Machine-readable Phase 02 technical analysis report."""
+    """Represent the evidence-grounded output of static analysis mode.
+
+    The report records repository and scientific identity, architecture and runtime claims,
+    variants, checkpoint and embedding candidates, dependencies, source strategies, open questions,
+    decisions, and confidence counts. All claim references must resolve to a unique evidence item.
+
+    Notes
+    -----
+    An analysis report is not proof of runtime compatibility. Creating or validating it does not
+    execute upstream code, install dependencies, or download checkpoints.
+
+    Raises
+    ------
+    pydantic.ValidationError
+        If identities are duplicated, evidence references are unresolved, confidence counts are
+        inconsistent, or a claim overstates its evidence.
+    """
 
     schema_version: Literal["1.0.0"]
     report_id: CanonicalId
@@ -553,12 +605,39 @@ class AnalysisReport(StrictBaseModel):
             )
 
         if self.recommended_next_mode == RecommendedNextMode.PROFILE:
-            raise ValueError("profile mode is reserved and cannot be a Phase 02 next step")
+            raise ValueError(
+                "profile mode is reserved and cannot be a onboarding workflow next step"
+            )
         return self
 
 
 class EnvironmentCandidate(StrictBaseModel):
-    """Evidence-motivated compatibility candidate; not a verified environment."""
+    """Describe one evidence-motivated environment compatibility candidate.
+
+    Attributes
+    ----------
+    candidate_id
+        Stable identifier within an environment-resolution report.
+    reason_for_selection
+        Evidence-backed explanation for trying this candidate.
+    python_version
+        Optional exact interpreter version proposed for the isolated environment.
+    installation_strategy
+        Selected source installation strategy.
+    expected_compatibility_evidence
+        Evidence identifiers supporting the candidate.
+    trial_status
+        Observed state; defaults to ``not_attempted``.
+    failure_classification
+        Normalized cause when a trial fails or is blocked.
+    uncertainty
+        Known remaining compatibility uncertainty.
+
+    Warnings
+    --------
+    Candidate creation is predictive and has no execution side effects. Only a successful controlled
+    trial and verification may establish compatibility.
+    """
 
     candidate_id: CanonicalId
     reason_for_selection: str
@@ -695,7 +774,29 @@ class EnvironmentCandidateGenerationResult(StrictBaseModel):
 
 
 class EnvironmentResolutionReport(StrictBaseModel):
-    """Structured output from resolve-environment mode."""
+    """Represent the complete output of environment-resolution mode.
+
+    Attributes
+    ----------
+    ordered_candidates
+        Compatibility candidates in the evidence-supported trial order.
+    attempted_candidates
+        Candidate identifiers actually tried in isolated runtime state.
+    selected_candidate_id
+        Candidate selected after observed validation, if any.
+    environment_artifact_paths
+        Repository-relative committed inputs created for a resolved environment.
+    environment_fingerprint
+        SHA-256 identity of a successfully materialized environment.
+    environment_verification_succeeded
+        Whether the committed verification procedure passed.
+
+    Raises
+    ------
+    pydantic.ValidationError
+        If candidate or evidence references are unresolved, outcomes contradict their diagnostics,
+        or lifecycle advancement lacks successful materialization and verification.
+    """
 
     schema_version: Literal["1.0.0"]
     report_id: CanonicalId
@@ -708,16 +809,18 @@ class EnvironmentResolutionReport(StrictBaseModel):
     selected_candidate_id: CanonicalId | None = None
     unresolved_risks: tuple[str, ...] = ()
     source_strategy_decision_gates: tuple[OpenQuestion, ...] = ()
-    phase01_artifact_paths: tuple[Annotated[str, Field(pattern=REPO_RELATIVE_PATTERN)], ...] = ()
-    phase01_materialization_succeeded: bool = False
-    phase01_verification_succeeded: bool = False
+    environment_artifact_paths: tuple[
+        Annotated[str, Field(pattern=REPO_RELATIVE_PATTERN)], ...
+    ] = ()
+    environment_materialization_succeeded: bool = False
+    environment_verification_succeeded: bool = False
     environment_fingerprint: Annotated[str | None, Field(pattern=r"^[0-9a-f]{64}$")] = None
     verification_report_or_diagnostic_reference: Annotated[
         str | None, Field(pattern=REPO_RELATIVE_PATTERN)
     ] = None
     next_lifecycle_status: Literal[ModelCardLifecycle.ENVIRONMENT_RESOLVED] | None = None
 
-    @field_validator("phase01_artifact_paths")
+    @field_validator("environment_artifact_paths")
     @classmethod
     def artifact_paths_repository_relative(cls, value: tuple[str, ...]) -> tuple[str, ...]:
         for item in value:
@@ -787,7 +890,7 @@ class EnvironmentResolutionReport(StrictBaseModel):
                     selected,
                     evidence_by_id,
                     set(selected.expected_compatibility_evidence),
-                    set(self.phase01_artifact_paths),
+                    set(self.environment_artifact_paths),
                 ):
                     raise ValueError(
                         "environment_resolved official-package strategy requires exact "
@@ -817,23 +920,27 @@ class EnvironmentResolutionReport(StrictBaseModel):
             }
             actual_names = {
                 item.rsplit("/", 1)[-1]
-                for item in self.phase01_artifact_paths
+                for item in self.environment_artifact_paths
                 if item.startswith("environments/")
             }
             actual_dirs = {
                 item.rsplit("/", 1)[0]
-                for item in self.phase01_artifact_paths
+                for item in self.environment_artifact_paths
                 if item.startswith("environments/")
             }
-            if actual_names != required_names or len(self.phase01_artifact_paths) != 5:
-                raise ValueError("environment_resolved requires all five Phase 01 artifact paths")
+            if actual_names != required_names or len(self.environment_artifact_paths) != 5:
+                raise ValueError(
+                    "environment_resolved requires all five environment artifact paths"
+                )
             if len(actual_dirs) != 1:
-                raise ValueError("environment_resolved requires one Phase 01 artifact directory")
+                raise ValueError("environment_resolved requires one environment artifact directory")
             artifact_card_id = next(iter(actual_dirs)).split("/", 1)[1]
-            if not self.phase01_materialization_succeeded:
-                raise ValueError("environment_resolved requires Phase 01 materialization success")
-            if not self.phase01_verification_succeeded:
-                raise ValueError("environment_resolved requires Phase 01 verification success")
+            if not self.environment_materialization_succeeded:
+                raise ValueError(
+                    "environment_resolved requires environment materialization success"
+                )
+            if not self.environment_verification_succeeded:
+                raise ValueError("environment_resolved requires environment verification success")
             if self.environment_fingerprint is None:
                 raise ValueError("environment_resolved requires environment_fingerprint")
             if self.verification_report_or_diagnostic_reference is None:

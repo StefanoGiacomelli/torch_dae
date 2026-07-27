@@ -114,7 +114,7 @@ class ErrorEnvironmentManager(FakeEnvironmentManager):
         raise self.error
 
 
-def test_phase01_environment_cli_success_paths(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_environment_cli_success_paths(monkeypatch: pytest.MonkeyPatch) -> None:
     fake = FakeEnvironmentManager()
     monkeypatch.setattr(env_cli, "_manager", lambda offline=False, no_python_downloads=False: fake)
     runner = CliRunner()
@@ -129,7 +129,7 @@ def test_phase01_environment_cli_success_paths(monkeypatch: pytest.MonkeyPatch) 
     assert run.output == "ran\n"
 
 
-def test_phase01_checkpoint_cli_success_paths(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_checkpoint_cli_success_paths(monkeypatch: pytest.MonkeyPatch) -> None:
     fake = FakeCheckpointManager()
     monkeypatch.setattr(checkpoint_cli, "_manager", lambda offline=False: fake)
     runner = CliRunner()
@@ -149,7 +149,7 @@ def test_phase01_checkpoint_cli_success_paths(monkeypatch: pytest.MonkeyPatch) -
         (TorchDaeError("other"), 2),
     ],
 )
-def test_phase01_environment_cli_error_mapping(error: TorchDaeError, code: int) -> None:
+def test_environment_cli_error_mapping(error: TorchDaeError, code: int) -> None:
     with pytest.raises(typer.Exit) as exc_info:
         env_cli._exit_for_error(error)
     assert exc_info.value.exit_code == code
@@ -163,7 +163,7 @@ def test_phase01_environment_cli_error_mapping(error: TorchDaeError, code: int) 
         (TorchDaeError("other"), 2),
     ],
 )
-def test_phase01_checkpoint_cli_error_mapping(error: TorchDaeError, code: int) -> None:
+def test_checkpoint_cli_error_mapping(error: TorchDaeError, code: int) -> None:
     with pytest.raises(typer.Exit) as exc_info:
         checkpoint_cli._exit_for_error(error)
     assert exc_info.value.exit_code == code
@@ -177,7 +177,7 @@ def test_phase01_checkpoint_cli_error_mapping(error: TorchDaeError, code: int) -
         ["checkpoint", "remove", "missing-card"],
     ],
 )
-def test_phase01_checkpoint_cli_missing_card_uses_clean_exit(command: list[str]) -> None:
+def test_checkpoint_cli_missing_card_uses_clean_exit(command: list[str]) -> None:
     result = CliRunner().invoke(app, command)
     assert result.exit_code == 3
     assert "model card not found" in result.output
@@ -225,7 +225,7 @@ def test_phase01_checkpoint_cli_missing_card_uses_clean_exit(command: list[str])
         ),
     ],
 )
-def test_phase01_checkpoint_cli_expected_acquisition_failures_are_concise(
+def test_checkpoint_cli_expected_acquisition_failures_are_concise(
     monkeypatch: pytest.MonkeyPatch,
     label: str,
     error: TorchDaeError,
@@ -250,7 +250,7 @@ def test_phase01_checkpoint_cli_expected_acquisition_failures_are_concise(
         ["env", "remove", "../bad"],
     ],
 )
-def test_phase01_environment_cli_invalid_id_uses_clean_exit(command: list[str]) -> None:
+def test_environment_cli_invalid_id_uses_clean_exit(command: list[str]) -> None:
     result = CliRunner().invoke(app, command)
     assert result.exit_code == 4
     assert "invalid environment ID" in result.output
@@ -264,7 +264,7 @@ def test_phase01_environment_cli_invalid_id_uses_clean_exit(command: list[str]) 
         (GitUnavailableError("git executable is unavailable"), "git executable is unavailable"),
     ],
 )
-def test_phase01_environment_cli_missing_tool_uses_clean_exit(
+def test_environment_cli_missing_tool_uses_clean_exit(
     monkeypatch: pytest.MonkeyPatch,
     error: TorchDaeError,
     expected: str,

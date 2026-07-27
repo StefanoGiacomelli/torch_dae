@@ -7,13 +7,32 @@ from torch_dae.core.errors import UnsupportedCapabilityError
 
 @dataclass(frozen=True)
 class Capability:
-    """Boolean capability with an optional reason."""
+    """Represent support for one model operation.
+
+    Attributes
+    ----------
+    supported
+        Whether callers may request the operation.
+    reason
+        Optional human-readable explanation, especially when unsupported.
+    """
 
     supported: bool
     reason: str | None = None
 
     def require(self, name: str) -> None:
-        """Raise when the capability is not supported."""
+        """Require this capability before performing ``name``.
+
+        Parameters
+        ----------
+        name
+            User-facing operation name included in any error.
+
+        Raises
+        ------
+        UnsupportedCapabilityError
+            If :attr:`supported` is false.
+        """
 
         if not self.supported:
             detail = f": {self.reason}" if self.reason else ""
@@ -22,7 +41,19 @@ class Capability:
 
 @dataclass(frozen=True)
 class ModelCapabilities:
-    """Model-independent capability set."""
+    """Collect the four generic execution capability declarations.
+
+    Attributes
+    ----------
+    random_initialization
+        Support for constructing random weights.
+    checkpoint_loading
+        Support for loading pretrained state.
+    probabilities
+        Support for probability output.
+    embeddings
+        Support for selectable embeddings.
+    """
 
     random_initialization: Capability
     checkpoint_loading: Capability

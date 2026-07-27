@@ -390,7 +390,7 @@ def test_real_git_grounded_scenario(repo_root: Path, tmp_path: Path) -> None:
     package = root / "real_git_audio"
     package.mkdir(parents=True)
     (root / "README.md").write_text(
-        "Synthetic real-Git fixture for Phase 02 tests. It is not a real model.\n"
+        "Synthetic real-Git fixture for onboarding workflow tests. It is not a real model.\n"
     )
     (root / "pyproject.toml").write_text(
         "[project]\n"
@@ -422,9 +422,9 @@ def test_real_git_grounded_scenario(repo_root: Path, tmp_path: Path) -> None:
         [
             "git",
             "-c",
-            "user.name=Phase 02",
+            "user.name=onboarding workflow",
             "-c",
-            "user.email=phase02@example.invalid",
+            "user.email=onboarding@example.invalid",
             "commit",
             "-m",
             "create synthetic real git fixture",

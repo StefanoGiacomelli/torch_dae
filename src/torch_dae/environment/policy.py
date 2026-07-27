@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class ExecutionPolicy:
-    """Network and subprocess policy for Phase 01 operations."""
+    """Network and subprocess policy for environment and checkpoint operations."""
 
     offline: bool = False
     allow_python_downloads: bool = True

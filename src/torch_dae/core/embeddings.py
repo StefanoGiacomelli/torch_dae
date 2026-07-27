@@ -10,7 +10,36 @@ from torch_dae.contracts import CanonicalId, StrictBaseModel
 
 
 class EmbeddingSpec(StrictBaseModel):
-    """Model-independent embedding declaration."""
+    """Declare one selectable model-independent embedding.
+
+    Attributes
+    ----------
+    schema_version
+        Contract version; currently ``1.0.0``.
+    embedding_id, name, description
+        Stable identity and human-readable semantics.
+    officially_defined
+        Whether upstream material explicitly defines this representation.
+    default
+        Whether this is the card's selected default embedding.
+    network_location, layout
+        Extraction location and ordered tensor-axis notation.
+    dimension
+        Optional positive feature dimension.
+    granularity, temporal_hop_seconds
+        Sequence/frame scope and optional frame spacing in seconds.
+    pooling, projection, normalization, task_head_relation, dtype
+        Transform and representation properties.
+    status
+        One of ``declared``, ``verified``, or ``unsupported``.
+    selection_rationale, evidence_ids
+        Justification and references to supporting evidence.
+
+    Raises
+    ------
+    pydantic.ValidationError
+        If identifiers, positive dimensions, positive hop duration, or allowed values are invalid.
+    """
 
     schema_version: Literal["1.0.0"]
     embedding_id: CanonicalId
