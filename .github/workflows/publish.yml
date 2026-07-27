@@ -72,7 +72,7 @@ jobs:
           "$RUNNER_TEMP/torch-dae-wheel-check/bin/python" -m pip install dist/*.whl
           "$RUNNER_TEMP/torch-dae-wheel-check/bin/python" -c \
             "import importlib.metadata, os; import torch_dae; import torch_dae.onboarding; assert importlib.metadata.version('torch-deepaudioembedding') == os.environ['PROJECT_VERSION']"
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: python-package-distributions
           path: dist/

@@ -222,7 +222,7 @@ def test_ci_and_codecov_contract(repo_root: Path) -> None:
         "actions/checkout@v7",
         "actions/setup-python@v7",
         "astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0",
-        "actions/upload-artifact@v5",
+        "actions/upload-artifact@v7",
         "codecov/codecov-action@v7",
     ):
         assert action in workflow
