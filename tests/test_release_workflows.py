@@ -23,7 +23,7 @@ def test_ci_python_and_artifact_contract(repo_root: Path) -> None:
     for job, next_job in job_boundaries.items():
         block = text.split(f"  {job}:", 1)[1].split(next_job, 1)[0]
         assert "actions/setup-python@v7" in block
-        assert "astral-sh/setup-uv@v9" in block
+        assert "astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0" in block
         assert block.count('python-version: "3.12"') == 2
     documentation = text.split("  documentation:", 1)[1].split("\n  distribution:", 1)[0]
     assert "sphinx-build -W --keep-going -b html docs docs/_build/html" in documentation
