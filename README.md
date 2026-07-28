@@ -42,7 +42,6 @@ One model card always describes exactly one model family, variant, and checkpoin
 - The `model inspect` and `model verify` CLI placeholders do not execute model workflows yet.
 - Profiling is reserved until a model is runtime-verified and a profiling workflow is explicitly
   implemented and invoked.
-- The first package-index release is not published yet; source installation remains available.
 
 ## Architecture
 

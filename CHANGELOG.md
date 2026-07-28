@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+No changes yet.
+
+## 0.1.0 - 2026-07-28
+
 ### Repository foundation
 
 - Added the lightweight control-plane package, strict typed contracts, generated schemas, registry,
