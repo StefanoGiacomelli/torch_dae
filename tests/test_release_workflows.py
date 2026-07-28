@@ -55,7 +55,7 @@ def test_production_build_once_and_artifact_reuse(repo_root: Path) -> None:
     text = (repo_root / ".github/workflows/publish.yml").read_text()
     assert text.count("uv run python -m build") == 1
     assert text.count("actions/upload-artifact@v7") == 1
-    assert text.count("actions/download-artifact@v6") == 2
+    assert text.count("actions/download-artifact@v8") == 2
     assert text.count("name: python-package-distributions") == 3
     assert 'scripts/check_release_version.py "$RELEASE_TAG"' in text
     assert "environment:\n      name: pypi" in text
