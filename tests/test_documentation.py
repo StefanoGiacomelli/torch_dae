@@ -98,8 +98,8 @@ def test_distribution_install_and_documentation_names(repo_root: Path) -> None:
         pyproject["project"]["urls"]["Documentation"]
         == "https://torch-dae.readthedocs.io/en/latest/"
     )
-    assert "https://readthedocs.org/projects/torch-dae/badge/?version=latest" in readme
-    assert "https://torch-dae.readthedocs.io/en/latest/" in readme
+    assert "https://readthedocs.org/projects/torch-dae/badge/?version=stable" in readme
+    assert "https://torch-dae.readthedocs.io/en/stable/" in readme
 
 
 def test_manifest_is_unique_importable_and_complete(repo_root: Path) -> None:

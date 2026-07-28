@@ -4,7 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
-No changes yet.
+### Documentation and release metadata
+
+- Added Zenodo concept and version DOI metadata, the `0.1.0` release date, and a concept DOI badge.
+- Linked the README documentation references to the stable Read the Docs release.
+- Added release and version badges, the embedding-pipeline graphic, and an illustrative
+  model-wrapper usage example.
+- Updated the release workflow to `actions/download-artifact@v8`.
 
 ## 0.1.0 - 2026-07-28
 

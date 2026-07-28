@@ -2,19 +2,30 @@
 
 [![CI](https://github.com/StefanoGiacomelli/torch_dae/actions/workflows/ci.yml/badge.svg)](https://github.com/StefanoGiacomelli/torch_dae/actions/workflows/ci.yml)
 [![Codecov](https://codecov.io/gh/StefanoGiacomelli/torch_dae/graph/badge.svg)](https://codecov.io/gh/StefanoGiacomelli/torch_dae)
-[![Documentation Status](https://readthedocs.org/projects/torch-dae/badge/?version=latest)](https://torch-dae.readthedocs.io/en/latest/?badge=latest)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21641390.svg)](https://doi.org/10.5281/zenodo.21641390)
+[![Documentation Status](https://readthedocs.org/projects/torch-dae/badge/?version=stable)](https://torch-dae.readthedocs.io/en/stable/?badge=stable)
 [![Python 3.11 | 3.12](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org/)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
-[![Status: Pre-release](https://img.shields.io/badge/status-pre--release-orange)](#project-status)
+[![Status: Release](https://img.shields.io/badge/status-release-brightgreen)](https://github.com/StefanoGiacomelli/torch_dae/releases/tag/v0.1.0)
+[![Version: v0.1.0](https://img.shields.io/badge/version-v0.1.0-blue)](https://github.com/StefanoGiacomelli/torch_dae/releases/tag/v0.1.0)
 
 ## Project status
 
-torch-dae is pre-release research software. Its typed control plane, isolated environment and
-checkpoint subsystems, and evidence-grounded audio-model onboarding skill are implemented and
-validated. No model-specific integrations are distributed in the current release. Model support is
-added through the canonical onboarding workflow and isolated model-specific environments.
+`torch-dae 0.1.0` is the first public release of the generic framework. Its typed control
+plane, isolated environment and checkpoint subsystems, and evidence-grounded audio-model onboarding
+skill are implemented and validated. No model-specific integrations are distributed in the current
+release. Model support is added through the canonical onboarding workflow and isolated
+model-specific environments.
 
 ## Overview
+
+<p align="center">
+  <img
+    src="graphics/embedding_pipeline.png"
+    alt="Generic audio embedding pipeline from waveform input through differentiable DSP and neural processing to embedding features"
+    width="100%"
+  />
+</p>
 
 `torch-dae` turns an official audio-model implementation and a specific checkpoint into a
 reproducible, evidence-backed PyTorch integration. It separates lightweight repository control from
@@ -68,8 +79,8 @@ checkpoints, diagnostics, and coverage data remain under ignored `.torch-dae/`.
 
 ## Installation
 
-The complete user and API documentation is available on
-[Read the Docs](https://torch-dae.readthedocs.io/en/latest/).
+The complete user and API documentation is available in the
+[stable Read the Docs release](https://torch-dae.readthedocs.io/en/stable/).
 
 Install a published package-index release:
 
@@ -100,6 +111,49 @@ uv run torch-dae checkpoint --help
 
 Model-specific environment and checkpoint commands require a committed model card and its
 environment specification. No such production artifact is included yet.
+
+## Illustrative model-wrapper usage
+
+The public registry is empty in `0.1.0`. The placeholder `model_name` below denotes the identifier
+of a future checkpoint-specific model card. This non-executable interface example illustrates how
+an integrated wrapper is expected to be resolved and used once its model card, checkpoint, wrapper,
+and isolated runtime have been committed and activated.
+
+```python
+from pathlib import Path
+
+from torch_dae import ModelCardRegistry
+
+repository_root = Path("/path/to/torch_dae_checkout")
+registry = ModelCardRegistry(repository_root)
+
+model_class = registry.get_model_class("model_name")
+model = model_class.from_pretrained()
+
+waveform = ...  # Tensor-like audio shaped [batch, channels, samples].
+sample_rate = 16_000
+
+output = model.forward(waveform, sample_rate)
+
+embedding = model.compute_embedding(
+    waveform,
+    sample_rate,
+    embedding_id=None,  # Use the model-card default embedding.
+)
+
+print(model.available_embeddings())
+print(output.primary)
+print(embedding.tensor)
+print(embedding.layout)
+
+# Invoke only when the model card declares probability support.
+probabilities = model.predict_probability(waveform, sample_rate)
+print(probabilities)
+```
+
+The exact tensor runtime, checkpoint source, sample-rate behavior, embedding identifiers, output
+layouts, and probability support are integration-specific and are defined by the corresponding
+model card and wrapper.
 
 ## Available CLI commands
 
@@ -182,6 +236,7 @@ schemas/                               Generated strict JSON Schemas
 scripts/                               Schema, coverage, and repository validation
 skills/audio-model-onboarding/         Canonical agent workflow
 docs/                                  Public subsystem and workflow guides
+graphics/                              README figures and architectural diagrams
 tests/                                 Contract, subsystem, safety, and synthetic evaluation tests
 environments/                          Committed per-card environment inputs
 model_cards/                           Checkpoint-specific production cards
@@ -247,12 +302,17 @@ Cite the software entry when citing this repository or package. Also cite the IE
 discussing the framework design, standardization rationale, or deployment methodology. The
 repository's canonical software metadata is in [CITATION.cff](CITATION.cff).
 
+The concept DOI for the complete software series is
+[`10.5281/zenodo.21641390`](https://doi.org/10.5281/zenodo.21641390). The immutable DOI for version
+`0.1.0` is [`10.5281/zenodo.21641391`](https://doi.org/10.5281/zenodo.21641391).
+
 ```bibtex
 @software{giacomelli2026torch_dae,
   author  = {Giacomelli, Stefano},
   title   = {{torch-dae}: an AI skill-based framework for Audio Embedding Models},
   year    = {2026},
   version = {0.1.0},
+  doi     = {10.5281/zenodo.21641391},
   url     = {https://github.com/StefanoGiacomelli/torch_dae},
   license = {Apache-2.0}
 }

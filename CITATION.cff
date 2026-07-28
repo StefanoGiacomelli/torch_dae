@@ -3,6 +3,15 @@ message: "If you use torch-dae in academic work, please cite this software."
 title: "torch-dae: an AI skill-based framework for Audio Embedding Models"
 type: software
 version: 0.1.0
+date-released: "2026-07-28"
+doi: "10.5281/zenodo.21641391"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.21641390"
+    description: "Concept DOI representing all releases of torch-dae."
+  - type: doi
+    value: "10.5281/zenodo.21641391"
+    description: "Version-specific DOI for torch-dae 0.1.0."
 license: Apache-2.0
 repository-code: "https://github.com/StefanoGiacomelli/torch_dae"
 url: "https://github.com/StefanoGiacomelli/torch_dae"

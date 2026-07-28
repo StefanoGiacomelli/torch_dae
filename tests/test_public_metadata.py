@@ -94,6 +94,15 @@ def test_license_citation_and_contribution_files(repo_root: Path) -> None:
     assert citation["title"] == "torch-dae: an AI skill-based framework for Audio Embedding Models"
     assert citation["type"] == "software"
     assert citation["version"] == "0.1.0"
+    assert citation["date-released"] == "2026-07-28"
+    assert citation["doi"] == "10.5281/zenodo.21641391"
+
+    identifiers = {(item["type"], item["value"]) for item in citation["identifiers"]}
+    assert identifiers == {
+        ("doi", "10.5281/zenodo.21641390"),
+        ("doi", "10.5281/zenodo.21641391"),
+    }
+
     assert citation["license"] == "Apache-2.0"
     assert citation["authors"][0]["orcid"] == "https://orcid.org/0009-0009-0438-1748"
     assert citation["authors"][0]["affiliation"] == (
@@ -105,7 +114,6 @@ def test_license_citation_and_contribution_files(repo_root: Path) -> None:
     assert "preferred-citation" not in citation
     assert citation["references"][0]["type"] == "conference-paper"
     assert citation["references"][0]["doi"] == "10.1109/ISCC65549.2025.11326439"
-    assert "doi" not in {key.lower() for key in citation if key != "references"}
 
     contribution = (repo_root / "CONTRIBUTING.md").read_text()
     for value in (
@@ -133,7 +141,10 @@ def test_readme_badges_sections_and_public_status(repo_root: Path) -> None:
         "codecov.io",
         "3.11%20%7C%203.12",
         "Apache--2.0",
-        "pre--release",
+        "readthedocs.org/projects/torch-dae/badge/?version=stable",
+        "zenodo.org/badge/DOI/10.5281/zenodo.21641390.svg",
+        "status-release",
+        "version-v0.1.0",
     ):
         assert badge in text
     sections = [
@@ -144,6 +155,7 @@ def test_readme_badges_sections_and_public_status(repo_root: Path) -> None:
         "Architecture",
         "Installation",
         "Quick start",
+        "Illustrative model-wrapper usage",
         "Available CLI commands",
         "Audio-model-onboarding skill",
         "Copy-paste agent request",
@@ -159,13 +171,33 @@ def test_readme_badges_sections_and_public_status(repo_root: Path) -> None:
     positions = [text.index(f"## {section}") for section in sections]
     assert positions == sorted(positions)
     assert text.startswith("# torch-dae: an AI skill-based framework for Audio Embedding Models")
+    assert "https://torch-dae.readthedocs.io/en/stable/" in text
+    assert 'src="graphics/embedding_pipeline.png"' in text
+    assert "raw.githubusercontent.com" not in text
+    assert "from torch_dae import ModelCardRegistry" in text
+    assert "from torch_dae.core import ModelCardRegistry" not in text
+    assert 'registry.get_model_class("model_name")' in text
+    assert "model.compute_embedding(" in text
+    assert "model.predict_probability(" in text
+    assert "torch-dae is pre-release research software" not in text
+
+    graphic = repo_root / "graphics/embedding_pipeline.png"
+    assert graphic.is_file()
+    assert graphic.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+
     assert "pip install torch-deepaudioembedding" in text
-    assert "No model-specific integrations are distributed in the current release." in text
+
+    normalized_text = " ".join(text.split())
+    assert (
+        "No model-specific integrations are distributed in the current release." in normalized_text
+    )
     assert "uv run torch-dae card list" in text
     assert "uv run torch-dae env create" in text
     assert "uv run torch-dae checkpoint ensure" in text
     for value in (
         "0009-0009-0438-1748",
+        "10.5281/zenodo.21641390",
+        "10.5281/zenodo.21641391",
         "phdict.disim.univaq.it/wp-content/uploads/2024/06/logo-univaq-disim-2-2-768x283.png",
         "stefano.giacomelli@graduate.univaq.it",
         "DM 118/2023",
