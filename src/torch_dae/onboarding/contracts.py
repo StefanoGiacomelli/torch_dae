@@ -160,6 +160,18 @@ class DependencyKind(StrEnum):
     UNKNOWN = "unknown"
 
 
+class PublishedChecksumAlgorithm(StrEnum):
+    """Algorithms accepted for checkpoint-host checksum metadata."""
+
+    MD5 = "md5"
+    SHA1 = "sha1"
+    SHA256 = "sha256"
+    SHA512 = "sha512"
+    BLAKE2B = "blake2b"
+    OTHER = "other"
+    UNKNOWN = "unknown"
+
+
 ONBOARDING_EVIDENCE_PATH_PATTERN = r"[A-Za-z0-9.][A-Za-z0-9._/-]*"
 
 
@@ -240,11 +252,17 @@ class EvidenceItem(StrictBaseModel):
 
 
 class EvidenceBackedClaim(StrictBaseModel):
-    """A claim that cannot silently promote inference to verified fact."""
+    """A claim that cannot silently promote inference to verified fact.
+
+    Empty scope tuples mean that the claim applies across the repository-level report. Nonempty
+    scopes are resolved by :class:`AnalysisReport` against declared variants and checkpoints.
+    """
 
     statement: str
     status: ClaimStatus
     evidence_ids: tuple[CanonicalId, ...] = ()
+    variant_ids: tuple[CanonicalId, ...] = ()
+    checkpoint_ids: tuple[CanonicalId, ...] = ()
     rationale: str | None = None
 
     @model_validator(mode="after")
@@ -262,6 +280,7 @@ class EvidenceBackedClaim(StrictBaseModel):
             raise ValueError(f"{self.status.value} claims require evidence references")
         if self.status == ClaimStatus.REASONED_INFERENCE and not self.rationale:
             raise ValueError("reasoned inference claims require rationale")
+        _validate_unique_scope_ids(self.variant_ids, self.checkpoint_ids)
         return self
 
 
@@ -301,6 +320,47 @@ class VariantCandidate(StrictBaseModel):
         return self
 
 
+class PublishedChecksum(StrictBaseModel):
+    """Host-published checkpoint checksum that has not been locally verified.
+
+    The record intentionally cannot represent local payload verification. A later SHA-256
+    acquisition check remains a separate lifecycle operation even when another published digest is
+    available.
+    """
+
+    algorithm: PublishedChecksumAlgorithm
+    digest: str
+    evidence_id: CanonicalId
+    verification_state: Literal["published_not_locally_verified"] = "published_not_locally_verified"
+    provenance_note: str | None = None
+
+    @model_validator(mode="after")
+    def validate_digest(self) -> PublishedChecksum:
+        lengths = {
+            PublishedChecksumAlgorithm.MD5: 32,
+            PublishedChecksumAlgorithm.SHA1: 40,
+            PublishedChecksumAlgorithm.SHA256: 64,
+            PublishedChecksumAlgorithm.SHA512: 128,
+            PublishedChecksumAlgorithm.BLAKE2B: 128,
+        }
+        expected = lengths.get(self.algorithm)
+        if expected is not None and re.fullmatch(rf"[0-9a-f]{{{expected}}}", self.digest) is None:
+            raise ValueError(
+                f"{self.algorithm.value} digest must contain exactly {expected} lowercase hex "
+                "characters"
+            )
+        if (
+            self.algorithm
+            in {
+                PublishedChecksumAlgorithm.OTHER,
+                PublishedChecksumAlgorithm.UNKNOWN,
+            }
+            and not self.provenance_note
+        ):
+            raise ValueError("other or unknown checksum algorithms require provenance_note")
+        return self
+
+
 class CheckpointCandidate(StrictBaseModel):
     """Candidate checkpoint metadata."""
 
@@ -311,6 +371,7 @@ class CheckpointCandidate(StrictBaseModel):
     model_variant: str | None = None
     loader: str | None = None
     hash_evidence: str | None = None
+    published_checksums: tuple[PublishedChecksum, ...] = ()
     access_or_license_notes: str | None = None
     helper_symbol: str | None = None
     expression_status: str | None = None
@@ -324,6 +385,11 @@ class CheckpointCandidate(StrictBaseModel):
         _validate_candidate_evidence(self.status, self.evidence_ids, self.unresolved_reason)
         if self.source_type == "https" and self.helper_symbol and not self.expression_status:
             raise ValueError("checkpoint helper candidates require expression_status")
+        checksum_identities = [
+            (checksum.algorithm, checksum.digest) for checksum in self.published_checksums
+        ]
+        if len(checksum_identities) != len(set(checksum_identities)):
+            raise ValueError("published checksum algorithm/digest pairs must be unique")
         return self
 
 
@@ -344,7 +410,10 @@ class SourceStrategyCandidate(StrictBaseModel):
 
 
 class EmbeddingCandidate(StrictBaseModel):
-    """Candidate embedding tensor whose semantics require evidence."""
+    """Candidate embedding tensor whose semantics require evidence.
+
+    Empty variant and checkpoint scopes mean report-wide applicability.
+    """
 
     embedding_id: CanonicalId
     tensor_origin: str
@@ -363,12 +432,15 @@ class EmbeddingCandidate(StrictBaseModel):
     time_dimension: str | None
     status: ClaimStatus
     evidence_ids: tuple[CanonicalId, ...]
+    variant_ids: tuple[CanonicalId, ...] = ()
+    checkpoint_ids: tuple[CanonicalId, ...] = ()
     requires_user_decision: bool = False
     unresolved_reason: str | None = None
 
     @model_validator(mode="after")
     def candidate_requires_evidence_or_reason(self) -> EmbeddingCandidate:
         _validate_candidate_evidence(self.status, self.evidence_ids, self.unresolved_reason)
+        _validate_unique_scope_ids(self.variant_ids, self.checkpoint_ids)
         return self
 
 
@@ -529,6 +601,23 @@ class AnalysisReport(StrictBaseModel):
         if duplicate_errors:
             raise ValueError("; ".join(duplicate_errors))
 
+        variant_ids = {item.variant_id for item in self.variants}
+        checkpoint_ids = {item.checkpoint_id for item in self.checkpoint_candidates}
+        scope_errors: list[str] = []
+        for label, item in [("claim", claim) for claim in _iter_claims(self)] + [
+            ("embedding", embedding) for embedding in self.embedding_candidates
+        ]:
+            missing_variants = sorted(set(item.variant_ids) - variant_ids)
+            missing_checkpoints = sorted(set(item.checkpoint_ids) - checkpoint_ids)
+            if missing_variants:
+                scope_errors.append(f"{label} variant scope is unresolved: {missing_variants}")
+            if missing_checkpoints:
+                scope_errors.append(
+                    f"{label} checkpoint scope is unresolved: {missing_checkpoints}"
+                )
+        if scope_errors:
+            raise ValueError("; ".join(scope_errors))
+
         compatibility_errors: list[str] = []
         for claim in _iter_claims(self):
             compatibility_errors.extend(_evidence_compatibility_errors(claim, evidence_by_id))
@@ -552,6 +641,16 @@ class AnalysisReport(StrictBaseModel):
                     checkpoint.unresolved_reason,
                 )
             )
+            for checksum in checkpoint.published_checksums:
+                compatibility_errors.extend(
+                    _evidence_status_compatibility_errors(
+                        "published checksum",
+                        ClaimStatus.VERIFIED_UPSTREAM_FACT,
+                        (checksum.evidence_id,),
+                        evidence_by_id,
+                        checksum.provenance_note,
+                    )
+                )
         for source_strategy in self.source_strategy_candidates:
             compatibility_errors.extend(
                 _evidence_status_compatibility_errors(
@@ -1053,6 +1152,10 @@ def _collect_evidence_references(value: Any) -> list[str]:
         references.extend(
             value.expected_compatibility_evidence if isinstance(value, EnvironmentCandidate) else ()
         )
+        if isinstance(value, CheckpointCandidate):
+            references.extend(checksum.evidence_id for checksum in value.published_checksums)
+    elif isinstance(value, PublishedChecksum):
+        references.append(value.evidence_id)
     elif isinstance(value, StrictBaseModel):
         for child in value.__dict__.values():
             references.extend(_collect_evidence_references(child))
@@ -1102,6 +1205,16 @@ def _validate_candidate_evidence(
             raise ValueError(
                 f"{status.value} candidates require unresolved_reason when unevidenced"
             )
+
+
+def _validate_unique_scope_ids(
+    variant_ids: tuple[str, ...],
+    checkpoint_ids: tuple[str, ...],
+) -> None:
+    if len(variant_ids) != len(set(variant_ids)):
+        raise ValueError("variant scope IDs must be unique")
+    if len(checkpoint_ids) != len(set(checkpoint_ids)):
+        raise ValueError("checkpoint scope IDs must be unique")
 
 
 def _duplicate_ids(*groups: tuple[str, list[str]]) -> list[str]:

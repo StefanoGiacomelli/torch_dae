@@ -40,7 +40,12 @@ No isolated model environment has been materialized.
 
 ## Checkpoint Candidates
 
-- `clear-audio`: https [locally_observed_behavior] evidence=ev-static
+- `clear-audio`
+  - filename: clear-audio.pth
+  - source type: https
+  - URL or source reference: https://example.invalid/clear-audio.pth
+  - claim status: locally_observed_behavior
+  - evidence IDs: ev-static
 
 ## Embedding Candidates
 

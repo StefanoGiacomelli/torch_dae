@@ -70,6 +70,7 @@ REQUIRED_SCRIPTS = {
     "validate_analysis_report.py",
     "validate_skill_artifacts.py",
     "render_analysis_report.py",
+    "extract_pdf_text.py",
     "common.py",
 }
 
@@ -314,7 +315,18 @@ def behavioral_smoke_errors(root: Path) -> list[str]:
         scenario_id="hidden-checkpoint-helper",
     )
     wrong_hash_report = copy.deepcopy(hidden)
-    wrong_hash_report["checkpoint_candidates"][0]["hash_evidence"] = "1" * 64
+    if not isinstance(wrong_hash_report, dict):
+        errors.append("hidden checkpoint golden report is malformed")
+        return errors
+    wrong_hash_candidates = wrong_hash_report["checkpoint_candidates"]
+    if (
+        not isinstance(wrong_hash_candidates, list)
+        or not wrong_hash_candidates
+        or not isinstance(wrong_hash_candidates[0], dict)
+    ):
+        errors.append("hidden checkpoint golden candidates are malformed")
+        return errors
+    wrong_hash_candidates[0]["hash_evidence"] = "1" * 64
     checkpoint_failures = evaluate_analysis_report(
         hidden_scenario,
         AnalysisReport.model_validate(wrong_hash_report),

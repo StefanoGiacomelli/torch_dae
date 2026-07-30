@@ -110,6 +110,14 @@
           "default": null,
           "title": "Model Variant"
         },
+        "published_checksums": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/PublishedChecksum"
+          },
+          "title": "Published Checksums",
+          "type": "array"
+        },
         "source_type": {
           "minLength": 1,
           "title": "Source Type",
@@ -289,7 +297,7 @@
     },
     "EmbeddingCandidate": {
       "additionalProperties": false,
-      "description": "Candidate embedding tensor whose semantics require evidence.",
+      "description": "Candidate embedding tensor whose semantics require evidence.\n\nEmpty variant and checkpoint scopes mean report-wide applicability.",
       "properties": {
         "batch_dimension": {
           "anyOf": [
@@ -302,6 +310,16 @@
             }
           ],
           "title": "Batch Dimension"
+        },
+        "checkpoint_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+            "type": "string"
+          },
+          "title": "Checkpoint Ids",
+          "type": "array"
         },
         "embedding_id": {
           "minLength": 1,
@@ -382,6 +400,16 @@
           ],
           "default": null,
           "title": "Unresolved Reason"
+        },
+        "variant_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+            "type": "string"
+          },
+          "title": "Variant Ids",
+          "type": "array"
         }
       },
       "required": [
@@ -399,8 +427,18 @@
     },
     "EvidenceBackedClaim": {
       "additionalProperties": false,
-      "description": "A claim that cannot silently promote inference to verified fact.",
+      "description": "A claim that cannot silently promote inference to verified fact.\n\nEmpty scope tuples mean that the claim applies across the repository-level report. Nonempty\nscopes are resolved by :class:`AnalysisReport` against declared variants and checkpoints.",
       "properties": {
+        "checkpoint_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+            "type": "string"
+          },
+          "title": "Checkpoint Ids",
+          "type": "array"
+        },
         "evidence_ids": {
           "default": [],
           "items": {
@@ -431,6 +469,16 @@
         },
         "status": {
           "$ref": "#/$defs/ClaimStatus"
+        },
+        "variant_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+            "type": "string"
+          },
+          "title": "Variant Ids",
+          "type": "array"
         }
       },
       "required": [
@@ -689,6 +737,68 @@
       ],
       "minLength": 1,
       "title": "OpenQuestionClassification",
+      "type": "string"
+    },
+    "PublishedChecksum": {
+      "additionalProperties": false,
+      "description": "Host-published checkpoint checksum that has not been locally verified.\n\nThe record intentionally cannot represent local payload verification. A later SHA-256\nacquisition check remains a separate lifecycle operation even when another published digest is\navailable.",
+      "properties": {
+        "algorithm": {
+          "$ref": "#/$defs/PublishedChecksumAlgorithm"
+        },
+        "digest": {
+          "minLength": 1,
+          "title": "Digest",
+          "type": "string"
+        },
+        "evidence_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "provenance_note": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provenance Note"
+        },
+        "verification_state": {
+          "const": "published_not_locally_verified",
+          "default": "published_not_locally_verified",
+          "minLength": 1,
+          "title": "Verification State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "algorithm",
+        "digest",
+        "evidence_id"
+      ],
+      "title": "PublishedChecksum",
+      "type": "object"
+    },
+    "PublishedChecksumAlgorithm": {
+      "description": "Algorithms accepted for checkpoint-host checksum metadata.",
+      "enum": [
+        "md5",
+        "sha1",
+        "sha256",
+        "sha512",
+        "blake2b",
+        "other",
+        "unknown"
+      ],
+      "minLength": 1,
+      "title": "PublishedChecksumAlgorithm",
       "type": "string"
     },
     "RecommendedNextMode": {

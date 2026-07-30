@@ -4,6 +4,18 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Analyze-skill hardening
+
+- Made checkpoint discovery binary-safe with deterministic skipped-file reporting and retained valid
+  textual candidates when unrelated binary or malformed files are present.
+- Added class-qualified output candidates with lexical method ownership and source spans.
+- Added backward-compatible variant/checkpoint scopes, structured host-published checksum metadata,
+  strict reference validation, regenerated schemas, and more complete Markdown reports.
+- Added bounded local PDF text-layer extraction through the lightweight root `pypdf` dependency,
+  without OCR, external processes, network retrieval, or model-runtime dependencies.
+- Documented best-effort source revision evidence, metadata-only authoritative checkpoint-host
+  analysis, and locked root-environment execution semantics.
+
 ### Documentation and release metadata
 
 - Added Zenodo concept and version DOI metadata, the `0.1.0` release date, and a concept DOI badge.

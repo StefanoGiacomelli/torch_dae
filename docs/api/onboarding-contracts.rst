@@ -59,6 +59,9 @@ Enum values
      - ``requirement``, ``conda``, ``vcs``, ``direct_url``, ``editable``, ``local_path``,
        ``locked``, ``unknown``
      - Static declaration format, not an installation decision.
+   * - ``PublishedChecksumAlgorithm``
+     - ``md5``, ``sha1``, ``sha256``, ``sha512``, ``blake2b``, ``other``, ``unknown``
+     - Exact host-published algorithm; nonstandard or unknown values require an explanation.
 
 ``FailureClassification`` values are ``python_constraint``, ``dependency_conflict``,
 ``resolution_failure``, ``removed_api``, ``deprecated_api``, ``binary_or_abi_incompatibility``,
@@ -88,8 +91,8 @@ artifact locations.
      - Package name normalized; version valid; inference requires rationale; user decision/kind
        agrees with status.
    * - ``EvidenceBackedClaim``
-     - ``statement``, ``status``, ``evidence_ids=()``, ``rationale=None``
-     - Positive statuses require evidence; inference requires rationale.
+     - ``statement``, ``status``, evidence, optional variant/checkpoint scopes, rationale
+     - Positive statuses require evidence; inference requires rationale; scope IDs resolve uniquely.
    * - ``ReportSection``
      - ``summary``, ``claims=()``
      - Claims retain their own evidence policy.
@@ -101,16 +104,21 @@ artifact locations.
      - ID, name, status, evidence IDs, unresolved reason
      - Status requires compatible evidence or explicit unresolved reason.
    * - ``CheckpointCandidate``
-     - ID/source type; optional filename, URL, variant, loader, hash, notes, helper/expression;
-       evidence IDs, status, unresolved reason
-     - Helper-based HTTPS candidates require expression status.
+     - ID/source type; optional filename, URL, variant, loader, legacy hash, structured published
+       checksums, notes, helper/expression; evidence IDs, status, unresolved reason
+     - Helper-based HTTPS candidates require expression status; published checksums retain their
+       algorithm and cannot claim local verification.
+   * - ``PublishedChecksum``
+     - algorithm, digest, evidence ID, fixed published-not-locally-verified state, provenance note
+     - Known digest formats are strict; nonstandard algorithms require an explanation and evidence.
    * - ``SourceStrategyCandidate``
      - strategy, status, rationale, evidence IDs, decision flag, unresolved reason
      - Evidence and ambiguity must agree with status.
    * - ``EmbeddingCandidate``
-     - ID, origin, exact semantic kind, shape/batch/time semantics, status, evidence, decision flag,
-       unresolved reason
-     - Candidate semantics remain evidence-backed; no tensor is executed.
+     - ID, origin, exact semantic kind, shape/batch/time semantics, status, evidence,
+       variant/checkpoint scopes, decision flag, unresolved reason
+     - Candidate semantics remain evidence-backed; scopes resolve to report candidates; no tensor
+       is executed.
    * - ``OpenQuestion``
      - ID, classification, description, alternatives, evidence, deferred default, failure class
      - User-decision questions require at least two alternatives.
@@ -191,6 +199,8 @@ compatible :class:`EvidenceItem`.
 
 .. autoclass:: torch_dae.onboarding.contracts.DependencyKind
 
+.. autoclass:: torch_dae.onboarding.contracts.PublishedChecksumAlgorithm
+
 .. autoclass:: torch_dae.onboarding.contracts.EvidenceItem
 
 .. autoclass:: torch_dae.onboarding.contracts.EvidenceBackedClaim
@@ -200,6 +210,8 @@ compatible :class:`EvidenceItem`.
 .. autoclass:: torch_dae.onboarding.contracts.RepositoryIdentity
 
 .. autoclass:: torch_dae.onboarding.contracts.VariantCandidate
+
+.. autoclass:: torch_dae.onboarding.contracts.PublishedChecksum
 
 .. autoclass:: torch_dae.onboarding.contracts.CheckpointCandidate
 

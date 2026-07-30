@@ -805,6 +805,7 @@ def main() -> int:
         "validate_analysis_report.py",
         "validate_skill_artifacts.py",
         "render_analysis_report.py",
+        "extract_pdf_text.py",
         "common.py",
     }
     for name in sorted(required_references):

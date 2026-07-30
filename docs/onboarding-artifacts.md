@@ -4,6 +4,13 @@ The onboarding workflow provides strict machine-readable contracts for technical
 environment-candidate generation results, and environment-resolution reports. Schemas are generated
 through `scripts/generate_schemas.py`; do not hand-edit generated schemas.
 
+Analysis claims and embedding candidates may carry optional `variant_ids` and `checkpoint_ids`.
+Empty tuples mean report-wide applicability; nonempty IDs must resolve to candidates declared in the
+same report. Checkpoint candidates may retain the backward-compatible `hash_evidence` string and may
+also carry structured `published_checksums`. Each structured checksum records its exact algorithm,
+validated digest, evidence reference, and fixed `published_not_locally_verified` state. Published
+MD5 metadata never substitutes for later local SHA-256 verification.
+
 Skill templates live under `skills/audio-model-onboarding/templates/`:
 
 - `technical-analysis-report.json`

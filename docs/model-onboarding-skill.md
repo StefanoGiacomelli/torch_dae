@@ -5,6 +5,23 @@ The canonical skill is
 Codex and Claude resolve to that directory through project-local relative symlinks, so the workflow
 and scientific policy remain agent-neutral.
 
+Run model-agnostic skill tooling through the locked root environment:
+
+```bash
+uv sync --all-groups --frozen
+uv run python skills/audio-model-onboarding/scripts/inspect_repository.py <checkout> --json
+```
+
+The ignored root `.venv` is expected control-plane state, not a materialized model environment.
+`pypdf` is installed there only for bounded document analysis; PyTorch and all model-runtime
+dependencies remain isolated under the model-environment subsystem. Report root environment
+creation when it occurs, and keep `.venv`, bytecode, and tool caches out of audit archives.
+
+For a supplied local paper, use
+`uv run python skills/audio-model-onboarding/scripts/extract_pdf_text.py <paper.pdf> --json`.
+This extracts only a machine-readable text layer under file, page, and character limits. It does not
+retrieve documents, provide OCR, or turn extracted prose into verified evidence.
+
 Supported modes are `analyze`, `resolve-environment`, `integrate`, `verify`, `card`, and `profile`.
 `integrate` is a workflow mode, not a lifecycle state. The committed lifecycle states remain
 `draft`, `analyzed`, `environment_resolved`, `checkpoint_verified`, `runtime_verified`, and

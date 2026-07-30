@@ -18,6 +18,15 @@ and CLI to materialize or verify isolated model-specific environments.
 
 Successful resolution may prepare `environments/<card-id>/environment.json`, `pyproject.toml`,
 `uv.lock`, `sources.json`, and `verify_environment.py`.
+
+The repository root `.venv` is expected control-plane runtime state. Create or synchronize it with
+`uv sync --all-groups --frozen`, and run analysis utilities with `uv run`; this is not model
+environment materialization. `pypdf` belongs to the root only as bounded document-analysis tooling.
+Model dependencies remain prohibited from the root and are resolved under `.torch-dae/environments/`
+through the model-environment subsystem. Report root environment creation when observed, but do not
+classify the `.venv` itself as contamination. Bytecode and tool caches remain ignored and excluded
+from audit archives.
+
 Official-package resolution requires exact `source_package_name` and `source_package_version`
 evidence that matches the selected candidate. Accepted identity provenance is verified upstream
 `package_metadata` or locally observed `environments/<card-id>/pyproject.toml`, `uv.lock`, or

@@ -35,6 +35,9 @@ Canonical request and response formats are available at:
 
 Use deterministic utilities under `scripts/` for evidence collection. They may collect, normalize,
 and validate static evidence; they do not replace scientific or architectural reasoning.
+For a local paper or technical PDF, `scripts/extract_pdf_text.py` may extract its machine-readable
+text layer under explicit limits. Extraction performs no OCR and does not make the text verified
+scientific evidence without source review.
 
 ## Evidence Vocabulary
 
@@ -82,12 +85,15 @@ Ordered procedure:
 2. Run static inventory utilities: repository, packaging, dependencies, checkpoint candidates, model
    candidates, and output candidates.
 3. Read upstream source, docs, papers, and package metadata needed to interpret the static evidence.
+   Use bounded local PDF extraction only when a supplied document has a machine-readable text layer.
 4. Produce the machine-readable report using `templates/technical-analysis-report.json`.
 5. Render the human report with `templates/technical-analysis-report.md`.
 6. Present unresolved scientific choices before making user-dependent decisions.
 
 Evidence requirements: every architecture, preprocessing, output, embedding, checkpoint,
-dependency, and source-strategy claim must cite evidence or be marked unresolved.
+dependency, and source-strategy claim must cite evidence or be marked unresolved. Variant-sensitive
+claims and embeddings must use declared variant/checkpoint scopes. Host-published checksums must
+preserve their explicit algorithm and published-not-locally-verified status.
 
 Generated outputs: technical analysis report JSON, Markdown report, open-question list, candidate
 source strategy list, checkpoint candidates, environment evidence summary.

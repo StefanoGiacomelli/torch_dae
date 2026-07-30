@@ -5,7 +5,10 @@ Report rendering
 and returns a deterministic Markdown view. It renders identity and sections in a fixed order,
 preserves tuple order for candidates, questions, decisions, and evidence, and spells out confidence
 counts and the recommended next mode. Missing optional identity values render as ``unresolved``;
-empty candidate collections render as ``none``.
+empty candidate collections render as ``none``. Checkpoint rows expose source, loader, helper,
+expression, checksum, access, status, and evidence fields that exist in JSON. Embedding rows expose
+origin, semantics, dimensions, report/variant/checkpoint scope, decision status, uncertainty, and
+evidence. Scoped claims show their declared candidate IDs.
 
 Canonical JSON remains the machine contract. Markdown is a presentation derived from it and is not
 parsed back into state. The renderer does not fetch sources, infer absent values, reorder evidence,

@@ -270,8 +270,18 @@
     },
     "EvidenceBackedClaim": {
       "additionalProperties": false,
-      "description": "A claim that cannot silently promote inference to verified fact.",
+      "description": "A claim that cannot silently promote inference to verified fact.\n\nEmpty scope tuples mean that the claim applies across the repository-level report. Nonempty\nscopes are resolved by :class:`AnalysisReport` against declared variants and checkpoints.",
       "properties": {
+        "checkpoint_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+            "type": "string"
+          },
+          "title": "Checkpoint Ids",
+          "type": "array"
+        },
         "evidence_ids": {
           "default": [],
           "items": {
@@ -302,6 +312,16 @@
         },
         "status": {
           "$ref": "#/$defs/ClaimStatus"
+        },
+        "variant_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+            "type": "string"
+          },
+          "title": "Variant Ids",
+          "type": "array"
         }
       },
       "required": [
