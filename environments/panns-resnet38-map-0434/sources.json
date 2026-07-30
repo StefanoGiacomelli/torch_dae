@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0.0",
+  "environment_id": "panns-resnet38-map-0434",
+  "sources": [
+    {
+      "source_id": "panns-upstream-minimal-vendor",
+      "role": "model_implementation",
+      "installation": "vendored",
+      "upstream_url": "https://github.com/qiuqiangkong/audioset_tagging_cnn",
+      "upstream_revision": "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0",
+      "copied_files": [
+        "src/torch_dae/models/panns/_vendor/LICENSE.MIT",
+        "src/torch_dae/models/panns/_vendor/models.py",
+        "src/torch_dae/models/panns/_vendor/pytorch_utils.py"
+      ],
+      "adaptation_description": "Draft expected copy set. Production files are intentionally absent until integrate mode. The only planned source edit is a namespace-relative import from .pytorch_utils in models.py; no model behavior is to change.",
+      "justification": "The official repository is not packaged, the official inference package omits the requested classes, and these are the two runtime Python files plus license needed for the selected minimal vendored source substrate."
+    }
+  ]
+}
