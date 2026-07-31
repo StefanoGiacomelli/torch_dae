@@ -1,0 +1,1358 @@
+{
+  "schema_version": "1.0.0",
+  "report_id": "panns-three-tuple-analysis",
+  "created_at": "2026-07-30T10:55:10Z",
+  "repository": {
+    "canonical_repository_url": "https://github.com/qiuqiangkong/audioset_tagging_cnn",
+    "repository_owner": "qiuqiangkong",
+    "repository_name": "audioset_tagging_cnn",
+    "revision_inspected": "d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4",
+    "license_evidence": [
+      {
+        "statement": "The official source repository publishes the implementation under the MIT License.",
+        "status": "verified_upstream_fact",
+        "evidence_ids": [
+          "ev-upstream-license"
+        ],
+        "variant_ids": [],
+        "checkpoint_ids": [],
+        "rationale": null
+      },
+      {
+        "statement": "Zenodo record 3987831 publishes record-level CC-BY-4.0 license metadata for the checkpoint deposit; this is informational and no file-specific legal conclusion is made.",
+        "status": "verified_upstream_fact",
+        "evidence_ids": [
+          "ev-zenodo-record"
+        ],
+        "variant_ids": [],
+        "checkpoint_ids": [],
+        "rationale": null
+      }
+    ],
+    "package_name": null,
+    "release_or_tag_evidence": [
+      {
+        "statement": "No Git tag or GitHub release was observed for audioset_tagging_cnn; no release or tag is explicitly associated with any requested checkpoint.",
+        "status": "locally_observed_behavior",
+        "evidence_ids": [
+          "ev-repository-inventory"
+        ],
+        "variant_ids": [],
+        "checkpoint_ids": [],
+        "rationale": null
+      }
+    ],
+    "maintenance_status_evidence": [
+      {
+        "statement": "The inspected default branch is master at d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4, whose commit date is 2021-07-13; this is current-source evidence only.",
+        "status": "locally_observed_behavior",
+        "evidence_ids": [
+          "ev-current-head"
+        ],
+        "variant_ids": [],
+        "checkpoint_ids": [],
+        "rationale": null
+      }
+    ],
+    "official_status": {
+      "statement": "The repository is the official PANNs source repository because both the paper and the authoritative Zenodo checkpoint record link it as the released code.",
+      "status": "verified_upstream_fact",
+      "evidence_ids": [
+        "ev-paper-preprint",
+        "ev-zenodo-record"
+      ],
+      "variant_ids": [],
+      "checkpoint_ids": [],
+      "rationale": null
+    }
+  },
+  "revision": "d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4",
+  "official_status": {
+    "statement": "The repository is the official PANNs source repository because both the paper and the authoritative Zenodo checkpoint record link it as the released code.",
+    "status": "verified_upstream_fact",
+    "evidence_ids": [
+      "ev-paper-preprint",
+      "ev-zenodo-record"
+    ],
+    "variant_ids": [],
+    "checkpoint_ids": [],
+    "rationale": null
+  },
+  "license_evidence": [
+    {
+      "statement": "The official source repository publishes the implementation under the MIT License.",
+      "status": "verified_upstream_fact",
+      "evidence_ids": [
+        "ev-upstream-license"
+      ],
+      "variant_ids": [],
+      "checkpoint_ids": [],
+      "rationale": null
+    },
+    {
+      "statement": "Zenodo record 3987831 publishes record-level CC-BY-4.0 license metadata for the checkpoint deposit; this is informational and no file-specific legal conclusion is made.",
+      "status": "verified_upstream_fact",
+      "evidence_ids": [
+        "ev-zenodo-record"
+      ],
+      "variant_ids": [],
+      "checkpoint_ids": [],
+      "rationale": null
+    }
+  ],
+  "scientific_identity": {
+    "summary": "PANNs are pretrained audio neural networks trained on AudioSet for multilabel audio tagging and transfer to downstream audio-pattern-recognition tasks. The peer-reviewed article is IEEE/ACM TASLP 28 (2020), 2880-2894, DOI 10.1109/TASLP.2020.3030497.",
+    "claims": [
+      {
+        "statement": "The work trains PANNs on raw AudioSet audio with 527 sound classes and evaluates clip-level multilabel audio tagging.",
+        "status": "verified_upstream_fact",
+        "evidence_ids": [
+          "ev-paper-preprint",
+          "ev-upstream-readme"
+        ],
+        "variant_ids": [
+          "panns-cnn14-16k",
+          "panns-resnet38",
+          "panns-wavegram-logmel-cnn14"
+        ],
+        "checkpoint_ids": [
+          "panns-cnn14-16k-map-0438",
+          "panns-resnet38-map-0434",
+          "panns-wavegram-logmel-cnn14-map-0439"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "The paper reports mAP 0.434 for ResNet38 and mAP 0.439 for Wavegram-Logmel-CNN on AudioSet.",
+        "status": "verified_upstream_fact",
+        "evidence_ids": [
+          "ev-paper-preprint"
+        ],
+        "variant_ids": [
+          "panns-resnet38",
+          "panns-wavegram-logmel-cnn14"
+        ],
+        "checkpoint_ids": [
+          "panns-resnet38-map-0434",
+          "panns-wavegram-logmel-cnn14-map-0439"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "The requested Cnn14_16k checkpoint reports mAP 0.438 and is explicitly described by the repository as trained by a later code version than the paper; the paper's 16 kHz experiment reports mAP 0.427 and must not be substituted for this checkpoint.",
+        "status": "verified_upstream_fact",
+        "evidence_ids": [
+          "ev-cnn16-readme",
+          "ev-paper-preprint",
+          "ev-zenodo-cnn16"
+        ],
+        "variant_ids": [
+          "panns-cnn14-16k"
+        ],
+        "checkpoint_ids": [
+          "panns-cnn14-16k-map-0438"
+        ],
+        "rationale": null
+      }
+    ]
+  },
+  "architecture": {
+    "summary": "All three requested variants consume waveform tensors and include differentiable feature extraction, a 2048-dimensional penultimate representation, and a 527-class AudioSet head, but their frontends and backbones differ.",
+    "claims": [
+      {
+        "statement": "Cnn14_16k uses frozen STFT and log-mel extraction followed by six two-convolution blocks with channels 64, 128, 256, 512, 1024, and 2048, global max-plus-mean pooling, a 2048-to-2048 ReLU fully connected layer, and a 527-class head.",
+        "status": "verified_upstream_fact",
+        "evidence_ids": [
+          "ev-model-cnn16"
+        ],
+        "variant_ids": [
+          "panns-cnn14-16k"
+        ],
+        "checkpoint_ids": [
+          "panns-cnn14-16k-map-0438"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "ResNet38 uses frozen STFT and log-mel extraction, an initial convolution block, a basic-block ResNet with layer counts [3,4,6,3], a 512-to-2048 post-ResNet convolution block, global max-plus-mean pooling, a 2048-dimensional fully connected representation, and a 527-class head.",
+        "status": "verified_upstream_fact",
+        "evidence_ids": [
+          "ev-model-resnet38",
+          "ev-paper-preprint"
+        ],
+        "variant_ids": [
+          "panns-resnet38"
+        ],
+        "checkpoint_ids": [
+          "panns-resnet38-map-0434"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "Wavegram_Logmel_Cnn14 has a learned waveform branch and a frozen STFT/log-mel branch; it concatenates their 64-channel feature maps into a 128-channel tensor before the remaining CNN14 blocks, then uses global max-plus-mean pooling, a 2048-dimensional fully connected representation, and a 527-class head.",
+        "status": "verified_upstream_fact",
+        "evidence_ids": [
+          "ev-model-wavegram",
+          "ev-paper-preprint"
+        ],
+        "variant_ids": [
+          "panns-wavegram-logmel-cnn14"
+        ],
+        "checkpoint_ids": [
+          "panns-wavegram-logmel-cnn14-map-0439"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "Static comparison found the three requested class bodies unchanged between the default-branch checkpoint-era candidate 802432669263a31af0c448dd8d7b677af3815c01 and the inspected current HEAD, but textual stability does not establish checkpoint equivalence.",
+        "status": "locally_observed_behavior",
+        "evidence_ids": [
+          "ev-static-class-comparison"
+        ],
+        "variant_ids": [
+          "panns-cnn14-16k",
+          "panns-resnet38",
+          "panns-wavegram-logmel-cnn14"
+        ],
+        "checkpoint_ids": [
+          "panns-cnn14-16k-map-0438",
+          "panns-resnet38-map-0434",
+          "panns-wavegram-logmel-cnn14-map-0439"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "The exact checkpoint-compatible source revision is unresolved independently for each checkpoint. The nearest preceding default-branch ancestor of the Zenodo record creation time is 802432669263a31af0c448dd8d7b677af3815c01; it is a chronology candidate, not proof.",
+        "status": "reasoned_inference",
+        "evidence_ids": [
+          "ev-zenodo-record",
+          "ev-default-branch-candidate"
+        ],
+        "variant_ids": [
+          "panns-cnn14-16k",
+          "panns-resnet38",
+          "panns-wavegram-logmel-cnn14"
+        ],
+        "checkpoint_ids": [
+          "panns-cnn14-16k-map-0438",
+          "panns-resnet38-map-0434",
+          "panns-wavegram-logmel-cnn14-map-0439"
+        ],
+        "rationale": "The host records no source revision, no associated tag or release exists, and chronological proximity cannot prove state-dictionary compatibility."
+      },
+      {
+        "statement": "For Cnn14_16k only, side-branch commit 58d0e624a2055fb1f2b5fb06369ecd726cfe64e0 is an additional same-day chronology candidate because it added the exact variant/checkpoint name shortly before Zenodo record creation; it is not on the inspected default-branch ancestry and is not proven checkpoint-equivalent.",
+        "status": "reasoned_inference",
+        "evidence_ids": [
+          "ev-zenodo-record",
+          "ev-cnn16-side-branch-candidate"
+        ],
+        "variant_ids": [
+          "panns-cnn14-16k"
+        ],
+        "checkpoint_ids": [
+          "panns-cnn14-16k-map-0438"
+        ],
+        "rationale": "The exact filename and timestamp proximity make this useful bounded evidence, but neither establishes an exact source association."
+      }
+    ]
+  },
+  "variants": [
+    {
+      "variant_id": "panns-cnn14-16k",
+      "name": "Cnn14_16k",
+      "status": "verified_upstream_fact",
+      "evidence_ids": [
+        "ev-model-cnn16",
+        "ev-cnn16-readme"
+      ],
+      "unresolved_reason": null
+    },
+    {
+      "variant_id": "panns-resnet38",
+      "name": "ResNet38",
+      "status": "verified_upstream_fact",
+      "evidence_ids": [
+        "ev-model-resnet38",
+        "ev-paper-preprint"
+      ],
+      "unresolved_reason": null
+    },
+    {
+      "variant_id": "panns-wavegram-logmel-cnn14",
+      "name": "Wavegram_Logmel_Cnn14",
+      "status": "verified_upstream_fact",
+      "evidence_ids": [
+        "ev-model-wavegram",
+        "ev-paper-preprint"
+      ],
+      "unresolved_reason": null
+    }
+  ],
+  "runtime_interface": {
+    "summary": "No upstream code was imported or executed. Static source exposes a native [B,T] waveform forward method rather than the project's future [B,C,T] plus sample_rate and optional valid_lengths contract.",
+    "claims": [
+      {
+        "statement": "Each requested class defines forward(input, mixup_lambda=None), documents input as (batch_size, data_length), and does not accept channel, sample-rate, or valid-length arguments.",
+        "status": "verified_upstream_fact",
+        "evidence_ids": [
+          "ev-model-cnn16",
+          "ev-model-resnet38",
+          "ev-model-wavegram"
+        ],
+        "variant_ids": [
+          "panns-cnn14-16k",
+          "panns-resnet38",
+          "panns-wavegram-logmel-cnn14"
+        ],
+        "checkpoint_ids": [
+          "panns-cnn14-16k-map-0438",
+          "panns-resnet38-map-0434",
+          "panns-wavegram-logmel-cnn14-map-0439"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "The reference inference path constructs the class from hyperparameters, loads torch.load(checkpoint)['model'] with load_state_dict, selects CPU or CUDA, loads mono audio at the requested sample rate, calls model.eval(), and runs without gradients.",
+        "status": "verified_upstream_fact",
+        "evidence_ids": [
+          "ev-upstream-inference"
+        ],
+        "variant_ids": [
+          "panns-cnn14-16k",
+          "panns-resnet38",
+          "panns-wavegram-logmel-cnn14"
+        ],
+        "checkpoint_ids": [
+          "panns-cnn14-16k-map-0438",
+          "panns-resnet38-map-0434",
+          "panns-wavegram-logmel-cnn14-map-0439"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "CPU/CUDA behavior is source-declared only; no device, dtype, length, determinism, checkpoint-loading, or inference behavior was locally executed.",
+        "status": "unresolved_ambiguity",
+        "evidence_ids": [
+          "ev-upstream-inference"
+        ],
+        "variant_ids": [
+          "panns-cnn14-16k",
+          "panns-resnet38",
+          "panns-wavegram-logmel-cnn14"
+        ],
+        "checkpoint_ids": [
+          "panns-cnn14-16k-map-0438",
+          "panns-resnet38-map-0434",
+          "panns-wavegram-logmel-cnn14-map-0439"
+        ],
+        "rationale": null
+      }
+    ]
+  },
+  "preprocessing": {
+    "summary": "Preprocessing is embedded partly in the models and partly in repository data/inference utilities. The source models accept mono waveform batches and perform STFT/log-mel extraction where applicable.",
+    "claims": [
+      {
+        "statement": "Cnn14_16k asserts 16,000 Hz, 512-sample Hann window, 160-sample hop, 64 mel bins, 50 Hz lower cutoff, and 8,000 Hz upper cutoff, with centered reflect-padded STFT and frozen log-mel parameters.",
+        "status": "verified_upstream_fact",
+        "evidence_ids": [
+          "ev-model-cnn16",
+          "ev-cnn16-readme"
+        ],
+        "variant_ids": [
+          "panns-cnn14-16k"
+        ],
+        "checkpoint_ids": [
+          "panns-cnn14-16k-map-0438"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "The paper and reference inference defaults use 32,000 Hz, 1024-sample analysis window, 320-sample hop, 64 mel bins, 50 Hz lower cutoff, and 14,000 Hz upper cutoff for the reported ResNet38 and Wavegram-Logmel-CNN systems.",
+        "status": "verified_upstream_fact",
+        "evidence_ids": [
+          "ev-paper-preprint",
+          "ev-upstream-inference"
+        ],
+        "variant_ids": [
+          "panns-resnet38",
+          "panns-wavegram-logmel-cnn14"
+        ],
+        "checkpoint_ids": [
+          "panns-resnet38-map-0434",
+          "panns-wavegram-logmel-cnn14-map-0439"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "The training data path converts audio to mono, resamples, pads or truncates to 10 seconds, clips floating samples to [-1,1] before int16 storage, and restores float32 by division by 32767; the standalone inference path resamples to the requested rate and mono but does not pad or truncate.",
+        "status": "verified_upstream_fact",
+        "evidence_ids": [
+          "ev-data-preprocessing",
+          "ev-upstream-inference",
+          "ev-paper-preprint"
+        ],
+        "variant_ids": [
+          "panns-cnn14-16k",
+          "panns-resnet38",
+          "panns-wavegram-logmel-cnn14"
+        ],
+        "checkpoint_ids": [
+          "panns-cnn14-16k-map-0438",
+          "panns-resnet38-map-0434",
+          "panns-wavegram-logmel-cnn14-map-0439"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "Exact project-wrapper policies for multi-channel downmixing, automatic resampling implementation, valid_lengths, and padding/truncation remain unresolved because upstream does not implement the project's public waveform contract.",
+        "status": "unresolved_ambiguity",
+        "evidence_ids": [
+          "ev-upstream-inference",
+          "ev-project-input-contract"
+        ],
+        "variant_ids": [
+          "panns-cnn14-16k",
+          "panns-resnet38",
+          "panns-wavegram-logmel-cnn14"
+        ],
+        "checkpoint_ids": [
+          "panns-cnn14-16k-map-0438",
+          "panns-resnet38-map-0434",
+          "panns-wavegram-logmel-cnn14-map-0439"
+        ],
+        "rationale": null
+      }
+    ]
+  },
+  "outputs": {
+    "summary": "All three requested classes return clip-level AudioSet probabilities and a clip-level 2048-dimensional embedding. They do not return pre-sigmoid logits or framewise outputs.",
+    "claims": [
+      {
+        "statement": "Each requested forward method returns {'clipwise_output': sigmoid(fc_audioset(x)), 'embedding': dropout(ReLU(fc1(...)))}; with 527 AudioSet classes the output shapes are [B,527] and [B,2048].",
+        "status": "verified_upstream_fact",
+        "evidence_ids": [
+          "ev-model-cnn16",
+          "ev-model-resnet38",
+          "ev-model-wavegram",
+          "ev-paper-preprint"
+        ],
+        "variant_ids": [
+          "panns-cnn14-16k",
+          "panns-resnet38",
+          "panns-wavegram-logmel-cnn14"
+        ],
+        "checkpoint_ids": [
+          "panns-cnn14-16k-map-0438",
+          "panns-resnet38-map-0434",
+          "panns-wavegram-logmel-cnn14-map-0439"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "The native clipwise_output is a post-sigmoid multilabel probability tensor, not logits; the project-required raw differentiable classification output would require a provenance-preserving adapter or minimal source adaptation.",
+        "status": "reasoned_inference",
+        "evidence_ids": [
+          "ev-model-cnn16",
+          "ev-model-resnet38",
+          "ev-model-wavegram",
+          "ev-project-output-contract"
+        ],
+        "variant_ids": [
+          "panns-cnn14-16k",
+          "panns-resnet38",
+          "panns-wavegram-logmel-cnn14"
+        ],
+        "checkpoint_ids": [
+          "panns-cnn14-16k-map-0438",
+          "panns-resnet38-map-0434",
+          "panns-wavegram-logmel-cnn14-map-0439"
+        ],
+        "rationale": "The source computes the linear head immediately before sigmoid but does not return that tensor, while the project contract requires forward() to expose native differentiable task outputs without automatically applying sigmoid."
+      }
+    ]
+  },
+  "embedding_candidates": [
+    {
+      "embedding_id": "panns-official-post-fc1-embedding",
+      "tensor_origin": "The upstream 'embedding' output: dropout applied to the 2048-dimensional ReLU output of fc1 immediately before fc_audioset; dropout is identity in evaluation mode.",
+      "semantic_kind": "pre_logit_representation",
+      "shape_semantics": "[B,2048]",
+      "batch_dimension": "dimension 0",
+      "time_dimension": null,
+      "status": "verified_upstream_fact",
+      "evidence_ids": [
+        "ev-paper-preprint",
+        "ev-model-cnn16",
+        "ev-model-resnet38",
+        "ev-model-wavegram",
+        "ev-upstream-inference"
+      ],
+      "variant_ids": [
+        "panns-cnn14-16k",
+        "panns-resnet38",
+        "panns-wavegram-logmel-cnn14"
+      ],
+      "checkpoint_ids": [
+        "panns-cnn14-16k-map-0438",
+        "panns-resnet38-map-0434",
+        "panns-wavegram-logmel-cnn14-map-0439"
+      ],
+      "requires_user_decision": true,
+      "unresolved_reason": "The user left PREFERRED_EMBEDDING unresolved; this is the recommended default because upstream explicitly names and returns it."
+    },
+    {
+      "embedding_id": "panns-global-pooled-backbone",
+      "tensor_origin": "The sum of temporal global maximum and temporal global mean after frequency pooling and before fc1.",
+      "semantic_kind": "pooled_representation",
+      "shape_semantics": "[B,2048]",
+      "batch_dimension": "dimension 0",
+      "time_dimension": null,
+      "status": "reasoned_inference",
+      "evidence_ids": [
+        "ev-paper-preprint",
+        "ev-model-cnn16",
+        "ev-model-resnet38",
+        "ev-model-wavegram"
+      ],
+      "variant_ids": [
+        "panns-cnn14-16k",
+        "panns-resnet38",
+        "panns-wavegram-logmel-cnn14"
+      ],
+      "checkpoint_ids": [
+        "panns-cnn14-16k-map-0438",
+        "panns-resnet38-map-0434",
+        "panns-wavegram-logmel-cnn14-map-0439"
+      ],
+      "requires_user_decision": true,
+      "unresolved_reason": "This tensor is architecturally meaningful but upstream reserves the term embedding for the following fc1 output; extraction would require an adapter or hook."
+    },
+    {
+      "embedding_id": "panns-pre-global-temporal-representation",
+      "tensor_origin": "The 2048-channel sequence after the final convolution block and frequency-axis mean, immediately before temporal max-plus-mean pooling.",
+      "semantic_kind": "frame_level_embedding",
+      "shape_semantics": "[B,2048,T_downsampled], with T_downsampled dependent on input length and variant downsampling",
+      "batch_dimension": "dimension 0",
+      "time_dimension": "dimension 2",
+      "status": "reasoned_inference",
+      "evidence_ids": [
+        "ev-model-cnn16",
+        "ev-model-resnet38",
+        "ev-model-wavegram"
+      ],
+      "variant_ids": [
+        "panns-cnn14-16k",
+        "panns-resnet38",
+        "panns-wavegram-logmel-cnn14"
+      ],
+      "checkpoint_ids": [
+        "panns-cnn14-16k-map-0438",
+        "panns-resnet38-map-0434",
+        "panns-wavegram-logmel-cnn14-map-0439"
+      ],
+      "requires_user_decision": true,
+      "unresolved_reason": "The source does not name or return this tensor as an embedding, and exact temporal hop/valid-length semantics require static derivation plus runtime verification."
+    },
+    {
+      "embedding_id": "panns-wavegram-branch-feature-map",
+      "tensor_origin": "Wavegram_Logmel_Cnn14.a1 after pre_block4 and before concatenation with the log-mel branch.",
+      "semantic_kind": "architectural_intermediate_tensor",
+      "shape_semantics": "[B,64,T_branch,32]",
+      "batch_dimension": "dimension 0",
+      "time_dimension": "dimension 2",
+      "status": "reasoned_inference",
+      "evidence_ids": [
+        "ev-model-wavegram",
+        "ev-paper-preprint"
+      ],
+      "variant_ids": [
+        "panns-wavegram-logmel-cnn14"
+      ],
+      "checkpoint_ids": [
+        "panns-wavegram-logmel-cnn14-map-0439"
+      ],
+      "requires_user_decision": true,
+      "unresolved_reason": "This branch-local learned time-frequency tensor is scientifically meaningful but is not an upstream-declared embedding and requires explicit extraction behavior."
+    },
+    {
+      "embedding_id": "panns-wavegram-logmel-branch-feature-map",
+      "tensor_origin": "Wavegram_Logmel_Cnn14 log-mel branch after conv_block1 and before concatenation.",
+      "semantic_kind": "architectural_intermediate_tensor",
+      "shape_semantics": "[B,64,T_branch,32]",
+      "batch_dimension": "dimension 0",
+      "time_dimension": "dimension 2",
+      "status": "reasoned_inference",
+      "evidence_ids": [
+        "ev-model-wavegram",
+        "ev-paper-preprint"
+      ],
+      "variant_ids": [
+        "panns-wavegram-logmel-cnn14"
+      ],
+      "checkpoint_ids": [
+        "panns-wavegram-logmel-cnn14-map-0439"
+      ],
+      "requires_user_decision": true,
+      "unresolved_reason": "This branch-local hand-crafted-feature tensor is meaningful for branch comparison but is not an upstream-declared embedding."
+    },
+    {
+      "embedding_id": "panns-wavegram-logmel-fused-feature-map",
+      "tensor_origin": "Wavegram_Logmel_Cnn14 concatenation of the wavegram and log-mel branch tensors before conv_block2.",
+      "semantic_kind": "sequence_level_embedding",
+      "shape_semantics": "[B,128,T_branch,32]",
+      "batch_dimension": "dimension 0",
+      "time_dimension": "dimension 2",
+      "status": "reasoned_inference",
+      "evidence_ids": [
+        "ev-model-wavegram",
+        "ev-paper-preprint"
+      ],
+      "variant_ids": [
+        "panns-wavegram-logmel-cnn14"
+      ],
+      "checkpoint_ids": [
+        "panns-wavegram-logmel-cnn14-map-0439"
+      ],
+      "requires_user_decision": true,
+      "unresolved_reason": "This is the first fused dual-branch representation, but it is not returned or formally named as an embedding upstream."
+    }
+  ],
+  "checkpoint_candidates": [
+    {
+      "checkpoint_id": "panns-cnn14-16k-map-0438",
+      "source_type": "https",
+      "filename": "Cnn14_16k_mAP=0.438.pth",
+      "url": "https://zenodo.org/api/records/3987831/files/Cnn14_16k_mAP=0.438.pth/content",
+      "model_variant": "panns-cnn14-16k",
+      "loader": "torch.load(path, map_location=device)['model'] followed by model.load_state_dict",
+      "hash_evidence": null,
+      "published_checksums": [
+        {
+          "algorithm": "md5",
+          "digest": "362fc5ff18f1d6ad2f6d464b45893f2c",
+          "evidence_id": "ev-zenodo-cnn16",
+          "verification_state": "published_not_locally_verified",
+          "provenance_note": "Host-published MD5 from immutable Zenodo record metadata; no checkpoint payload was downloaded and no local digest was computed."
+        }
+      ],
+      "access_or_license_notes": "Zenodo record 3987831 reports open access, record-level CC-BY-4.0 metadata, and size 358668570 bytes. License metadata is informational and non-blocking.",
+      "helper_symbol": null,
+      "expression_status": "resolved_from_authoritative_metadata",
+      "unresolved_components": [
+        "exact checkpoint-compatible source revision",
+        "locally verified SHA-256",
+        "state-dictionary compatibility",
+        "runtime behavior"
+      ],
+      "evidence_ids": [
+        "ev-zenodo-cnn16",
+        "ev-cnn16-readme",
+        "ev-upstream-inference"
+      ],
+      "status": "verified_upstream_fact",
+      "unresolved_reason": null
+    },
+    {
+      "checkpoint_id": "panns-resnet38-map-0434",
+      "source_type": "https",
+      "filename": "ResNet38_mAP=0.434.pth",
+      "url": "https://zenodo.org/api/records/3987831/files/ResNet38_mAP=0.434.pth/content",
+      "model_variant": "panns-resnet38",
+      "loader": "torch.load(path, map_location=device)['model'] followed by model.load_state_dict",
+      "hash_evidence": null,
+      "published_checksums": [
+        {
+          "algorithm": "md5",
+          "digest": "bf12f36aaabac4e0855e22d3c3239c1b",
+          "evidence_id": "ev-zenodo-resnet38",
+          "verification_state": "published_not_locally_verified",
+          "provenance_note": "Host-published MD5 from immutable Zenodo record metadata; no checkpoint payload was downloaded and no local digest was computed."
+        }
+      ],
+      "access_or_license_notes": "Zenodo record 3987831 reports open access, record-level CC-BY-4.0 metadata, and size 299615982 bytes. License metadata is informational and non-blocking.",
+      "helper_symbol": null,
+      "expression_status": "resolved_from_authoritative_metadata",
+      "unresolved_components": [
+        "exact checkpoint-compatible source revision",
+        "locally verified SHA-256",
+        "state-dictionary compatibility",
+        "runtime behavior"
+      ],
+      "evidence_ids": [
+        "ev-zenodo-resnet38",
+        "ev-paper-preprint",
+        "ev-upstream-inference"
+      ],
+      "status": "verified_upstream_fact",
+      "unresolved_reason": null
+    },
+    {
+      "checkpoint_id": "panns-wavegram-logmel-cnn14-map-0439",
+      "source_type": "https",
+      "filename": "Wavegram_Logmel_Cnn14_mAP=0.439.pth",
+      "url": "https://zenodo.org/api/records/3987831/files/Wavegram_Logmel_Cnn14_mAP=0.439.pth/content",
+      "model_variant": "panns-wavegram-logmel-cnn14",
+      "loader": "torch.load(path, map_location=device)['model'] followed by model.load_state_dict",
+      "hash_evidence": null,
+      "published_checksums": [
+        {
+          "algorithm": "md5",
+          "digest": "17fa9ab65af3c0eb5ffbc5f65552c4e1",
+          "evidence_id": "ev-zenodo-wavegram",
+          "verification_state": "published_not_locally_verified",
+          "provenance_note": "Host-published MD5 from immutable Zenodo record metadata; no checkpoint payload was downloaded and no local digest was computed."
+        }
+      ],
+      "access_or_license_notes": "Zenodo record 3987831 reports open access, record-level CC-BY-4.0 metadata, and size 328692198 bytes. License metadata is informational and non-blocking.",
+      "helper_symbol": null,
+      "expression_status": "resolved_from_authoritative_metadata",
+      "unresolved_components": [
+        "exact checkpoint-compatible source revision",
+        "locally verified SHA-256",
+        "state-dictionary compatibility",
+        "runtime behavior"
+      ],
+      "evidence_ids": [
+        "ev-zenodo-wavegram",
+        "ev-paper-preprint",
+        "ev-upstream-inference"
+      ],
+      "status": "verified_upstream_fact",
+      "unresolved_reason": null
+    }
+  ],
+  "dependency_evidence": {
+    "summary": "The upstream repository is not packaged and declares a historical Python 3.7 / PyTorch stack. No compatibility claim has been made and no model environment was resolved.",
+    "claims": [
+      {
+        "statement": "The README states Python 3.7; requirements.txt pins matplotlib 3.0.3, soundfile 0.10.3.post1, librosa 0.6.3, torch 1.0.1.post2, and torchlibrosa 0.0.4.",
+        "status": "verified_upstream_fact",
+        "evidence_ids": [
+          "ev-upstream-readme",
+          "ev-upstream-requirements"
+        ],
+        "variant_ids": [
+          "panns-cnn14-16k",
+          "panns-resnet38",
+          "panns-wavegram-logmel-cnn14"
+        ],
+        "checkpoint_ids": [
+          "panns-cnn14-16k-map-0438",
+          "panns-resnet38-map-0434",
+          "panns-wavegram-logmel-cnn14-map-0439"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "Static inspection found no setup.py, setup.cfg, pyproject.toml, lockfile, CI matrix, or declared Python version constraint in audioset_tagging_cnn, and found deprecated NumPy aliases in utility paths.",
+        "status": "locally_observed_behavior",
+        "evidence_ids": [
+          "ev-repository-inventory",
+          "ev-static-dependencies"
+        ],
+        "variant_ids": [
+          "panns-cnn14-16k",
+          "panns-resnet38",
+          "panns-wavegram-logmel-cnn14"
+        ],
+        "checkpoint_ids": [
+          "panns-cnn14-16k-map-0438",
+          "panns-resnet38-map-0434",
+          "panns-wavegram-logmel-cnn14-map-0439"
+        ],
+        "rationale": null
+      },
+      {
+        "statement": "The upstream-linked panns-inference package/repository is not a complete source for the requested scope: its model module contains Cnn14 and Cnn14_DecisionLevelMax, not the three requested variants, and its wrapper contains an uncontrolled wget checkpoint download path.",
+        "status": "verified_upstream_fact",
+        "evidence_ids": [
+          "ev-panns-inference-source"
+        ],
+        "variant_ids": [
+          "panns-cnn14-16k",
+          "panns-resnet38",
+          "panns-wavegram-logmel-cnn14"
+        ],
+        "checkpoint_ids": [
+          "panns-cnn14-16k-map-0438",
+          "panns-resnet38-map-0434",
+          "panns-wavegram-logmel-cnn14-map-0439"
+        ],
+        "rationale": null
+      }
+    ]
+  },
+  "source_strategy_candidates": [
+    {
+      "strategy": "official_package",
+      "status": "reasoned_inference",
+      "rationale": "The official panns-inference package is rejected as a complete strategy for this three-tuple scope because its inspected source does not contain Cnn14_16k, ResNet38, or Wavegram_Logmel_Cnn14 and its wrapper can trigger an uncontrolled checkpoint download.",
+      "evidence_ids": [
+        "ev-panns-inference-source",
+        "ev-user-scope"
+      ],
+      "user_decision_required": false,
+      "unresolved_reason": "No exact official package exposing all three requested variants was identified."
+    },
+    {
+      "strategy": "pinned_official_git_repository",
+      "status": "unresolved_ambiguity",
+      "rationale": "The official repository contains all three classes and immutable revisions, but it has no installable package metadata and the exact checkpoint-associated revision is unresolved for each checkpoint.",
+      "evidence_ids": [
+        "ev-model-cnn16",
+        "ev-model-resnet38",
+        "ev-model-wavegram",
+        "ev-default-branch-candidate",
+        "ev-repository-inventory"
+      ],
+      "user_decision_required": true,
+      "unresolved_reason": "Need a selected source revision and a reproducible import/build plan that does not execute setup code or use path-unsafe dynamic imports."
+    },
+    {
+      "strategy": "minimal_vendored_adaptation",
+      "status": "reasoned_inference",
+      "rationale": "This is the leading implementation strategy because the official repository is not packaged, only a bounded subset is needed, and a provenance-preserving adaptation can expose pre-sigmoid logits and the requested embeddings while documenting every change.",
+      "evidence_ids": [
+        "ev-repository-inventory",
+        "ev-model-cnn16",
+        "ev-model-resnet38",
+        "ev-model-wavegram",
+        "ev-project-output-contract"
+      ],
+      "user_decision_required": true,
+      "unresolved_reason": "The exact vendored file set, revision, adaptation surface, and equivalence tests must be planned after source-revision review."
+    }
+  ],
+  "environment_evidence": {
+    "summary": "No PANNs environment was resolved, created, synchronized, or materialized; no PANNs dependency was installed. Only the pre-existing model-agnostic root control-plane environment ran skill utilities.",
+    "claims": [
+      {
+        "statement": "All environment compatibility remains unverified; the declared 2019-era dependency pins are evidence inputs, not a selected modern or historical environment.",
+        "status": "unresolved_ambiguity",
+        "evidence_ids": [
+          "ev-upstream-requirements",
+          "ev-static-dependencies"
+        ],
+        "variant_ids": [
+          "panns-cnn14-16k",
+          "panns-resnet38",
+          "panns-wavegram-logmel-cnn14"
+        ],
+        "checkpoint_ids": [
+          "panns-cnn14-16k-map-0438",
+          "panns-resnet38-map-0434",
+          "panns-wavegram-logmel-cnn14-map-0439"
+        ],
+        "rationale": null
+      }
+    ]
+  },
+  "open_questions": [
+    {
+      "question_id": "q-default-embedding",
+      "classification": "needs_user_decision",
+      "description": "Select the default embedding. The recommended first choice is panns-official-post-fc1-embedding for all three tuples because it is explicitly named, returned, and used for transfer upstream; temporal and Wavegram branch candidates can remain separately accessible.",
+      "alternatives": [
+        "panns-official-post-fc1-embedding",
+        "panns-global-pooled-backbone",
+        "panns-pre-global-temporal-representation",
+        "tuple-specific defaults including Wavegram branch or fused representations"
+      ],
+      "evidence_ids": [
+        "ev-user-embedding-unresolved",
+        "ev-paper-preprint",
+        "ev-model-cnn16",
+        "ev-model-resnet38",
+        "ev-model-wavegram"
+      ],
+      "default_if_deferred": "panns-official-post-fc1-embedding",
+      "failure_classification": null
+    },
+    {
+      "question_id": "q-source-strategy",
+      "classification": "needs_user_decision",
+      "description": "Choose between a reproducible pinned-repository import plan and the leading minimal-vendored-adaptation plan after accepting that the official package does not cover the requested three tuples.",
+      "alternatives": [
+        "minimal_vendored_adaptation",
+        "pinned_official_git_repository"
+      ],
+      "evidence_ids": [
+        "ev-repository-inventory",
+        "ev-panns-inference-source",
+        "ev-project-output-contract"
+      ],
+      "default_if_deferred": "minimal_vendored_adaptation",
+      "failure_classification": null
+    },
+    {
+      "question_id": "q-source-revision-cnn16",
+      "classification": "needs_more_evidence",
+      "description": "The exact source revision for Cnn14_16k_mAP=0.438.pth remains unresolved; retain default-branch candidate 802432669263a31af0c448dd8d7b677af3815c01 and side-branch candidate 58d0e624a2055fb1f2b5fb06369ecd726cfe64e0 without claiming equivalence.",
+      "alternatives": [
+        "obtain authoritative host or maintainer revision metadata",
+        "carry both chronology candidates into later compatibility verification"
+      ],
+      "evidence_ids": [
+        "ev-zenodo-cnn16",
+        "ev-default-branch-candidate",
+        "ev-cnn16-side-branch-candidate"
+      ],
+      "default_if_deferred": "carry both chronology candidates as unverified",
+      "failure_classification": null
+    },
+    {
+      "question_id": "q-source-revision-resnet38",
+      "classification": "needs_more_evidence",
+      "description": "The exact source revision for ResNet38_mAP=0.434.pth remains unresolved; 802432669263a31af0c448dd8d7b677af3815c01 is only the nearest preceding default-branch candidate.",
+      "alternatives": [
+        "obtain authoritative host or maintainer revision metadata",
+        "carry the chronology candidate into later compatibility verification"
+      ],
+      "evidence_ids": [
+        "ev-zenodo-resnet38",
+        "ev-default-branch-candidate"
+      ],
+      "default_if_deferred": "carry the chronology candidate as unverified",
+      "failure_classification": null
+    },
+    {
+      "question_id": "q-source-revision-wavegram",
+      "classification": "needs_more_evidence",
+      "description": "The exact source revision for Wavegram_Logmel_Cnn14_mAP=0.439.pth remains unresolved; 802432669263a31af0c448dd8d7b677af3815c01 is only the nearest preceding default-branch candidate.",
+      "alternatives": [
+        "obtain authoritative host or maintainer revision metadata",
+        "carry the chronology candidate into later compatibility verification"
+      ],
+      "evidence_ids": [
+        "ev-zenodo-wavegram",
+        "ev-default-branch-candidate"
+      ],
+      "default_if_deferred": "carry the chronology candidate as unverified",
+      "failure_classification": null
+    },
+    {
+      "question_id": "q-environment-resolution",
+      "classification": "needs_environment_resolution",
+      "description": "Resolve one or more evidence-motivated isolated environments for the selected source strategy; do not assume the declared Python 3.7 / torch 1.0.1.post2 stack is the only viable candidate.",
+      "alternatives": [
+        "historical-declaration candidate",
+        "source-API-compatible modern candidate"
+      ],
+      "evidence_ids": [
+        "ev-upstream-requirements",
+        "ev-static-dependencies"
+      ],
+      "default_if_deferred": "no environment selection",
+      "failure_classification": null
+    },
+    {
+      "question_id": "q-checkpoint-runtime-verification",
+      "classification": "needs_runtime_probe",
+      "description": "Later verify acquisition SHA-256, state-dictionary loading, shapes, values, device behavior, and deterministic behavior independently for all three checkpoint files. Published MD5 metadata does not satisfy local SHA-256 verification.",
+      "alternatives": [
+        "verify all three after environment and wrapper prerequisites",
+        "defer checkpoint verification"
+      ],
+      "evidence_ids": [
+        "ev-zenodo-cnn16",
+        "ev-zenodo-resnet38",
+        "ev-zenodo-wavegram",
+        "ev-upstream-inference"
+      ],
+      "default_if_deferred": "remain unverified",
+      "failure_classification": null
+    }
+  ],
+  "decisions": [
+    {
+      "decision_id": "d-mode-analyze-only",
+      "decision": "Execute only analyze mode and prohibit environment resolution, model execution, checkpoint acquisition, integration artifacts, and repository changes.",
+      "selected_option": "analyze",
+      "status": "user_provided_decision",
+      "evidence_ids": [
+        "ev-user-scope"
+      ],
+      "rationale": null
+    },
+    {
+      "decision_id": "d-three-tuple-scope",
+      "decision": "Analyze three separate model/variant/checkpoint tuples without reducing scope to a single implementation slice.",
+      "selected_option": "all-three-tuples",
+      "status": "user_provided_decision",
+      "evidence_ids": [
+        "ev-user-scope"
+      ],
+      "rationale": null
+    },
+    {
+      "decision_id": "d-authoritative-checkpoint-record",
+      "decision": "Use Zenodo record 3987831 as the authoritative checkpoint-record candidate.",
+      "selected_option": "zenodo-3987831",
+      "status": "user_provided_decision",
+      "evidence_ids": [
+        "ev-user-scope"
+      ],
+      "rationale": null
+    },
+    {
+      "decision_id": "d-embedding-deferred",
+      "decision": "Leave the preferred embedding unresolved during analyze mode.",
+      "selected_option": "unresolved",
+      "status": "user_provided_decision",
+      "evidence_ids": [
+        "ev-user-embedding-unresolved"
+      ],
+      "rationale": null
+    }
+  ],
+  "evidence_items": [
+    {
+      "evidence_id": "ev-upstream-readme",
+      "kind": "official_documentation",
+      "claim_status": "verified_upstream_fact",
+      "description": "Official README identifies PANNs, AudioSet, 527 classes, Python 3.7, Zenodo checkpoints, metrics, and usage.",
+      "source_file": "README.md",
+      "source_line_or_symbol": "README.md",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn/blob/d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4/README.md",
+      "revision": "d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-cnn16-readme",
+      "kind": "official_documentation",
+      "claim_status": "verified_upstream_fact",
+      "description": "Official README maps Cnn14_16k_mAP=0.438.pth to Cnn14_16k and exact 16 kHz frontend arguments, and states it was trained by a later code version than the paper.",
+      "source_file": "README.md",
+      "source_line_or_symbol": "README.md lines 39-54",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn/blob/d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4/README.md#L39-L54",
+      "revision": "d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-upstream-license",
+      "kind": "source_file",
+      "claim_status": "verified_upstream_fact",
+      "description": "Official repository MIT license text.",
+      "source_file": "LICENSE.MIT",
+      "source_line_or_symbol": "LICENSE.MIT",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn/blob/d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4/LICENSE.MIT",
+      "revision": "d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-paper-preprint",
+      "kind": "paper",
+      "claim_status": "verified_upstream_fact",
+      "description": "Reviewed arXiv v5 paper text for scientific identity, architecture, preprocessing, embeddings, AudioSet metrics, and released repository.",
+      "source_file": null,
+      "source_line_or_symbol": "arXiv:1912.10211v5, especially Sections II, III, VI and Tables II, IX, XI",
+      "url": "https://arxiv.org/pdf/1912.10211",
+      "revision": null,
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-paper-peer-reviewed",
+      "kind": "paper",
+      "claim_status": "verified_upstream_fact",
+      "description": "Peer-reviewed IEEE/ACM TASLP publication identity, volume 28, pages 2880-2894, DOI 10.1109/TASLP.2020.3030497.",
+      "source_file": null,
+      "source_line_or_symbol": "IEEE document 9229505",
+      "url": "https://ieeexplore.ieee.org/document/9229505",
+      "revision": null,
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-model-cnn16",
+      "kind": "source_line_or_symbol",
+      "claim_status": "verified_upstream_fact",
+      "description": "Official Cnn14_16k constructor and forward path define frontend assertions, CNN topology, 2048-dimensional representation, sigmoid head, and returned embedding.",
+      "source_file": "pytorch/models.py",
+      "source_line_or_symbol": "Cnn14_16k.__init__; Cnn14_16k.forward",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn/blob/802432669263a31af0c448dd8d7b677af3815c01/pytorch/models.py#L2542-L2636",
+      "revision": "802432669263a31af0c448dd8d7b677af3815c01",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-model-resnet38",
+      "kind": "source_line_or_symbol",
+      "claim_status": "verified_upstream_fact",
+      "description": "Official ResNet38 constructor and forward path define log-mel frontend, [3,4,6,3] residual topology, 2048-dimensional representation, sigmoid head, and returned embedding.",
+      "source_file": "pytorch/models.py",
+      "source_line_or_symbol": "ResNet38.__init__; ResNet38.forward",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn/blob/802432669263a31af0c448dd8d7b677af3815c01/pytorch/models.py#L858-L942",
+      "revision": "802432669263a31af0c448dd8d7b677af3815c01",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-model-wavegram",
+      "kind": "source_line_or_symbol",
+      "claim_status": "verified_upstream_fact",
+      "description": "Official Wavegram_Logmel_Cnn14 constructor and forward path define dual waveform/log-mel branches, fusion, 2048-dimensional representation, sigmoid head, and returned embedding.",
+      "source_file": "pytorch/models.py",
+      "source_line_or_symbol": "Wavegram_Logmel_Cnn14.__init__; Wavegram_Logmel_Cnn14.forward",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn/blob/802432669263a31af0c448dd8d7b677af3815c01/pytorch/models.py#L2314-L2425",
+      "revision": "802432669263a31af0c448dd8d7b677af3815c01",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-upstream-inference",
+      "kind": "source_line_or_symbol",
+      "claim_status": "verified_upstream_fact",
+      "description": "Official reference inference statically defines construction, torch.load()['model'] loading, eval/no-grad use, mono resampling, default 32 kHz frontend arguments, and output handling.",
+      "source_file": "pytorch/inference.py",
+      "source_line_or_symbol": "audio_tagging; CLI parser",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn/blob/d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4/pytorch/inference.py",
+      "revision": "d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-data-preprocessing",
+      "kind": "source_line_or_symbol",
+      "claim_status": "verified_upstream_fact",
+      "description": "Official utilities and dataset paths define mono loading, resampling, 10-second padding/truncation, int16 clipping/storage, and float32 restoration.",
+      "source_file": "utils/utilities.py",
+      "source_line_or_symbol": "float32_to_int16; int16_to_float32; pad_or_truncate; utils/dataset.py; utils/data_generator.py",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn/tree/d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4/utils",
+      "revision": "d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-upstream-requirements",
+      "kind": "configuration_file",
+      "claim_status": "verified_upstream_fact",
+      "description": "Official exact dependency declarations: matplotlib 3.0.3, soundfile 0.10.3.post1, librosa 0.6.3, torch 1.0.1.post2, torchlibrosa 0.0.4.",
+      "source_file": "requirements.txt",
+      "source_line_or_symbol": "requirements.txt lines 1-5",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn/blob/d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4/requirements.txt",
+      "revision": "d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-zenodo-record",
+      "kind": "official_documentation",
+      "claim_status": "verified_upstream_fact",
+      "description": "Immutable Zenodo record 3987831 metadata: record created 2020-08-17T09:42:16.515697Z, open access, record-level CC-BY-4.0, concept DOI 10.5281/zenodo.3576402, record DOI 10.5281/zenodo.3987831, and official repository link; no Git revision is recorded.",
+      "source_file": null,
+      "source_line_or_symbol": "Zenodo API record 3987831",
+      "url": "https://zenodo.org/records/3987831",
+      "revision": null,
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-zenodo-cnn16",
+      "kind": "official_documentation",
+      "claim_status": "verified_upstream_fact",
+      "description": "Zenodo record file entry for Cnn14_16k_mAP=0.438.pth: 358668570 bytes, checksum md5:362fc5ff18f1d6ad2f6d464b45893f2c.",
+      "source_file": null,
+      "source_line_or_symbol": "Zenodo record 3987831 file ID 78959985-0cd1-4b55-95ef-36cfcac0d60e",
+      "url": "https://zenodo.org/records/3987831",
+      "revision": null,
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-zenodo-resnet38",
+      "kind": "official_documentation",
+      "claim_status": "verified_upstream_fact",
+      "description": "Zenodo record file entry for ResNet38_mAP=0.434.pth: 299615982 bytes, checksum md5:bf12f36aaabac4e0855e22d3c3239c1b.",
+      "source_file": null,
+      "source_line_or_symbol": "Zenodo record 3987831 file ID 78f4df41-5273-4315-8742-c614bf4f1428",
+      "url": "https://zenodo.org/records/3987831",
+      "revision": null,
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-zenodo-wavegram",
+      "kind": "official_documentation",
+      "claim_status": "verified_upstream_fact",
+      "description": "Zenodo record file entry for Wavegram_Logmel_Cnn14_mAP=0.439.pth: 328692198 bytes, checksum md5:17fa9ab65af3c0eb5ffbc5f65552c4e1.",
+      "source_file": null,
+      "source_line_or_symbol": "Zenodo record 3987831 file ID dae15165-3ee9-4bd1-83a2-044ffda0d551",
+      "url": "https://zenodo.org/records/3987831",
+      "revision": null,
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-current-head",
+      "kind": "source_line_or_symbol",
+      "claim_status": "locally_observed_behavior",
+      "description": "Read-only clone observed origin/master and origin/HEAD at d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4 dated 2021-07-13.",
+      "source_file": "README.md",
+      "source_line_or_symbol": "git rev-parse HEAD; git show",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn/commit/d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4",
+      "revision": "d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-default-branch-candidate",
+      "kind": "source_line_or_symbol",
+      "claim_status": "verified_upstream_fact",
+      "description": "Commit 802432669263a31af0c448dd8d7b677af3815c01, dated 2020-07-30, is the nearest preceding commit on current master ancestry before Zenodo record creation and contains all three requested classes; no checkpoint association is asserted.",
+      "source_file": "pytorch/models.py",
+      "source_line_or_symbol": "git first-parent/default-branch history and requested class symbols",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn/commit/802432669263a31af0c448dd8d7b677af3815c01",
+      "revision": "802432669263a31af0c448dd8d7b677af3815c01",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-cnn16-side-branch-candidate",
+      "kind": "source_line_or_symbol",
+      "claim_status": "verified_upstream_fact",
+      "description": "Side-branch commit 58d0e624a2055fb1f2b5fb06369ecd726cfe64e0, dated 2020-08-17T09:36:37Z, added the exact Cnn14_16k checkpoint name shortly before Zenodo record creation; it is not an ancestor of current master.",
+      "source_file": "README.md",
+      "source_line_or_symbol": "commit 58d0e624a2055fb1f2b5fb06369ecd726cfe64e0 README diff",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn/commit/58d0e624a2055fb1f2b5fb06369ecd726cfe64e0",
+      "revision": "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-repository-inventory",
+      "kind": "source_line_or_symbol",
+      "claim_status": "locally_observed_behavior",
+      "description": "Canonical static repository and Python-project inspectors observed the source tree, MIT license, requirements.txt, absent packaging metadata, no checkpoint files, and no tags/releases in the clone.",
+      "source_file": "README.md",
+      "source_line_or_symbol": "inspect_repository.py; inspect_python_project.py; git tag",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn",
+      "revision": "d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-static-dependencies",
+      "kind": "configuration_file",
+      "claim_status": "locally_observed_behavior",
+      "description": "Canonical dependency inspector normalized all five exact requirement pins and observed deprecated np.int/np.float API risks in utility files.",
+      "source_file": "requirements.txt",
+      "source_line_or_symbol": "inspect_dependencies.py output",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn/blob/d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4/requirements.txt",
+      "revision": "d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-static-class-comparison",
+      "kind": "source_line_or_symbol",
+      "claim_status": "locally_observed_behavior",
+      "description": "Read-only Git diff inspection observed no textual changes to Cnn14_16k, ResNet38, or Wavegram_Logmel_Cnn14 class bodies between 802432669263a31af0c448dd8d7b677af3815c01 and current HEAD; this is not runtime or checkpoint evidence.",
+      "source_file": "pytorch/models.py",
+      "source_line_or_symbol": "git diff of requested class bodies",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn/compare/802432669263a31af0c448dd8d7b677af3815c01...d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4",
+      "revision": "d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-panns-inference-source",
+      "kind": "package_metadata",
+      "claim_status": "verified_upstream_fact",
+      "description": "Upstream-linked panns-inference source at f673f604ec6f4805a61c5b3be087e24776ec5fda declares package version 0.1.1, contains only Cnn14 and Cnn14_DecisionLevelMax model classes, and can invoke wget for checkpoints.",
+      "source_file": "setup.py",
+      "source_line_or_symbol": "setup.py; panns_inference/models.py; panns_inference/inference.py",
+      "url": "https://github.com/qiuqiangkong/panns_inference/tree/f673f604ec6f4805a61c5b3be087e24776ec5fda",
+      "revision": "f673f604ec6f4805a61c5b3be087e24776ec5fda",
+      "package_name": "panns-inference",
+      "package_version": "0.1.1",
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-project-input-contract",
+      "kind": "configuration_file",
+      "claim_status": "verified_upstream_fact",
+      "description": "Project specification requires public [B,C,T] waveform input plus sample_rate and optional [B] valid_lengths, with wrapper-owned preprocessing.",
+      "source_file": "project_spec.md",
+      "source_line_or_symbol": "Sections 13 and 14",
+      "url": null,
+      "revision": null,
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-project-output-contract",
+      "kind": "configuration_file",
+      "claim_status": "verified_upstream_fact",
+      "description": "Project specification requires forward() to return raw differentiable outputs without automatically applying sigmoid and requires all meaningful embeddings to remain accessible.",
+      "source_file": "project_spec.md",
+      "source_line_or_symbol": "Sections 14.2 and 16",
+      "url": null,
+      "revision": null,
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-user-scope",
+      "kind": "user_decision",
+      "claim_status": "user_provided_decision",
+      "description": "User selected analyze-only consumer mode, the three exact tuples, Zenodo record 3987831, and explicit prohibitions on environment/model/checkpoint/integration/repository mutations.",
+      "source_file": null,
+      "source_line_or_symbol": "current user request",
+      "url": null,
+      "revision": null,
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-user-embedding-unresolved",
+      "kind": "user_decision",
+      "claim_status": "user_provided_decision",
+      "description": "User specified PREFERRED_EMBEDDING: UNRESOLVED.",
+      "source_file": null,
+      "source_line_or_symbol": "current user request",
+      "url": null,
+      "revision": null,
+      "package_name": null,
+      "package_version": null,
+      "rationale": null
+    }
+  ],
+  "confidence_summary": {
+    "verified_fact_count": 47,
+    "locally_observed_count": 8,
+    "inference_count": 10,
+    "unresolved_count": 11,
+    "unsupported_claim_count": 0
+  },
+  "recommended_next_mode": "resolve-environment"
+}

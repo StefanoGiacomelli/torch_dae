@@ -1,0 +1,136 @@
+{
+  "allowed_next_modes": [
+    "resolve-environment",
+    "card"
+  ],
+  "canonical_skill_fingerprint": "d818b36f001168d717ac5ade7ee5d6ac581734ad11b7476fbb86d7964e2f3617",
+  "handoff_status": "accepted",
+  "input_artifacts": [
+    {
+      "canonical_role": null,
+      "external_label": "accepted-migration-input-bundle",
+      "media_type": "application/gzip",
+      "originating_phase": "external",
+      "path": null,
+      "sha256": "b42430987718498ce93af9c1ff3493c440e63fa19c25cdb243400b7840369dc2"
+    }
+  ],
+  "lifecycle_promotion": null,
+  "output_artifacts": [
+    {
+      "canonical_role": "technical-analysis-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "analyze",
+      "path": "onboarding_reports/panns-audioset-three-tuple/analyze/panns-technical-analysis.json",
+      "sha256": "afc32f4652686b0e6dc39d771d325691e614b4568096a67c9b9f627cdec554d3"
+    },
+    {
+      "canonical_role": "technical-analysis-markdown",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "analyze",
+      "path": "onboarding_reports/panns-audioset-three-tuple/analyze/panns-technical-analysis.md",
+      "sha256": "1777ee28788d2834b70db9f9b0b3468ff2cd9277134b6b82805f119de3d930d5"
+    },
+    {
+      "canonical_role": "manual-supplement-register",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "analyze",
+      "path": "onboarding_reports/panns-audioset-three-tuple/analyze/manual-supplements.json",
+      "sha256": "9d96ebe1b54674d72bf3b0b997fa4661cfcc960417060c12cd2a4a1ef5dfd7ef"
+    }
+  ],
+  "phase": "analyze",
+  "project_spec_sha256": "cca7eeb5ef482d5d587bce9be7aee0ce00268c23d5446d99662ee36fff1ab7b5",
+  "repository_commit": "c156433b2432b2549ed5169fb5dada7386005d3b",
+  "schema_version": "1.0.0",
+  "superseded_handoff_sha256": null,
+  "target_card_ids": [
+    "panns-cnn14-16k-map-0438",
+    "panns-resnet38-map-0434",
+    "panns-wavegram-logmel-cnn14-map-0439"
+  ],
+  "target_checkpoint_ids": [
+    "panns-cnn14-16k-map-0438",
+    "panns-resnet38-map-0434",
+    "panns-wavegram-logmel-cnn14-map-0439"
+  ],
+  "target_variant_ids": [
+    "panns-cnn14-16k",
+    "panns-resnet38",
+    "panns-wavegram-logmel-cnn14"
+  ],
+  "unresolved_items_carried_forward": [
+    {
+      "description": "Select the default embedding; the accepted analysis recommends the official post-fc1 embedding while retaining all meaningful candidates.",
+      "item_id": "q-default-embedding",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/analyze/panns-technical-analysis.json"
+    },
+    {
+      "description": "Choose between minimal vendored adaptation and a pinned official Git repository.",
+      "item_id": "q-source-strategy",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/analyze/panns-technical-analysis.json"
+    },
+    {
+      "description": "Exact checkpoint-to-source equivalence for Cnn14_16k remains unresolved.",
+      "item_id": "q-source-revision-cnn16",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/analyze/panns-technical-analysis.json"
+    },
+    {
+      "description": "Exact checkpoint-to-source equivalence for ResNet38 remains unresolved.",
+      "item_id": "q-source-revision-resnet38",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/analyze/panns-technical-analysis.json"
+    },
+    {
+      "description": "Exact checkpoint-to-source equivalence for Wavegram_Logmel_Cnn14 remains unresolved.",
+      "item_id": "q-source-revision-wavegram",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/analyze/panns-technical-analysis.json"
+    },
+    {
+      "description": "Resolve an evidence-motivated isolated environment without assuming the historical declaration is the only viable candidate.",
+      "item_id": "q-environment-resolution",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/analyze/panns-technical-analysis.json"
+    },
+    {
+      "description": "Checkpoint acquisition, SHA-256, loading, outputs, embeddings, and runtime behavior remain unverified for all three tuples.",
+      "item_id": "q-checkpoint-runtime-verification",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/analyze/panns-technical-analysis.json"
+    }
+  ],
+  "user_decisions_consumed": [
+    {
+      "decision": "Execute only analyze mode and prohibit environment resolution, model execution, checkpoint acquisition, integration artifacts, and repository changes.",
+      "decision_id": "d-mode-analyze-only",
+      "selected_option": "analyze"
+    },
+    {
+      "decision": "Analyze three separate model/variant/checkpoint tuples without reducing scope to a single implementation slice.",
+      "decision_id": "d-three-tuple-scope",
+      "selected_option": "all-three-tuples"
+    },
+    {
+      "decision": "Use Zenodo record 3987831 as the authoritative checkpoint-record candidate.",
+      "decision_id": "d-authoritative-checkpoint-record",
+      "selected_option": "zenodo-3987831"
+    },
+    {
+      "decision": "Leave the preferred embedding unresolved during analyze mode.",
+      "decision_id": "d-embedding-deferred",
+      "selected_option": "unresolved"
+    }
+  ],
+  "validation_summary": {
+    "checks": [
+      "attached SHA256SUMS validation",
+      "AnalysisReport Pydantic validation",
+      "Draft 2020-12 analysis schema validation",
+      "deterministic Markdown equality",
+      "manual supplement register JSON validation"
+    ],
+    "errors": [],
+    "passed": true
+  },
+  "workflow_id": "panns-audioset-three-tuple"
+}

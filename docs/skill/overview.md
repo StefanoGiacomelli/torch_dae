@@ -17,3 +17,8 @@ card
 The skill never treats missing evidence as fact. Repository analysis is static by default;
 execution, network acquisition, environment creation, and integration occur only in modes that
 authorize them.
+
+Every mode accepts `WORKFLOW_ID`. Accepted prerequisites are discovered and hash-validated from
+`onboarding_reports/` before attachments are requested. Phase runs use recorded managed workspaces,
+promote accepted canonical outputs, generate a deterministic external review bundle, and finish with
+scoped cleanup.

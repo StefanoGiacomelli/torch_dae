@@ -39,7 +39,7 @@ One model card always describes exactly one model family, variant, and checkpoin
 ## Current capabilities
 
 - Strict typed contracts and generated JSON Schemas for cards, environments, checkpoints,
-  embeddings, onboarding reports, and runtime verification.
+  embeddings, onboarding reports, cross-phase workflow handoffs, and runtime verification.
 - Reproducible model-specific environment materialization, verification, reuse, and execution.
 - Checkpoint acquisition from HTTPS, GitHub releases, Hugging Face, package resources, and local
   paths, with hashing, cache validation, offline behavior, and sanitized diagnostics.
@@ -73,9 +73,11 @@ The root package is a model-agnostic control plane:
 - [Synthetic grounded evaluation](skills/audio-model-onboarding/references/synthetic-evaluation.md)
   checks reports against concrete fixture observations.
 
-Model cards belong under `model_cards/`, verification reports under `verification_reports/`, and
-committed environment inputs under `environments/`. Materialized environments, repositories,
-checkpoints, diagnostics, and coverage data remain under ignored `.torch-dae/`.
+Model cards belong under `model_cards/`, accepted pre-runtime phase handoffs under
+`onboarding_reports/`, verification reports under `verification_reports/`, and committed
+environment inputs under `environments/`. `verification_reports/` contains checkpoint-specific
+runtime observations only. Materialized environments, managed workspaces, repositories, checkpoints,
+diagnostics, and coverage data remain under ignored `.torch-dae/`.
 
 ## Installation
 
@@ -205,6 +207,7 @@ fill in its placeholders:
 Use the canonical `audio-model-onboarding` skill available in this repository.
 
 MODE: <analyze | resolve-environment | integrate | verify | card>
+WORKFLOW_ID: <STABLE_WORKFLOW_ID_OR_AUTO_DISCOVER>
 
 MODEL_NAME: <MODEL_NAME>
 UPSTREAM_REPOSITORY: <GITHUB_REPOSITORY_URL>
@@ -223,10 +226,36 @@ no-commit instructions.
 
 ## Expected agent response
 
-The [canonical response template](skills/audio-model-onboarding/templates/agent-response.md) requires
-`Summary`, `Work completed`, `Problems and resolutions`, `Open questions`, `Files`, and `Validation`
-sections. It lists only files actually changed for the requested model and uses `None.` when no open
-question remains.
+The [canonical response template](skills/audio-model-onboarding/templates/agent-response.md) reports
+the consumed and produced handoffs, promoted paths, external review bundle and digest, scoped
+workspace cleanup, retained managed runtime paths, problems, open questions, files, and validation.
+It lists only files actually changed for the requested model and uses `None.` when no open question
+remains.
+
+Promotion accepts only the selected handoff's exact declared phase-local artifact set. Review
+bundles include explicit archive-normalization results and a SHA-256 sidecar. Scoped cleanup reports
+external audit outputs without deleting them and persists an atomic receipt under
+`.torch-dae/reports/onboarding/<workflow-id>/cleanup/`.
+
+Accepted prerequisites are locally discoverable by stable workflow ID:
+
+```bash
+uv run python scripts/onboarding_handoff.py discover \
+  --workflow-id <workflow-id> \
+  --required-phase <phase> \
+  --json
+```
+
+Build a normalized deterministic external review bundle through an accepted phase:
+
+```bash
+uv run python scripts/onboarding_handoff.py bundle \
+  --workflow-id <workflow-id> \
+  --through-phase <phase> \
+  --output-dir ../torch-dae-review-bundles \
+  --include-working-tree \
+  --json
+```
 
 ## Repository layout
 
@@ -239,9 +268,10 @@ docs/                                  Public subsystem and workflow guides
 graphics/                              README figures and architectural diagrams
 tests/                                 Contract, subsystem, safety, and synthetic evaluation tests
 environments/                          Committed per-card environment inputs
+onboarding_reports/                    Accepted pre-runtime cross-phase handoffs
 model_cards/                           Checkpoint-specific production cards
-verification_reports/                  Committed runtime observations
-.torch-dae/                            Ignored runtime state
+verification_reports/                  Committed checkpoint-specific runtime observations
+.torch-dae/                            Ignored runtime state and managed workspaces
 ```
 
 The `.agents/` and `.claude/` skill entries are public relative symlinks to the canonical skill.

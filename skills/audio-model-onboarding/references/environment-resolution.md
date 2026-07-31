@@ -19,6 +19,38 @@ and CLI to materialize or verify isolated model-specific environments.
 Successful resolution may prepare `environments/<card-id>/environment.json`, `pyproject.toml`,
 `uv.lock`, `sources.json`, and `verify_environment.py`.
 
+Every package imported directly by the selected minimal runtime source surface is a direct
+dependency. Do not rely on transitive installation. When dependencies are exactly pinned, the
+verification script checks every declared direct dependency and exact version.
+
+When multiple tuples may share future source, identify the minimum files and symbols and compare
+candidate revisions for byte identity, symbol identity, and semantic differences. Select one common
+revision only when it preserves every required variant; otherwise retain tuple-specific provenance.
+Chronological proximity never establishes checkpoint equivalence.
+
+Tuples share environment evidence only when direct dependencies are equivalent, selected source APIs
+are compatible, import/constructor trials pass for every tuple, platform and interpreter match, and
+the reused evidence and differences are documented.
+
+A constructor trial establishes dependency resolution, source import, class construction, and
+parameter-device placement only. It does not establish checkpoint compatibility, forward
+correctness, output correctness, embedding correctness, inference equivalence, or runtime
+verification.
+
+Resolve-environment has two successful completion states. **Draft resolution complete** means a
+candidate was selected, its isolated import/constructor trial passed, environment drafts and locks
+validate, production materialization prerequisites are intentionally absent, and no fingerprint or
+lifecycle promotion is claimed; `integrate` may be next. **Environment lifecycle resolved** requires
+canonical materialization, successful verification, fingerprint and report reference, and every
+strict lifecycle prerequisite. Draft completion is not failure and must not be promoted to
+`environment_resolved`.
+
+Optional host diagnostics are portable and non-blocking. A failed optional CPU-brand or
+platform-detail command is recorded separately from model-trial success. Sandbox, DNS,
+package-index, authentication, and rate-limit failures retain their original logs and classification.
+One identical evidence-motivated rerun is permitted when policy allows; preserve both outcomes and
+do not hide an external failure by changing generic code.
+
 The repository root `.venv` is expected control-plane runtime state. Create or synchronize it with
 `uv sync --all-groups --frozen`, and run analysis utilities with `uv run`; this is not model
 environment materialization. `pypdf` belongs to the root only as bounded document-analysis tooling.

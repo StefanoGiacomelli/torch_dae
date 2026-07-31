@@ -1,6 +1,7 @@
 Use the canonical `audio-model-onboarding` skill available in this repository.
 
 MODE: <analyze | resolve-environment | integrate | verify | card>
+WORKFLOW_ID: <STABLE_WORKFLOW_ID_OR_AUTO_DISCOVER>
 
 MODEL_NAME: <MODEL_NAME>
 UPSTREAM_REPOSITORY: <GITHUB_REPOSITORY_URL>
@@ -22,6 +23,9 @@ Requirements:
 - Record evidence and provenance for every material conclusion
 - Use isolated model-specific environments
 - Validate every generated artifact
+- Discover and validate accepted prerequisite handoffs before requesting attachments
+- Promote accepted pre-runtime outputs before declaring a phase complete
+- Generate the deterministic review bundle and run scoped cleanup
 - Execute only the requested workflow mode
 - Do not create a Git commit
 - Request user input only for genuine unresolved decisions

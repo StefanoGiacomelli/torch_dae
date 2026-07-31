@@ -38,7 +38,7 @@ def markdown_link_errors(root: Path, paths: list[Path]) -> list[str]:
 
 def test_project_spec_is_byte_preserved(repo_root: Path) -> None:
     assert (
-        git_blob_hash(repo_root / "project_spec.md") == "e915c388190e64aeebaae2efead051ef98fe8a18"
+        git_blob_hash(repo_root / "project_spec.md") == "66e6ae9bcb77b1e67be03fb91edf0ec57d764c18"
     )
 
 
@@ -216,6 +216,7 @@ def test_agent_templates_have_exact_contract(repo_root: Path) -> None:
     request = (repo_root / "skills/audio-model-onboarding/templates/agent-request.md").read_text()
     for placeholder in (
         "MODE: <analyze | resolve-environment | integrate | verify | card>",
+        "WORKFLOW_ID: <STABLE_WORKFLOW_ID_OR_AUTO_DISCOVER>",
         "MODEL_NAME: <MODEL_NAME>",
         "UPSTREAM_REPOSITORY: <GITHUB_REPOSITORY_URL>",
         "PAPER_OR_TECHNICAL_REFERENCE: <PAPER_URL_OR_NONE>",
@@ -229,6 +230,10 @@ def test_agent_templates_have_exact_contract(repo_root: Path) -> None:
     for heading in (
         "## Summary",
         "## Work completed",
+        "## Consumed handoff",
+        "## Produced handoff",
+        "## Review bundle",
+        "## Workspace cleanup",
         "## Problems and resolutions",
         "## Open questions",
         "## Files",

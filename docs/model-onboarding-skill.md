@@ -49,6 +49,27 @@ Supported modes are `analyze`, `resolve-environment`, `integrate`, `verify`, `ca
 Every mode executes only its own scope. No mode adds model dependencies to the root project, commits
 checkpoint binaries, silently begins another mode, or creates a Git commit.
 
+## Cross-conversation handoffs
+
+Every request accepts `WORKFLOW_ID`. The skill first discovers the required accepted phase through
+`scripts/onboarding_handoff.py`, validates local artifact hashes, the specification hash, and the
+canonical skill fingerprint, then consumes recorded decisions and unresolved items. It asks for an
+attachment only when the canonical prerequisite is genuinely absent. Duplicate attachments must
+match the canonical digest.
+
+Phase execution uses a managed `.torch-dae/workspaces/<workflow-id>/<phase>/<run-id>/` manifest.
+Accepted pre-runtime output is atomically promoted under `onboarding_reports/`, followed by a
+deterministic external review bundle and scoped cleanup. Default cleanup removes recorded ephemeral
+workspaces and trial environments only; reusable caches, materialized environments, checkpoints,
+and external audit bundles remain. External audit outputs are never cleanup targets. Retained
+diagnostics must be moved under `.torch-dae/reports/onboarding/<workflow-id>/`; cleanup writes a
+durable receipt there before deleting an eligible workspace.
+
+Resolve-environment may finish successfully as a draft without lifecycle promotion when isolated
+import/construction passed but production source, wrapper, or card prerequisites are intentionally
+absent. Constructor trials do not establish checkpoint compatibility, forward/output/embedding
+correctness, inference equivalence, or runtime verification.
+
 ## Evidence and evaluation
 
 The end-to-end workflow is static inspection, structured observations, evidence-grounded analysis,

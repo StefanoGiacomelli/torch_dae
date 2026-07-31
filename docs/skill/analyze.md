@@ -21,3 +21,7 @@ Checkpoint/source chronology is best-effort. Prefer explicit host revision metad
 signed or annotated tag, or an authoritative cited commit. Repository-history dating and the nearest
 preceding commit are inference only. Current default-branch HEAD is current-source evidence and is
 not automatically checkpoint-equivalent.
+
+With `WORKFLOW_ID`, accepted output is promoted to
+`onboarding_reports/<workflow-id>/analyze/` before completion. The response reports the handoff,
+bundle digest, cleanup result, and retained managed caches.

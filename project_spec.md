@@ -387,6 +387,22 @@ torch-dae/
 │       ├── sources.json
 │       └── verify_environment.py
 │
+├── onboarding_reports/
+│   └── <workflow-id>/
+│       ├── workflow.json
+│       ├── analyze/
+│       │   ├── handoff.json
+│       │   └── <canonical phase outputs>
+│       ├── resolve-environment/
+│       │   ├── handoff.json
+│       │   └── <canonical phase outputs>
+│       ├── integrate/
+│       │   ├── handoff.json
+│       │   └── <canonical phase outputs>
+│       └── card/
+│           ├── handoff.json
+│           └── <canonical phase outputs>
+│
 ├── verification_reports/
 │   └── <family>/
 │       └── <card-id>.json
@@ -404,12 +420,25 @@ torch-dae/
     ├── environments/
     ├── checkpoints/
     ├── reports/
+    ├── workspaces/
     └── profiling/
 ```
 
 The complete `.torch-dae/` directory MUST be ignored by Git.
 
 No legacy backbone JSON files or parsed legacy hints MUST be included in the new repository.
+
+`onboarding_reports/` contains accepted, bounded, reviewable static-analysis, planning, and
+environment-resolution handoffs produced before runtime verification. Phase directories MAY be
+absent until accepted. Canonical JSON and Markdown files MUST remain decompressed and diffable.
+Checkpoint payloads, complete command logs, source clones, virtual environments, caches, coverage
+output, and duplicate transport archives MUST NOT be committed there.
+
+`verification_reports/` retains one meaning only: committed checkpoint-specific runtime
+observations created by `verify`. Analysis reports, environment-resolution reports, integration
+plans, handoff manifests, and audit bundles MUST NOT be stored there. Ignored diagnostic and
+execution logs belong under `.torch-dae/reports/`. External review bundles are on-demand transport
+and audit artifacts and MUST be generated outside the repository.
 
 ---
 
@@ -532,6 +561,61 @@ torch-dae env ensure <card-id>
 ```
 
 Recreation MUST use the committed environment specification and lock file. It MUST NOT repeat compatibility research.
+
+## 9.3 Onboarding phase handoffs
+
+Every cross-conversation onboarding workflow MUST have a stable canonical workflow ID and MAY commit
+accepted phase outputs under `onboarding_reports/<workflow-id>/`. The workflow record and each
+accepted handoff MUST use strict Draft 2020-12 contracts with closed objects, canonical identifiers,
+repository-relative paths, and validated SHA-256 values.
+
+A workflow record MUST identify the model family, target variant/checkpoint/card scopes, repository
+commit at creation, accepted phase paths, current accepted phase, and active or completed status.
+Each handoff MUST identify its workflow and phase, draft/accepted/superseded status, producing
+repository commit, `project_spec.md` hash, canonical skill fingerprint, hashed input and output
+artifacts, consumed user decisions, carried unresolved items, validation result, target scopes, and
+allowed next modes. An accepted handoff MUST have passed its required validation. A superseding
+handoff MUST record the SHA-256 of the prior accepted handoff.
+
+All referenced canonical local files MUST exist and match their recorded hashes. External
+attachments MAY be retained as digest-only evidence, but MUST NOT become required future local
+paths. Handoffs from different workflows MUST NOT be combined silently. A handoff MUST NOT claim a
+model-card lifecycle promotion that its underlying report does not claim.
+
+The root control plane MUST provide deterministic `discover`, `validate`, `promote`, `bundle`, and
+`cleanup` operations through `scripts/onboarding_handoff.py`. Discovery MUST search only the
+committed `onboarding_reports/` root. Promotion MUST validate before mutation, use an atomic
+temporary sibling and rename, reject partial or arbitrary runtime content, and require explicit
+supersession before replacing an accepted handoff.
+
+Every phase execution MUST use either a context-managed system temporary directory or:
+
+```text
+.torch-dae/workspaces/<workflow-id>/<phase>/<run-id>/
+```
+
+A managed run manifest MUST record its run/workflow/phase identities, start time, repository commit,
+created, reused, external, and retained paths, retained reasons, and cleanup result. Successful
+closure MUST validate in the workspace, promote accepted canonical artifacts, generate the review
+bundle, remove recorded ephemeral workspaces and trial environments, verify removal, and report
+retained managed caches. Failure handling MUST preserve only bounded diagnostics required to
+classify the failure and MUST leave no unidentified temporary paths.
+
+Cleanup categories are: ephemeral workflow workspaces; failed or completed trial environments;
+reusable repository/package caches; materialized model environments; checkpoint caches; and external
+audit outputs. Default cleanup MAY remove only the first two categories for the selected workflow
+and completed run. All deletion targets MUST be recorded by a managed run manifest. Reusable caches,
+materialized environments, checkpoints, and external audit outputs require explicit flags or
+external user action and MUST NOT be removed implicitly.
+
+Review bundles MUST be deterministic, produced exclusively with Python `tarfile`, and normalize
+ownership, names, timestamps, modes, gzip metadata, and extended archive metadata. They MUST contain
+the workflow and accepted artifacts through the requested phase, referenced committed artifacts,
+repository identity and status, staged/unstaged/untracked inventories and diffs, a tracked-file
+manifest, specification and skill fingerprints, artifact hashes and sizes, declared and actual
+archive inventories, and a bundle result. When requested, the bundle MUST include a working-tree
+snapshot excluding Git metadata and ignored runtime/build/cache/checkpoint state. Declared and
+actual inventories MUST be compared independently.
 
 ---
 
@@ -1311,6 +1395,7 @@ The minimum user input is:
 
 Optional inputs include:
 
+* stable workflow ID;
 * requested variant;
 * requested checkpoint;
 * official paper URL;
@@ -1319,6 +1404,13 @@ Optional inputs include:
 * target local platform.
 
 The skill MUST remain independent of the previous project’s backbone JSON files.
+
+When a workflow ID is supplied, the skill MUST discover and validate accepted prerequisite
+handoffs locally before requesting attachments. Without a workflow ID, automatic selection is
+permitted only when exactly one compatible active workflow exists. Recorded decisions and unresolved
+items MUST be consumed and carried forward. A duplicate attachment MUST match the canonical digest;
+a mismatch MUST stop the phase rather than select one silently. An accepted phase MUST be promoted
+before it is declared complete, followed by deterministic bundle generation and scoped cleanup.
 
 ## 19.2 Skill modes
 
@@ -1409,6 +1501,21 @@ The historical period and source APIs MUST influence the initial candidates.
 
 The newest package versions MUST NOT be assumed to be the correct starting point.
 
+Every package imported directly by the selected minimal runtime source surface MUST be declared as a
+direct environment dependency. Direct imports MUST NOT rely only on transitive installation. When
+exact pins are used, the environment verification script MUST verify every declared direct
+dependency and its exact version.
+
+When variants or checkpoints may share a future source substrate, resolution MUST identify the
+minimum required files and symbols and compare candidate revisions at byte, symbol, and semantic
+levels. One common revision MAY be selected only when it preserves every required variant;
+otherwise tuple-specific provenance is required. Checkpoint equivalence MUST NOT be inferred from
+chronological proximity.
+
+Multiple tuples MAY reuse one environment stack only when their direct dependencies are equivalent,
+the selected source APIs are compatible, constructor/import trials pass for each tuple, platform and
+interpreter are identical, and all differences and reused evidence are documented.
+
 ## 20.3 Failure classification
 
 Every failed attempt SHOULD be classified as one of:
@@ -1454,6 +1561,35 @@ After success, the onboarding process MUST:
 * freeze source revisions;
 * execute an environment verification;
 * commit only specifications and lock data.
+
+## 20.6 Constructor trials and completion states
+
+A constructor trial MAY establish dependency resolution, source import, class construction, and
+parameter-device placement only. It MUST explicitly record that it does not establish checkpoint
+compatibility, forward or output correctness, embedding correctness, inference equivalence, or
+runtime verification.
+
+A successful resolve-environment phase has two distinct completion states:
+
+1. **draft resolution complete**: an evidence-supported candidate is selected; isolated import and
+   constructor trials pass; environment drafts and locks validate; production source, wrapper, or
+   card prerequisites are intentionally absent; no fingerprint or lifecycle promotion is claimed;
+   and `integrate` MAY be recommended next;
+2. **environment lifecycle resolved**: canonical materialization and verification pass; the
+   fingerprint and report reference exist; every lifecycle contract is satisfied; and promotion to
+   `environment_resolved` is valid.
+
+The first state is successful phase completion but MUST NOT be promoted to `environment_resolved`.
+The strict `EnvironmentResolutionReport` lifecycle contract remains authoritative.
+
+Optional host metadata probes MUST be portable and non-blocking. Failure of an optional CPU-brand or
+platform-detail probe MUST be recorded separately and MUST NOT invalidate an otherwise successful
+constructor trial.
+
+Sandbox, DNS, package-index, authentication, and rate-limit failures MUST retain their original
+logs, be classified separately from model or dependency incompatibility, and MAY receive one
+identical evidence-motivated rerun when execution policy permits. Both outcomes MUST be preserved;
+generic code MUST NOT be changed merely to hide an external execution failure.
 
 ---
 
@@ -1527,6 +1663,9 @@ Each model integration MUST have a committed verification report containing:
 
 Large runtime outputs and checkpoints MUST remain ignored.
 
+Committed verification reports are created only by `verify` after checkpoint-specific runtime
+observation. Pre-runtime handoffs and audit/transport bundles are not verification reports.
+
 ---
 
 # 22. Registry
@@ -1597,7 +1736,9 @@ Validation MUST cover:
 * environments;
 * checkpoints;
 * embeddings;
-* verification reports.
+* verification reports;
+* onboarding workflow records;
+* onboarding phase-handoff manifests.
 
 Pydantic or an equivalent typed Python model SHOULD mirror each principal schema.
 
@@ -1857,6 +1998,10 @@ The following invariants apply throughout development:
 14. legacy backbone JSON files are not project inputs;
 15. profiling begins only after runtime verification;
 16. unresolved information is represented explicitly rather than rhetorically strengthened.
+17. accepted pre-runtime phase handoffs are committed under `onboarding_reports/`;
+18. `verification_reports/` remains checkpoint-specific runtime evidence only;
+19. temporary onboarding work uses recorded managed workspaces and scoped cleanup;
+20. draft environment resolution is distinct from lifecycle promotion.
 
 ---
 

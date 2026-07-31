@@ -6,3 +6,7 @@ observations, inferences, unresolved items, and non-applicable fields remain dis
 
 The card validator enforces lifecycle prerequisites and cross-document identity with its environment
 and verification artifacts.
+
+With `WORKFLOW_ID`, accepted prerequisite handoffs and their recorded decisions are discovered
+locally. The accepted card handoff is promoted under `onboarding_reports/<workflow-id>/card/`,
+bundled, and followed by scoped cleanup.

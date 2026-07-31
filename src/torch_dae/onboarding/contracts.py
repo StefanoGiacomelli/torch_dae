@@ -16,6 +16,7 @@ from torch_dae.cards.models import ModelCardLifecycle
 from torch_dae.contracts import (
     GIT_REVISION_PATTERN,
     REPO_RELATIVE_PATTERN,
+    SHA256_PATTERN,
     CanonicalId,
     StrictBaseModel,
     ensure_repository_relative,
@@ -135,6 +136,10 @@ class FailureClassification(StrEnum):
     RUNTIME_FAILURE = "runtime_failure"
     PLATFORM_INCOMPATIBILITY = "platform_incompatibility"
     ACCESS_OR_AUTHENTICATION_BLOCKER = "access_or_authentication_blocker"
+    SANDBOX_OR_EXECUTION_POLICY = "sandbox_or_execution_policy"
+    NETWORK_OR_DNS = "network_or_dns"
+    PACKAGE_INDEX = "package_index"
+    RATE_LIMIT = "rate_limit"
     INSUFFICIENT_EVIDENCE = "insufficient_evidence"
 
 
@@ -1087,6 +1092,327 @@ class EnvironmentResolutionReport(StrictBaseModel):
             )
         if compatibility_errors:
             raise ValueError("; ".join(sorted(set(compatibility_errors))))
+        return self
+
+
+class OnboardingPhase(StrEnum):
+    """Committed pre-runtime onboarding phases."""
+
+    ANALYZE = "analyze"
+    RESOLVE_ENVIRONMENT = "resolve-environment"
+    INTEGRATE = "integrate"
+    CARD = "card"
+
+
+class WorkflowStatus(StrEnum):
+    """Lifecycle of one cross-conversation onboarding workflow."""
+
+    ACTIVE = "active"
+    COMPLETED = "completed"
+
+
+class HandoffStatus(StrEnum):
+    """Review status of one phase handoff."""
+
+    DRAFT = "draft"
+    ACCEPTED = "accepted"
+    SUPERSEDED = "superseded"
+
+
+class ArtifactOriginPhase(StrEnum):
+    """Origin recorded for an artifact reference."""
+
+    ANALYZE = "analyze"
+    RESOLVE_ENVIRONMENT = "resolve-environment"
+    INTEGRATE = "integrate"
+    CARD = "card"
+    EXTERNAL = "external"
+
+
+class AcceptedPhaseReference(StrictBaseModel):
+    """Canonical accepted handoff path for one workflow phase."""
+
+    phase: OnboardingPhase
+    handoff_path: Annotated[str, Field(pattern=REPO_RELATIVE_PATTERN)]
+
+    @field_validator("handoff_path")
+    @classmethod
+    def handoff_path_repository_relative(cls, value: str) -> str:
+        return ensure_repository_relative(value) or value
+
+
+class WorkflowRecord(StrictBaseModel):
+    """Committed identity and accepted-phase index for an onboarding workflow."""
+
+    schema_version: Literal["1.0.0"]
+    workflow_id: CanonicalId
+    model_family: str
+    target_variant_ids: tuple[CanonicalId, ...]
+    target_checkpoint_ids: tuple[CanonicalId, ...]
+    target_card_ids: tuple[CanonicalId, ...] = ()
+    created_repository_commit: Annotated[str, Field(pattern=GIT_REVISION_PATTERN)]
+    current_accepted_phase: OnboardingPhase | None = None
+    accepted_phase_paths: tuple[AcceptedPhaseReference, ...] = ()
+    status: WorkflowStatus
+
+    @model_validator(mode="after")
+    def validate_phase_index(self) -> WorkflowRecord:
+        phases = [item.phase for item in self.accepted_phase_paths]
+        if len(phases) != len(set(phases)):
+            raise ValueError("accepted workflow phases must be unique")
+        if self.current_accepted_phase is not None and self.current_accepted_phase not in phases:
+            raise ValueError("current_accepted_phase must have an accepted phase path")
+        if len(self.target_variant_ids) != len(set(self.target_variant_ids)):
+            raise ValueError("target variant IDs must be unique")
+        if len(self.target_checkpoint_ids) != len(set(self.target_checkpoint_ids)):
+            raise ValueError("target checkpoint IDs must be unique")
+        if len(self.target_card_ids) != len(set(self.target_card_ids)):
+            raise ValueError("target card IDs must be unique")
+        expected_prefix = f"onboarding_reports/{self.workflow_id}/"
+        for reference in self.accepted_phase_paths:
+            expected = f"{expected_prefix}{reference.phase.value}/handoff.json"
+            if reference.handoff_path != expected:
+                raise ValueError(f"accepted handoff path must be {expected}")
+        return self
+
+
+class HandoffArtifactReference(StrictBaseModel):
+    """Hash-addressed local or external artifact used by a phase handoff."""
+
+    path: Annotated[str | None, Field(pattern=REPO_RELATIVE_PATTERN)] = None
+    sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    media_type: Annotated[str, Field(pattern=r"^[a-z0-9.+-]+/[a-z0-9.+-]+$")]
+    originating_phase: ArtifactOriginPhase
+    canonical_role: CanonicalId | None = None
+    external_label: CanonicalId | None = None
+
+    @field_validator("path")
+    @classmethod
+    def path_repository_relative(cls, value: str | None) -> str | None:
+        return ensure_repository_relative(value)
+
+    @model_validator(mode="after")
+    def validate_location(self) -> HandoffArtifactReference:
+        if (self.path is None) == (self.external_label is None):
+            raise ValueError("artifact reference requires exactly one of path or external_label")
+        if self.path is None and self.originating_phase != ArtifactOriginPhase.EXTERNAL:
+            raise ValueError("digest-only artifacts must have external origin")
+        if self.path is not None and self.external_label is not None:
+            raise ValueError("local artifacts must not carry an external label")
+        return self
+
+
+class ConsumedUserDecision(StrictBaseModel):
+    """One task-specific user decision consumed by a phase."""
+
+    decision_id: CanonicalId
+    decision: str
+    selected_option: str
+
+
+class CarriedUnresolvedItem(StrictBaseModel):
+    """One unresolved item explicitly carried into a later phase."""
+
+    item_id: CanonicalId
+    description: str
+    source_artifact_path: Annotated[str | None, Field(pattern=REPO_RELATIVE_PATTERN)] = None
+
+    @field_validator("source_artifact_path")
+    @classmethod
+    def source_path_repository_relative(cls, value: str | None) -> str | None:
+        return ensure_repository_relative(value)
+
+
+class HandoffValidationSummary(StrictBaseModel):
+    """Deterministic validation outcome required for handoff acceptance."""
+
+    passed: bool
+    checks: tuple[str, ...]
+    errors: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def passed_has_no_errors(self) -> HandoffValidationSummary:
+        if self.passed and self.errors:
+            raise ValueError("passed validation summary must not contain errors")
+        if not self.passed and not self.errors:
+            raise ValueError("failed validation summary requires errors")
+        return self
+
+
+class PhaseHandoffManifest(StrictBaseModel):
+    """Committed, hash-addressed handoff from one onboarding phase."""
+
+    schema_version: Literal["1.0.0"]
+    workflow_id: CanonicalId
+    phase: OnboardingPhase
+    handoff_status: HandoffStatus
+    repository_commit: Annotated[str, Field(pattern=GIT_REVISION_PATTERN)]
+    project_spec_sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    canonical_skill_fingerprint: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    input_artifacts: tuple[HandoffArtifactReference, ...] = ()
+    output_artifacts: tuple[HandoffArtifactReference, ...]
+    target_variant_ids: tuple[CanonicalId, ...]
+    target_checkpoint_ids: tuple[CanonicalId, ...]
+    target_card_ids: tuple[CanonicalId, ...] = ()
+    user_decisions_consumed: tuple[ConsumedUserDecision, ...] = ()
+    unresolved_items_carried_forward: tuple[CarriedUnresolvedItem, ...] = ()
+    validation_summary: HandoffValidationSummary
+    allowed_next_modes: tuple[RecommendedNextMode, ...]
+    lifecycle_promotion: ModelCardLifecycle | None = None
+    superseded_handoff_sha256: Annotated[str | None, Field(pattern=SHA256_PATTERN)] = None
+
+    @model_validator(mode="after")
+    def validate_handoff_state(self) -> PhaseHandoffManifest:
+        if self.handoff_status == HandoffStatus.ACCEPTED and not self.validation_summary.passed:
+            raise ValueError("accepted handoffs require passed validation")
+        if not self.output_artifacts:
+            raise ValueError("phase handoffs require output artifacts")
+        if any(item.canonical_role is None for item in self.output_artifacts):
+            raise ValueError("output artifacts require canonical_role")
+        if len(self.allowed_next_modes) != len(set(self.allowed_next_modes)):
+            raise ValueError("allowed next modes must be unique")
+        for label, values in (
+            ("target variant", self.target_variant_ids),
+            ("target checkpoint", self.target_checkpoint_ids),
+            ("target card", self.target_card_ids),
+        ):
+            if len(values) != len(set(values)):
+                raise ValueError(f"{label} IDs must be unique")
+        expected_prefix = f"onboarding_reports/{self.workflow_id}/"
+        phase_prefix = f"{expected_prefix}{self.phase.value}/"
+        for artifact in (*self.input_artifacts, *self.output_artifacts):
+            if artifact.path and artifact.path.startswith("onboarding_reports/"):
+                if not artifact.path.startswith(expected_prefix):
+                    raise ValueError("handoff artifacts may not mix onboarding workflows")
+        allowed_external_output_roots = {
+            OnboardingPhase.ANALYZE: (),
+            OnboardingPhase.RESOLVE_ENVIRONMENT: ("environments/",),
+            OnboardingPhase.INTEGRATE: (
+                "docs/",
+                "environments/",
+                "model_cards/",
+                "src/",
+                "tests/",
+            ),
+            OnboardingPhase.CARD: ("model_cards/",),
+        }[self.phase]
+        for artifact in self.output_artifacts:
+            if artifact.path is None or not (
+                artifact.path.startswith(phase_prefix)
+                or artifact.path.startswith(allowed_external_output_roots)
+            ):
+                raise ValueError("output artifacts must be canonical for the handoff phase")
+        if not any(
+            artifact.path and artifact.path.startswith(phase_prefix)
+            for artifact in self.output_artifacts
+        ):
+            raise ValueError("handoff requires at least one phase-local canonical output")
+        return self
+
+
+class ManagedRunManifest(StrictBaseModel):
+    """Ignored runtime manifest for one managed onboarding phase execution."""
+
+    schema_version: Literal["1.0.0"]
+    run_id: CanonicalId
+    workflow_id: CanonicalId
+    phase: OnboardingPhase
+    started_at: datetime
+    repository_commit: Annotated[str, Field(pattern=GIT_REVISION_PATTERN)]
+    created_paths: tuple[str, ...]
+    reused_paths: tuple[str, ...] = ()
+    external_paths: tuple[str, ...] = ()
+    retained_paths: tuple[str, ...] = ()
+    retained_reasons: dict[str, str] = Field(default_factory=dict)
+    cleanup_result: dict[str, Any] | None = None
+
+
+class CleanupPathRecord(StrictBaseModel):
+    """One managed or external path retained by cleanup."""
+
+    path: str
+    category: str
+    reason: str
+    status: Literal[
+        "retained-existing-file",
+        "retained-existing-directory",
+        "retained-symlink",
+        "missing",
+    ]
+    sha256: Annotated[str | None, Field(pattern=SHA256_PATTERN)] = None
+
+    @model_validator(mode="after")
+    def hash_only_existing_files(self) -> CleanupPathRecord:
+        if self.status == "retained-existing-file" and self.sha256 is None:
+            raise ValueError("retained existing files require SHA-256")
+        if self.status != "retained-existing-file" and self.sha256 is not None:
+            raise ValueError("only retained existing files may carry SHA-256")
+        return self
+
+
+class CleanupRetentionConflict(StrictBaseModel):
+    """A retained path that would be removed by a planned deletion root."""
+
+    retained_path: str
+    deletion_root: str
+    reason: str
+    remediation: str
+
+
+class CleanupExternalProtectionConflict(StrictBaseModel):
+    """An existing external output that overlaps a planned deletion root."""
+
+    supplied_external_path: str
+    resolved_path: str
+    deletion_root: str
+    status: Literal[
+        "retained-existing-file",
+        "retained-existing-directory",
+        "retained-symlink",
+        "missing",
+    ]
+    reason: str
+    remediation: str
+
+
+class CleanupConsumedRunManifest(StrictBaseModel):
+    """A finalized run manifest embedded in a durable cleanup receipt."""
+
+    path: str
+    sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    manifest: ManagedRunManifest
+
+
+class CleanupReceipt(StrictBaseModel):
+    """Durable ignored-runtime receipt for one cleanup plan or execution."""
+
+    schema_version: Literal["1.0.0"]
+    workflow_id: CanonicalId
+    cleanup_operation_id: CanonicalId
+    time: datetime
+    mode: Literal["dry-run", "execute"]
+    run_manifests_consumed: tuple[CleanupConsumedRunManifest, ...]
+    planned_paths: tuple[str, ...]
+    removed_paths: tuple[str, ...]
+    retention_conflicts: tuple[CleanupRetentionConflict, ...] = ()
+    external_protection_conflicts: tuple[CleanupExternalProtectionConflict, ...] = ()
+    retained_managed_paths: tuple[CleanupPathRecord, ...] = ()
+    retained_external_paths: tuple[CleanupPathRecord, ...] = ()
+    repository_caches_retained: tuple[CleanupPathRecord, ...] = ()
+    package_caches_retained: tuple[CleanupPathRecord, ...] = ()
+    materialized_environments_retained: tuple[CleanupPathRecord, ...] = ()
+    checkpoint_caches_retained: tuple[CleanupPathRecord, ...] = ()
+    verified_removed: bool
+    errors: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def verified_removal_is_truthful(self) -> CleanupReceipt:
+        if self.mode == "dry-run" and (self.removed_paths or self.verified_removed):
+            raise ValueError("dry-run cleanup cannot remove or verify removal")
+        if (
+            self.errors or self.retention_conflicts or self.external_protection_conflicts
+        ) and self.verified_removed:
+            raise ValueError("cleanup with errors or protection conflicts cannot verify removal")
         return self
 
 

@@ -74,6 +74,11 @@ uv run python -m twine check dist/*
 - Keep public wrapper modules importable without model-specific dependencies. Import heavy runtime
   dependencies lazily during controlled construction, verification, or inference.
 - Never commit model or checkpoint binaries; checkpoint assets belong in ignored runtime state.
+- Commit accepted pre-runtime phase artifacts only under `onboarding_reports/<workflow-id>/`; keep
+  `verification_reports/` exclusive to checkpoint-specific observations created by `verify`.
+- Use recorded `.torch-dae/workspaces/<workflow-id>/<phase>/<run-id>/` state for phase execution,
+  promote validated canonical artifacts, generate the deterministic external review bundle, and run
+  scoped cleanup.
 - Never commit `.torch-dae/`, caches, coverage output, `dist/`, wheels, source distributions, or
   other build artifacts.
 - Never add manual PyPI or TestPyPI tokens to repository files or GitHub workflow configuration.

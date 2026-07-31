@@ -26,3 +26,14 @@ requested.
 The allowed modes are `analyze`, `resolve-environment`, `integrate`, `verify`, `card`, and
 `profile`. `profile` is reserved until a runtime-verified model and an explicitly implemented
 profiling workflow exist.
+
+Every mode accepts `WORKFLOW_ID`. Use `scripts/onboarding_handoff.py discover` before requesting a
+prerequisite attachment. The command searches only `onboarding_reports/`, validates the accepted
+handoff and all local hashes, and returns canonical artifact paths. Without `WORKFLOW_ID`, automatic
+selection is allowed only when exactly one compatible active workflow exists.
+
+Phase runs use `.torch-dae/workspaces/<workflow-id>/<phase>/<run-id>/` with a managed run manifest.
+Validate there, promote accepted pre-runtime outputs under `onboarding_reports/`, build the
+deterministic external review bundle, then run scoped cleanup. Reusable repository/package caches,
+materialized model environments, and checkpoint caches are managed runtime state, not accidental
+contamination, and are not removed by default.

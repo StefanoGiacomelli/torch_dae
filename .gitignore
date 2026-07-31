@@ -1,4 +1,6 @@
 .torch-dae/
+onboarding_reports/.*.promote-*/
+onboarding_reports/.*.backup-*/
 .venv/
 __pycache__/
 *.py[cod]

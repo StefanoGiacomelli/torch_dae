@@ -649,6 +649,10 @@
         "runtime_failure",
         "platform_incompatibility",
         "access_or_authentication_blocker",
+        "sandbox_or_execution_policy",
+        "network_or_dns",
+        "package_index",
+        "rate_limit",
         "insufficient_evidence"
       ],
       "minLength": 1,

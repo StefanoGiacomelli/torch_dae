@@ -5,9 +5,15 @@ Resolve-environment failures must be classified with a specific cause, including
 `binary_or_abi_incompatibility`, `missing_binary_wheel`, `torch_torchaudio_mismatch`,
 `numpy_compatibility`, `checkpoint_incompatibility`, `source_build_failure`, `import_failure`,
 `runtime_failure`, `platform_incompatibility`, `access_or_authentication_blocker`, and
+`sandbox_or_execution_policy`, `network_or_dns`, `package_index`, `rate_limit`, and
 `insufficient_evidence`.
 
 The next candidate must be motivated by evidence or failure diagnostics.
+
+Sandbox, DNS, package-index, authentication, and rate-limit failures are external execution
+failures, not model/dependency incompatibilities. Preserve the original log and classification. When
+execution policy permits, one identical evidence-motivated rerun may be recorded alongside the
+initial outcome.
 
 Licenses are informational and non-blocking. Missing, ambiguous, or restrictive license text must be
 recorded as evidence or an open question, but it must not automatically classify a model as

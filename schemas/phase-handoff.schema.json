@@ -1,0 +1,389 @@
+{
+  "$defs": {
+    "ArtifactOriginPhase": {
+      "description": "Origin recorded for an artifact reference.",
+      "enum": [
+        "analyze",
+        "resolve-environment",
+        "integrate",
+        "card",
+        "external"
+      ],
+      "minLength": 1,
+      "title": "ArtifactOriginPhase",
+      "type": "string"
+    },
+    "CarriedUnresolvedItem": {
+      "additionalProperties": false,
+      "description": "One unresolved item explicitly carried into a later phase.",
+      "properties": {
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "item_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Item Id",
+          "type": "string"
+        },
+        "source_artifact_path": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Artifact Path"
+        }
+      },
+      "required": [
+        "item_id",
+        "description"
+      ],
+      "title": "CarriedUnresolvedItem",
+      "type": "object"
+    },
+    "ConsumedUserDecision": {
+      "additionalProperties": false,
+      "description": "One task-specific user decision consumed by a phase.",
+      "properties": {
+        "decision": {
+          "minLength": 1,
+          "title": "Decision",
+          "type": "string"
+        },
+        "decision_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Decision Id",
+          "type": "string"
+        },
+        "selected_option": {
+          "minLength": 1,
+          "title": "Selected Option",
+          "type": "string"
+        }
+      },
+      "required": [
+        "decision_id",
+        "decision",
+        "selected_option"
+      ],
+      "title": "ConsumedUserDecision",
+      "type": "object"
+    },
+    "HandoffArtifactReference": {
+      "additionalProperties": false,
+      "description": "Hash-addressed local or external artifact used by a phase handoff.",
+      "properties": {
+        "canonical_role": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Canonical Role"
+        },
+        "external_label": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "External Label"
+        },
+        "media_type": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9.+-]+/[a-z0-9.+-]+$",
+          "title": "Media Type",
+          "type": "string"
+        },
+        "originating_phase": {
+          "$ref": "#/$defs/ArtifactOriginPhase"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "sha256": {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sha256",
+        "media_type",
+        "originating_phase"
+      ],
+      "title": "HandoffArtifactReference",
+      "type": "object"
+    },
+    "HandoffStatus": {
+      "description": "Review status of one phase handoff.",
+      "enum": [
+        "draft",
+        "accepted",
+        "superseded"
+      ],
+      "minLength": 1,
+      "title": "HandoffStatus",
+      "type": "string"
+    },
+    "HandoffValidationSummary": {
+      "additionalProperties": false,
+      "description": "Deterministic validation outcome required for handoff acceptance.",
+      "properties": {
+        "checks": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Checks",
+          "type": "array"
+        },
+        "errors": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Errors",
+          "type": "array"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "passed",
+        "checks"
+      ],
+      "title": "HandoffValidationSummary",
+      "type": "object"
+    },
+    "ModelCardLifecycle": {
+      "description": "Lifecycle states defined by project_spec.md.",
+      "enum": [
+        "draft",
+        "analyzed",
+        "environment_resolved",
+        "checkpoint_verified",
+        "runtime_verified",
+        "profiled"
+      ],
+      "minLength": 1,
+      "title": "ModelCardLifecycle",
+      "type": "string"
+    },
+    "OnboardingPhase": {
+      "description": "Committed pre-runtime onboarding phases.",
+      "enum": [
+        "analyze",
+        "resolve-environment",
+        "integrate",
+        "card"
+      ],
+      "minLength": 1,
+      "title": "OnboardingPhase",
+      "type": "string"
+    },
+    "RecommendedNextMode": {
+      "description": "Allowed next skill modes.",
+      "enum": [
+        "analyze",
+        "resolve-environment",
+        "integrate",
+        "verify",
+        "card",
+        "profile"
+      ],
+      "minLength": 1,
+      "title": "RecommendedNextMode",
+      "type": "string"
+    }
+  },
+  "$id": "https://torch-dae.local/schemas/phase-handoff.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Committed, hash-addressed handoff from one onboarding phase.",
+  "properties": {
+    "allowed_next_modes": {
+      "items": {
+        "$ref": "#/$defs/RecommendedNextMode"
+      },
+      "title": "Allowed Next Modes",
+      "type": "array"
+    },
+    "canonical_skill_fingerprint": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Canonical Skill Fingerprint",
+      "type": "string"
+    },
+    "handoff_status": {
+      "$ref": "#/$defs/HandoffStatus"
+    },
+    "input_artifacts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/HandoffArtifactReference"
+      },
+      "title": "Input Artifacts",
+      "type": "array"
+    },
+    "lifecycle_promotion": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelCardLifecycle"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "output_artifacts": {
+      "items": {
+        "$ref": "#/$defs/HandoffArtifactReference"
+      },
+      "title": "Output Artifacts",
+      "type": "array"
+    },
+    "phase": {
+      "$ref": "#/$defs/OnboardingPhase"
+    },
+    "project_spec_sha256": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Project Spec Sha256",
+      "type": "string"
+    },
+    "repository_commit": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Repository Commit",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "superseded_handoff_sha256": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Superseded Handoff Sha256"
+    },
+    "target_card_ids": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+        "type": "string"
+      },
+      "title": "Target Card Ids",
+      "type": "array"
+    },
+    "target_checkpoint_ids": {
+      "items": {
+        "minLength": 1,
+        "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+        "type": "string"
+      },
+      "title": "Target Checkpoint Ids",
+      "type": "array"
+    },
+    "target_variant_ids": {
+      "items": {
+        "minLength": 1,
+        "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+        "type": "string"
+      },
+      "title": "Target Variant Ids",
+      "type": "array"
+    },
+    "unresolved_items_carried_forward": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CarriedUnresolvedItem"
+      },
+      "title": "Unresolved Items Carried Forward",
+      "type": "array"
+    },
+    "user_decisions_consumed": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ConsumedUserDecision"
+      },
+      "title": "User Decisions Consumed",
+      "type": "array"
+    },
+    "validation_summary": {
+      "$ref": "#/$defs/HandoffValidationSummary"
+    },
+    "workflow_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Workflow Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "workflow_id",
+    "phase",
+    "handoff_status",
+    "repository_commit",
+    "project_spec_sha256",
+    "canonical_skill_fingerprint",
+    "output_artifacts",
+    "target_variant_ids",
+    "target_checkpoint_ids",
+    "validation_summary",
+    "allowed_next_modes"
+  ],
+  "title": "PhaseHandoffManifest",
+  "type": "object"
+}

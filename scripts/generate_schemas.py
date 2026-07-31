@@ -14,7 +14,13 @@ from torch_dae.core.checkpoint import CheckpointSpec
 from torch_dae.core.embeddings import EmbeddingSpec
 from torch_dae.environment.specification import EnvironmentSourcesManifest, EnvironmentSpecification
 from torch_dae.environment.verification import VerificationReport
-from torch_dae.onboarding.contracts import AnalysisReport, EnvironmentResolutionReport
+from torch_dae.onboarding.contracts import (
+    AnalysisReport,
+    CleanupReceipt,
+    EnvironmentResolutionReport,
+    PhaseHandoffManifest,
+    WorkflowRecord,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "schemas"
@@ -48,6 +54,18 @@ SCHEMAS: dict[str, tuple[str, type[BaseModel]]] = {
     "environment-resolution-report.schema.json": (
         "https://torch-dae.local/schemas/environment-resolution-report.schema.json",
         EnvironmentResolutionReport,
+    ),
+    "workflow-record.schema.json": (
+        "https://torch-dae.local/schemas/workflow-record.schema.json",
+        WorkflowRecord,
+    ),
+    "phase-handoff.schema.json": (
+        "https://torch-dae.local/schemas/phase-handoff.schema.json",
+        PhaseHandoffManifest,
+    ),
+    "cleanup-receipt.schema.json": (
+        "https://torch-dae.local/schemas/cleanup-receipt.schema.json",
+        CleanupReceipt,
     ),
 }
 

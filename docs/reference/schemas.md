@@ -2,7 +2,8 @@
 
 Generated JSON Schemas under `schemas/` mirror the strict Pydantic contracts for model cards,
 checkpoints, embeddings, environments, source manifests, verification reports, analysis reports,
-and environment-resolution reports.
+environment-resolution reports, workflow records, phase-handoff manifests, and durable cleanup
+receipts.
 
 ```bash
 uv run python scripts/generate_schemas.py --check

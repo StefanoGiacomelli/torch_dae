@@ -1,0 +1,298 @@
+{
+  "allowed_next_modes": [
+    "integrate"
+  ],
+  "canonical_skill_fingerprint": "d818b36f001168d717ac5ade7ee5d6ac581734ad11b7476fbb86d7964e2f3617",
+  "handoff_status": "accepted",
+  "input_artifacts": [
+    {
+      "canonical_role": "technical-analysis-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "analyze",
+      "path": "onboarding_reports/panns-audioset-three-tuple/analyze/panns-technical-analysis.json",
+      "sha256": "afc32f4652686b0e6dc39d771d325691e614b4568096a67c9b9f627cdec554d3"
+    },
+    {
+      "canonical_role": "technical-analysis-markdown",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "analyze",
+      "path": "onboarding_reports/panns-audioset-three-tuple/analyze/panns-technical-analysis.md",
+      "sha256": "1777ee28788d2834b70db9f9b0b3468ff2cd9277134b6b82805f119de3d930d5"
+    },
+    {
+      "canonical_role": "manual-supplement-register",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "analyze",
+      "path": "onboarding_reports/panns-audioset-three-tuple/analyze/manual-supplements.json",
+      "sha256": "9d96ebe1b54674d72bf3b0b997fa4661cfcc960417060c12cd2a4a1ef5dfd7ef"
+    },
+    {
+      "canonical_role": null,
+      "external_label": "environment-resolution-audit",
+      "media_type": "application/gzip",
+      "originating_phase": "external",
+      "path": null,
+      "sha256": "9036e8dafc356a53616172cc9ef790f8b1270f60b910969c9ba1eab38df3ffef"
+    }
+  ],
+  "lifecycle_promotion": null,
+  "output_artifacts": [
+    {
+      "canonical_role": "environment-resolution-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "resolve-environment",
+      "path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/environment-resolution-report.json",
+      "sha256": "a6d57bfb7ea855c94c226584ca69fa05fa5f72cfa453083910770e2a8f1218c4"
+    },
+    {
+      "canonical_role": "source-revision-comparison",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "resolve-environment",
+      "path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/source-revision-comparison.json",
+      "sha256": "04f419093df438cff3d1bd1e8629d1b099cb48495d03c6f6b035943146fd2938"
+    },
+    {
+      "canonical_role": "constructor-trial-result",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "resolve-environment",
+      "path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/constructor-trial-result.json",
+      "sha256": "5c0499d473d88f446b826052651956af5c127ed7686f41c9cebed67fd9ede266"
+    },
+    {
+      "canonical_role": "environment-specification",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "resolve-environment",
+      "path": "environments/panns-cnn14-16k-map-0438/environment.json",
+      "sha256": "6048cbf0376c895be98e1264b5b0f36d8b27ab628cbd1cb4f44120503916909f"
+    },
+    {
+      "canonical_role": "environment-project",
+      "external_label": null,
+      "media_type": "application/toml",
+      "originating_phase": "resolve-environment",
+      "path": "environments/panns-cnn14-16k-map-0438/pyproject.toml",
+      "sha256": "59a1399c96acc50a45c71695d144ae56a4d9a3c681a69d01a82250f419d2ed22"
+    },
+    {
+      "canonical_role": "environment-lock",
+      "external_label": null,
+      "media_type": "application/toml",
+      "originating_phase": "resolve-environment",
+      "path": "environments/panns-cnn14-16k-map-0438/uv.lock",
+      "sha256": "535d270366411a972789b3fb1f2855d73aa6da20a05caa9dc581e7bbd4d6350d"
+    },
+    {
+      "canonical_role": "environment-sources",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "resolve-environment",
+      "path": "environments/panns-cnn14-16k-map-0438/sources.json",
+      "sha256": "2d5c42a3ac7a94d55d2c5bf6aac22eb2b7b6d1efa356582cc9db23cbfdc68df4"
+    },
+    {
+      "canonical_role": "environment-verification-script",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "resolve-environment",
+      "path": "environments/panns-cnn14-16k-map-0438/verify_environment.py",
+      "sha256": "f776272f55c43a7da9f8f06d71e7e25ff982d32b927aa8814e52d0b3cea3be97"
+    },
+    {
+      "canonical_role": "environment-specification",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "resolve-environment",
+      "path": "environments/panns-resnet38-map-0434/environment.json",
+      "sha256": "2855e171ef7184ffaa04fe8455fd7602c8b12ef1ecc9f8e4b048434a3c2fb594"
+    },
+    {
+      "canonical_role": "environment-project",
+      "external_label": null,
+      "media_type": "application/toml",
+      "originating_phase": "resolve-environment",
+      "path": "environments/panns-resnet38-map-0434/pyproject.toml",
+      "sha256": "e5de0c5067e5497d942b5a10b286bbe54c2c5164bcc8db1ed6607720a2a6d89f"
+    },
+    {
+      "canonical_role": "environment-lock",
+      "external_label": null,
+      "media_type": "application/toml",
+      "originating_phase": "resolve-environment",
+      "path": "environments/panns-resnet38-map-0434/uv.lock",
+      "sha256": "41b7659d99062bc9ccd39f6d3ac7810b6b3a123e148eb0394fba9190508f893b"
+    },
+    {
+      "canonical_role": "environment-sources",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "resolve-environment",
+      "path": "environments/panns-resnet38-map-0434/sources.json",
+      "sha256": "da5f3221b2e8e59a99f90ea95c868ea637e445580b33a3270b77ad2e429567bd"
+    },
+    {
+      "canonical_role": "environment-verification-script",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "resolve-environment",
+      "path": "environments/panns-resnet38-map-0434/verify_environment.py",
+      "sha256": "2c5d31f2621a49098156d9d7fad355e23e50386d28a9774d475fa0e1aad4e5a2"
+    },
+    {
+      "canonical_role": "environment-specification",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "resolve-environment",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/environment.json",
+      "sha256": "e29880e85eee0ce25de304f567e474e90314fb2fd47899d40a40e9e61bc36e5f"
+    },
+    {
+      "canonical_role": "environment-project",
+      "external_label": null,
+      "media_type": "application/toml",
+      "originating_phase": "resolve-environment",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/pyproject.toml",
+      "sha256": "3d87cbac074cec790cb550485ae045d48a1fe7d524786749c6f3a38b06bd7a51"
+    },
+    {
+      "canonical_role": "environment-lock",
+      "external_label": null,
+      "media_type": "application/toml",
+      "originating_phase": "resolve-environment",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/uv.lock",
+      "sha256": "1e7c1234ede269ddaa2debf349b8eb1a925bd185ca791cf064117d33d6521433"
+    },
+    {
+      "canonical_role": "environment-sources",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "resolve-environment",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/sources.json",
+      "sha256": "b5333be614396cad2afa3def3d5a701faf446b35629bf24a042a8eeae0473b6f"
+    },
+    {
+      "canonical_role": "environment-verification-script",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "resolve-environment",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/verify_environment.py",
+      "sha256": "fba1a1276a75952b2bf033702e4f9a720733c4fdb1cb59dcdeee1c82ecd4ad72"
+    }
+  ],
+  "phase": "resolve-environment",
+  "project_spec_sha256": "cca7eeb5ef482d5d587bce9be7aee0ce00268c23d5446d99662ee36fff1ab7b5",
+  "repository_commit": "c156433b2432b2549ed5169fb5dada7386005d3b",
+  "schema_version": "1.0.0",
+  "superseded_handoff_sha256": null,
+  "target_card_ids": [
+    "panns-cnn14-16k-map-0438",
+    "panns-resnet38-map-0434",
+    "panns-wavegram-logmel-cnn14-map-0439"
+  ],
+  "target_checkpoint_ids": [
+    "panns-cnn14-16k-map-0438",
+    "panns-resnet38-map-0434",
+    "panns-wavegram-logmel-cnn14-map-0439"
+  ],
+  "target_variant_ids": [
+    "panns-cnn14-16k",
+    "panns-resnet38",
+    "panns-wavegram-logmel-cnn14"
+  ],
+  "unresolved_items_carried_forward": [
+    {
+      "description": "Exact checkpoint-to-source equivalence remains unresolved for all tuples.",
+      "item_id": "risk-checkpoint-source-equivalence",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/environment-resolution-report.json"
+    },
+    {
+      "description": "Cnn14_16k source semantics differ between the chronological candidate and selected later revision; selection does not prove checkpoint equivalence.",
+      "item_id": "risk-cnn14-16k-source-semantics",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/environment-resolution-report.json"
+    },
+    {
+      "description": "The paper Hamming versus source Hann window discrepancy remains unresolved.",
+      "item_id": "risk-window-function",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/environment-resolution-report.json"
+    },
+    {
+      "description": "Ordered AudioSet class metadata remains an integration and runtime-verification item.",
+      "item_id": "risk-class-metadata",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/environment-resolution-report.json"
+    },
+    {
+      "description": "Final wrapper duration and valid_lengths policies remain unresolved.",
+      "item_id": "risk-length-policy",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/environment-resolution-report.json"
+    },
+    {
+      "description": "Native upstream sigmoid output versus the project's raw-logits contract remains unresolved.",
+      "item_id": "risk-output-contract",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/environment-resolution-report.json"
+    },
+    {
+      "description": "Temporal embedding semantics and temporal hop remain unresolved.",
+      "item_id": "risk-temporal-embedding",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/environment-resolution-report.json"
+    },
+    {
+      "description": "Checkpoint acquisition remains unperformed.",
+      "item_id": "risk-checkpoint-acquisition",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/environment-resolution-report.json"
+    },
+    {
+      "description": "CUDA, MPS, Linux, and other Python versions were not exercised.",
+      "item_id": "risk-platform-coverage",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/environment-resolution-report.json"
+    },
+    {
+      "description": "Production vendored files, wrapper, and model cards do not yet exist.",
+      "item_id": "risk-production-prerequisites",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/environment-resolution-report.json"
+    }
+  ],
+  "user_decisions_consumed": [
+    {
+      "decision": "Use a minimal vendored adaptation for the future production source substrate.",
+      "decision_id": "d-source-strategy",
+      "selected_option": "minimal-vendored-adaptation"
+    },
+    {
+      "decision": "Use one common future vendored source revision while preserving tuple-specific checkpoint-equivalence uncertainty.",
+      "decision_id": "d-common-source-revision",
+      "selected_option": "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0"
+    },
+    {
+      "decision": "Use the observed modern dependency stack for all three tuple drafts based on their shared minimal source surface and per-class constructor evidence.",
+      "decision_id": "d-shared-environment-stack",
+      "selected_option": "python-3.12.13-numpy-2.4.6-torch-2.13.0-torchlibrosa-0.1.0"
+    },
+    {
+      "decision": "Treat the accepted result as draft environment resolution without materialization, fingerprint, or lifecycle promotion.",
+      "decision_id": "d-no-lifecycle-promotion",
+      "selected_option": "draft-resolution-complete"
+    }
+  ],
+  "validation_summary": {
+    "checks": [
+      "attached SHA256SUMS validation",
+      "EnvironmentResolutionReport Pydantic validation",
+      "Draft 2020-12 environment-resolution schema validation",
+      "source revision comparison validation",
+      "constructor-trial scope validation",
+      "three environment specifications and source manifests validation",
+      "three lockfile synchronization checks",
+      "15 committed PANNs environment artifact hash checks",
+      "explicit no-lifecycle-promotion validation"
+    ],
+    "errors": [],
+    "passed": true
+  },
+  "workflow_id": "panns-audioset-three-tuple"
+}

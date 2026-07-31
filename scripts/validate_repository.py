@@ -28,12 +28,16 @@ from torch_dae.environment.specification import EnvironmentSourcesManifest, Envi
 from torch_dae.environment.verification import VerificationReport
 from torch_dae.onboarding.contracts import (
     AnalysisReport,
+    CleanupReceipt,
     DependencyEvidenceRecord,
     EnvironmentResolutionReport,
     EvidenceItem,
+    PhaseHandoffManifest,
     SkillEvaluationScenario,
+    WorkflowRecord,
 )
 from torch_dae.onboarding.evaluation import evaluate_analysis_report
+from torch_dae.onboarding.handoff import validate_workflow
 from torch_dae.onboarding.inspection import (
     InspectionBudget,
     generate_environment_candidates,
@@ -48,6 +52,7 @@ REQUIRED = [
     "project_spec.md",
     "pyproject.toml",
     "uv.lock",
+    "scripts/onboarding_handoff.py",
     "skills/audio-model-onboarding/SKILL.md",
     ".agents/skills/audio-model-onboarding",
     ".claude/skills/audio-model-onboarding",
@@ -59,6 +64,9 @@ REQUIRED = [
     "schemas/verification-report.schema.json",
     "schemas/analysis-report.schema.json",
     "schemas/environment-resolution-report.schema.json",
+    "schemas/workflow-record.schema.json",
+    "schemas/phase-handoff.schema.json",
+    "schemas/cleanup-receipt.schema.json",
     "src/torch_dae",
     "tests/fixtures",
 ]
@@ -95,6 +103,9 @@ def pydantic_validate(fixture: Path) -> None:
         "verification-report": VerificationReport,
         "analysis-report": AnalysisReport,
         "environment-resolution-report": EnvironmentResolutionReport,
+        "workflow-record": WorkflowRecord,
+        "phase-handoff": PhaseHandoffManifest,
+        "cleanup-receipt": CleanupReceipt,
     }
     model_by_kind[kind].model_validate(load_json(fixture))
 
@@ -337,6 +348,39 @@ def validate_integration_artifacts(root: Path, failures: list[str]) -> None:
                 f"committed model/checkpoint binary is forbidden: {path.relative_to(root)}",
                 failures,
             )
+
+
+def validate_onboarding_reports(root: Path, failures: list[str]) -> None:
+    """Validate committed pre-runtime handoffs without changing verification semantics."""
+
+    reports_root = root / "onboarding_reports"
+    if not reports_root.exists():
+        fail("committed onboarding_reports root is missing", failures)
+        return
+    schema_root = root / "schemas"
+    for workflow_path in sorted(reports_root.glob("*/workflow.json")):
+        workflow_id = workflow_path.parent.name
+        try:
+            _validate_with_schema(
+                workflow_path,
+                schema_root / "workflow-record.schema.json",
+                WorkflowRecord,
+            )
+            workflow = WorkflowRecord.model_validate_json(workflow_path.read_text())
+            for reference in workflow.accepted_phase_paths:
+                _validate_with_schema(
+                    root / reference.handoff_path,
+                    schema_root / "phase-handoff.schema.json",
+                    PhaseHandoffManifest,
+                )
+            validate_workflow(root, workflow_id)
+        except Exception as exc:
+            fail(f"invalid onboarding workflow {workflow_id}: {exc}", failures)
+    for path in reports_root.rglob("*"):
+        if not path.is_file():
+            continue
+        if path.suffix not in {".json", ".md"}:
+            fail(f"forbidden onboarding report artifact: {path.relative_to(root)}", failures)
 
 
 def root_dependency_errors(root: Path) -> list[str]:
@@ -618,6 +662,7 @@ def main() -> int:
     failures.extend(numbered_stage_errors(ROOT))
     failures.extend(root_dependency_errors(ROOT))
     validate_integration_artifacts(ROOT, failures)
+    validate_onboarding_reports(ROOT, failures)
     if subprocess.run(
         ["git", "ls-files", "._*"], cwd=ROOT, check=False, capture_output=True, text=True
     ).stdout:
@@ -680,6 +725,9 @@ def main() -> int:
         "verification-report": ROOT / "schemas/verification-report.schema.json",
         "analysis-report": ROOT / "schemas/analysis-report.schema.json",
         "environment-resolution-report": ROOT / "schemas/environment-resolution-report.schema.json",
+        "workflow-record": ROOT / "schemas/workflow-record.schema.json",
+        "phase-handoff": ROOT / "schemas/phase-handoff.schema.json",
+        "cleanup-receipt": ROOT / "schemas/cleanup-receipt.schema.json",
     }
     for path in valid_dir.glob("*.json"):
         kind = path.name.split(".")[0]

@@ -1,0 +1,137 @@
+{
+  "$defs": {
+    "AcceptedPhaseReference": {
+      "additionalProperties": false,
+      "description": "Canonical accepted handoff path for one workflow phase.",
+      "properties": {
+        "handoff_path": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+          "title": "Handoff Path",
+          "type": "string"
+        },
+        "phase": {
+          "$ref": "#/$defs/OnboardingPhase"
+        }
+      },
+      "required": [
+        "phase",
+        "handoff_path"
+      ],
+      "title": "AcceptedPhaseReference",
+      "type": "object"
+    },
+    "OnboardingPhase": {
+      "description": "Committed pre-runtime onboarding phases.",
+      "enum": [
+        "analyze",
+        "resolve-environment",
+        "integrate",
+        "card"
+      ],
+      "minLength": 1,
+      "title": "OnboardingPhase",
+      "type": "string"
+    },
+    "WorkflowStatus": {
+      "description": "Lifecycle of one cross-conversation onboarding workflow.",
+      "enum": [
+        "active",
+        "completed"
+      ],
+      "minLength": 1,
+      "title": "WorkflowStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://torch-dae.local/schemas/workflow-record.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Committed identity and accepted-phase index for an onboarding workflow.",
+  "properties": {
+    "accepted_phase_paths": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/AcceptedPhaseReference"
+      },
+      "title": "Accepted Phase Paths",
+      "type": "array"
+    },
+    "created_repository_commit": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Created Repository Commit",
+      "type": "string"
+    },
+    "current_accepted_phase": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/OnboardingPhase"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "model_family": {
+      "minLength": 1,
+      "title": "Model Family",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/WorkflowStatus"
+    },
+    "target_card_ids": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+        "type": "string"
+      },
+      "title": "Target Card Ids",
+      "type": "array"
+    },
+    "target_checkpoint_ids": {
+      "items": {
+        "minLength": 1,
+        "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+        "type": "string"
+      },
+      "title": "Target Checkpoint Ids",
+      "type": "array"
+    },
+    "target_variant_ids": {
+      "items": {
+        "minLength": 1,
+        "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+        "type": "string"
+      },
+      "title": "Target Variant Ids",
+      "type": "array"
+    },
+    "workflow_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Workflow Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "workflow_id",
+    "model_family",
+    "target_variant_ids",
+    "target_checkpoint_ids",
+    "created_repository_commit",
+    "status"
+  ],
+  "title": "WorkflowRecord",
+  "type": "object"
+}

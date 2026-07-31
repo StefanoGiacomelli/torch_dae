@@ -4,6 +4,18 @@
 ## Work completed
 [Concise description of the completed workflow.]
 
+## Consumed handoff
+[Canonical accepted prerequisite handoff path, or None for the first analyze phase.]
+
+## Produced handoff
+[Promoted canonical handoff path, or the runtime verification report for verify.]
+
+## Review bundle
+[External bundle path, SHA-256, byte size, and member count.]
+
+## Workspace cleanup
+[Removed recorded ephemeral paths, verification result, and retained managed runtime paths.]
+
 ## Problems and resolutions
 - [Problem]&#58; [Resolution or safe workaround]
 

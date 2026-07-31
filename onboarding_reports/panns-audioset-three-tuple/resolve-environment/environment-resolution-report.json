@@ -1,0 +1,295 @@
+{
+  "analysis_report_id": "panns-three-tuple-analysis",
+  "attempted_candidates": [
+    "modern-source-api-macos-arm64"
+  ],
+  "created_at": "2026-07-30T14:03:47Z",
+  "environment_artifact_paths": [
+    "environments/panns-cnn14-16k-map-0438/environment.json",
+    "environments/panns-cnn14-16k-map-0438/pyproject.toml",
+    "environments/panns-cnn14-16k-map-0438/uv.lock",
+    "environments/panns-cnn14-16k-map-0438/sources.json",
+    "environments/panns-cnn14-16k-map-0438/verify_environment.py",
+    "environments/panns-resnet38-map-0434/environment.json",
+    "environments/panns-resnet38-map-0434/pyproject.toml",
+    "environments/panns-resnet38-map-0434/uv.lock",
+    "environments/panns-resnet38-map-0434/sources.json",
+    "environments/panns-resnet38-map-0434/verify_environment.py",
+    "environments/panns-wavegram-logmel-cnn14-map-0439/environment.json",
+    "environments/panns-wavegram-logmel-cnn14-map-0439/pyproject.toml",
+    "environments/panns-wavegram-logmel-cnn14-map-0439/uv.lock",
+    "environments/panns-wavegram-logmel-cnn14-map-0439/sources.json",
+    "environments/panns-wavegram-logmel-cnn14-map-0439/verify_environment.py"
+  ],
+  "environment_fingerprint": null,
+  "environment_materialization_succeeded": false,
+  "environment_verification_succeeded": false,
+  "evidence_items": [
+    {
+      "claim_status": "user_provided_decision",
+      "description": "The user selected all three tuples, minimal vendored adaptation, the modern source-API-compatible dependency track, the official post-fc1 embedding, 58d0e624a2055fb1f2b5fb06369ecd726cfe64e0 as the common future vendored-source revision, and NumPy 2.4.6 as a direct model-environment dependency.",
+      "evidence_id": "ev-user-decisions",
+      "kind": "user_decision",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null,
+      "revision": null,
+      "source_file": null,
+      "source_line_or_symbol": null,
+      "url": null
+    },
+    {
+      "claim_status": "verified_upstream_fact",
+      "description": "The official historical requirements declare torch 1.0.1.post2, torchlibrosa 0.0.4, librosa 0.6.3, SoundFile 0.10.3.post1, and matplotlib 3.0.3.",
+      "evidence_id": "ev-upstream-requirements",
+      "kind": "configuration_file",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null,
+      "revision": "802432669263a31af0c448dd8d7b677af3815c01",
+      "source_file": "requirements.txt",
+      "source_line_or_symbol": "requirements.txt lines 1-5",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn/blob/802432669263a31af0c448dd8d7b677af3815c01/requirements.txt"
+    },
+    {
+      "claim_status": "locally_observed_behavior",
+      "description": "The project supports Python >=3.11,<3.13, and Python 3.12.13 is installed on the exercised host.",
+      "evidence_id": "ev-project-python",
+      "kind": "configuration_file",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null,
+      "revision": null,
+      "source_file": "pyproject.toml",
+      "source_line_or_symbol": "project.requires-python",
+      "url": null
+    },
+    {
+      "claim_status": "verified_upstream_fact",
+      "description": "Official package metadata publishes torch 2.13.0 and a CPython 3.12 macOS ARM64 wheel.",
+      "evidence_id": "ev-torch-package",
+      "kind": "package_metadata",
+      "package_name": "torch",
+      "package_version": "2.13.0",
+      "rationale": null,
+      "revision": null,
+      "source_file": null,
+      "source_line_or_symbol": "PyPI release and wheel metadata",
+      "url": "https://pypi.org/project/torch/2.13.0/"
+    },
+    {
+      "claim_status": "verified_upstream_fact",
+      "description": "Official package metadata publishes torchlibrosa 0.1.0 as a universal Python 3 wheel.",
+      "evidence_id": "ev-torchlibrosa-package",
+      "kind": "package_metadata",
+      "package_name": "torchlibrosa",
+      "package_version": "0.1.0",
+      "rationale": null,
+      "revision": null,
+      "source_file": null,
+      "source_line_or_symbol": "PyPI release and wheel metadata",
+      "url": "https://pypi.org/project/torchlibrosa/0.1.0/"
+    },
+    {
+      "claim_status": "locally_observed_behavior",
+      "description": "Byte-level and symbol-level comparison found pytorch_utils.py and LICENSE.MIT identical between the two checkpoint-era revisions; ResNet38 and Wavegram_Logmel_Cnn14 are unchanged, while the later Cnn14_16k uses native 16-kHz frontend parameters and removes internal waveform downsampling.",
+      "evidence_id": "ev-source-comparison",
+      "kind": "source_line_or_symbol",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null,
+      "revision": "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0",
+      "source_file": "pytorch/models.py",
+      "source_line_or_symbol": "git show, SHA-256, and bounded git diff",
+      "url": null
+    },
+    {
+      "claim_status": "locally_observed_behavior",
+      "description": "At the selected revision, pytorch/models.py directly imports PyTorch and TorchLibrosa, while pytorch/pytorch_utils.py directly imports PyTorch and NumPy.",
+      "evidence_id": "ev-runtime-source-imports",
+      "kind": "source_line_or_symbol",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null,
+      "revision": "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0",
+      "source_file": "pytorch/pytorch_utils.py",
+      "source_line_or_symbol": "pytorch/models.py module imports and pytorch/pytorch_utils.py module imports",
+      "url": null
+    },
+    {
+      "claim_status": "locally_observed_behavior",
+      "description": "A fresh isolated Python 3.12.13 environment imported the selected later-revision source and constructed native-16-kHz Cnn14_16k, ResNet38, and Wavegram_Logmel_Cnn14 on CPU using NumPy 2.4.6, PyTorch 2.13.0, and TorchLibrosa 0.1.0; no forward, inference, or checkpoint load occurred.",
+      "evidence_id": "ev-constructor-trial",
+      "kind": "runtime_observation",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null,
+      "revision": "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0",
+      "source_file": "environments/panns-cnn14-16k-map-0438/pyproject.toml",
+      "source_line_or_symbol": "controlled import and random-initialized constructor smoke; no forward",
+      "url": null
+    },
+    {
+      "claim_status": "locally_observed_behavior",
+      "description": "Three checkpoint-scoped environment artifact drafts pin the corrected common source revision and declare NumPy, PyTorch, and TorchLibrosa as direct dependencies.",
+      "evidence_id": "ev-draft-artifacts",
+      "kind": "configuration_file",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null,
+      "revision": null,
+      "source_file": "environments/panns-cnn14-16k-map-0438/environment.json",
+      "source_line_or_symbol": "three environment directories",
+      "url": null
+    },
+    {
+      "claim_status": "locally_observed_behavior",
+      "description": "No PANNs model card, wrapper, or production vendored source exists in the repository, so canonical environment materialization cannot yet run.",
+      "evidence_id": "ev-lifecycle-prerequisites",
+      "kind": "source_file",
+      "package_name": null,
+      "package_version": null,
+      "rationale": null,
+      "revision": null,
+      "source_file": "environments/.gitkeep",
+      "source_line_or_symbol": "repository inventory and environment manager prerequisites",
+      "url": null
+    }
+  ],
+  "evidence_summary": [
+    {
+      "checkpoint_ids": [],
+      "evidence_ids": [
+        "ev-constructor-trial"
+      ],
+      "rationale": null,
+      "statement": "The corrected modern dependency stack passed a fresh isolated source import and CPU constructor trial for all three requested classes at the selected later revision.",
+      "status": "locally_observed_behavior",
+      "variant_ids": []
+    },
+    {
+      "checkpoint_ids": [],
+      "evidence_ids": [
+        "ev-source-comparison",
+        "ev-runtime-source-imports",
+        "ev-constructor-trial",
+        "ev-draft-artifacts"
+      ],
+      "rationale": "All three classes share the same minimal two-file runtime source surface; that surface directly imports NumPy, PyTorch, and TorchLibrosa, and one fresh controlled trial constructed all three under the same corrected lock graph.",
+      "statement": "All three tuple drafts use one observed dependency stack because the minimal imported source surface and dependency requirements are shared.",
+      "status": "reasoned_inference",
+      "variant_ids": []
+    },
+    {
+      "checkpoint_ids": [],
+      "evidence_ids": [
+        "ev-lifecycle-prerequisites",
+        "ev-draft-artifacts"
+      ],
+      "rationale": null,
+      "statement": "Canonical environment materialization and verification remain incomplete until integrate mode supplies the declared vendored files and a production card/wrapper.",
+      "status": "unresolved_ambiguity",
+      "variant_ids": []
+    }
+  ],
+  "next_lifecycle_status": null,
+  "ordered_candidates": [
+    {
+      "candidate_id": "historical-declaration",
+      "expected_compatibility_evidence": [
+        "ev-upstream-requirements"
+      ],
+      "failure_classification": null,
+      "failure_diagnostics": null,
+      "installation_strategy": "minimal_vendored_adaptation",
+      "numpy_constraint": null,
+      "numpy_version": null,
+      "other_principal_dependencies": {
+        "librosa": "==0.6.3",
+        "matplotlib": "==3.0.3",
+        "soundfile": "==0.10.3.post1",
+        "torchlibrosa": "==0.0.4"
+      },
+      "predicted_failure_risks": [
+        "python_constraint",
+        "missing_binary_wheel"
+      ],
+      "python_constraint": "==3.7",
+      "python_version": "3.7",
+      "pytorch_constraint": "==1.0.1.post2",
+      "pytorch_version": "1.0.1.post2",
+      "reason_for_selection": "Preserved as upstream compatibility evidence, not selected automatically; the declared stack predates current project Python and macOS ARM64 wheel support.",
+      "source_package_name": null,
+      "source_package_version": null,
+      "source_revision": "802432669263a31af0c448dd8d7b677af3815c01",
+      "torchaudio_constraint": null,
+      "torchaudio_version": null,
+      "trial_command_plan": [],
+      "trial_status": "not_attempted",
+      "uncertainty": [
+        "No selected Python 3.7 or torch 1.0.1.post2 macOS ARM64 wheel evidence.",
+        "Exact checkpoint-to-source equivalence is unresolved."
+      ]
+    },
+    {
+      "candidate_id": "modern-source-api-macos-arm64",
+      "expected_compatibility_evidence": [
+        "ev-project-python",
+        "ev-torch-package",
+        "ev-torchlibrosa-package",
+        "ev-source-comparison",
+        "ev-runtime-source-imports",
+        "ev-constructor-trial"
+      ],
+      "failure_classification": null,
+      "failure_diagnostics": null,
+      "installation_strategy": "minimal_vendored_adaptation",
+      "numpy_constraint": "==2.4.6",
+      "numpy_version": "2.4.6",
+      "other_principal_dependencies": {
+        "librosa": "==0.11.0",
+        "scipy": "==1.18.0",
+        "torchlibrosa": "==0.1.0"
+      },
+      "predicted_failure_risks": [],
+      "python_constraint": "==3.12.13",
+      "python_version": "3.12.13",
+      "pytorch_constraint": "==2.13.0",
+      "pytorch_version": "2.13.0",
+      "reason_for_selection": "Python 3.12 is project-compatible; official PyTorch 2.13.0 metadata publishes a CPython 3.12 macOS ARM64 wheel; TorchLibrosa 0.1.0 exposes the imported frontend APIs; NumPy 2.4.6 is directly declared because pytorch_utils.py imports it; and a fresh isolated trial passed all three constructors at the selected native-16-kHz source revision.",
+      "source_package_name": null,
+      "source_package_version": null,
+      "source_revision": "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0",
+      "torchaudio_constraint": null,
+      "torchaudio_version": null,
+      "trial_command_plan": [
+        "Lock direct NumPy, PyTorch, and TorchLibrosa dependencies under Python 3.12.13.",
+        "Import only the selected later-revision minimal future-vendoring source surface in a fresh isolated trial environment.",
+        "Construct native-16-kHz Cnn14_16k, ResNet38, and Wavegram_Logmel_Cnn14 on CPU without forward or checkpoint calls."
+      ],
+      "trial_status": "passed",
+      "uncertainty": [
+        "Exact checkpoint-to-source equivalence remains unresolved.",
+        "The earlier 802432669263a31af0c448dd8d7b677af3815c01 revision remains checkpoint-era chronological and comparative evidence, not proof of equivalence.",
+        "No checkpoint, forward, output, embedding, or accelerator runtime verification."
+      ]
+    }
+  ],
+  "report_id": "panns-three-tuple-environment-resolution",
+  "schema_version": "1.0.0",
+  "selected_candidate_id": "modern-source-api-macos-arm64",
+  "source_strategy_decision_gates": [],
+  "unresolved_risks": [
+    "Exact checkpoint-to-source equivalence remains unresolved for all tuples.",
+    "Cnn14_16k source semantics differ between 802432669263a31af0c448dd8d7b677af3815c01 and 58d0e624a2055fb1f2b5fb06369ecd726cfe64e0; selecting the later native-16-kHz implementation does not prove checkpoint equivalence.",
+    "The paper Hamming versus source Hann window discrepancy remains unresolved.",
+    "Ordered AudioSet class metadata remains an integration and runtime-verification item and was not implemented.",
+    "Final wrapper duration and valid_lengths policies remain unresolved.",
+    "Native upstream sigmoid output versus the project's raw-logits contract remains unresolved.",
+    "Temporal embedding semantics and temporal hop remain unresolved.",
+    "Checkpoint acquisition remains unperformed.",
+    "CUDA, MPS, Linux, and other Python versions were not exercised.",
+    "Production vendored files, wrapper, and model cards do not yet exist."
+  ],
+  "verification_report_or_diagnostic_reference": null
+}

@@ -4,6 +4,27 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Onboarding phase-handoff hardening
+
+- Closed promotion to an exact declared-artifact allowlist, with byte-preserving rejection of
+  unreferenced JSON, Markdown, nested runtime content, and symlinks.
+- Made cleanup conflict-aware and all-or-nothing for retained paths and existing external outputs;
+  pre-deletion protection covers supplied and symlink-resolved path topology, and durable atomic
+  receipts include finalized source manifests and explicit conflict and retention inventories.
+- Added explicit bundle cleanliness and normalization result fields plus deterministic SHA-256
+  sidecars, while documenting the intentional self-exclusions of the bundled artifact manifest.
+- Added strict workflow and phase-handoff contracts, generated schemas, committed
+  `onboarding_reports/`, local prerequisite discovery, atomic promotion, explicit supersession, and
+  accepted three-tuple analyze/resolve-environment migration fixtures.
+- Added deterministic normalized review bundles with working-tree evidence, artifact hashes,
+  declared/actual inventory checks, and external result metadata.
+- Added managed workflow workspaces and manifest-scoped cleanup that preserves reusable caches,
+  materialized environments, checkpoints, and external audit outputs by default.
+- Clarified direct dependency closure, shared source/environment evidence, constructor-trial scope,
+  external execution failures, and successful draft environment resolution without lifecycle
+  promotion.
+- Preserved `verification_reports/` exclusively for checkpoint-specific runtime observations.
+
 ### Analyze-skill hardening
 
 - Made checkpoint discovery binary-safe with deterministic skipped-file reporting and retained valid

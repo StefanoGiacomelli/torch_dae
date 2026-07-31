@@ -7,3 +7,7 @@ resolved. The wrapper accepts canonical `[B,C,T]` waveforms, a sample rate in he
 
 Model-specific imports remain lazy and occur only inside controlled construction, verification, or
 inference. The root package must stay importable without those dependencies.
+
+With `WORKFLOW_ID`, the mode discovers and validates accepted analyze and resolve-environment
+handoffs rather than requesting them again. Accepted integration artifacts are promoted under the
+workflow, bundled, and followed by scoped cleanup.

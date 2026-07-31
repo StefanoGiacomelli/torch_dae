@@ -19,3 +19,31 @@ torch-dae checkpoint remove <card-id>
 
 Run `uv run torch-dae <group> --help` for option details. Model inspection and verification CLI
 entries are unavailable-feature placeholders in this release.
+
+Onboarding handoff management is a root control-plane script:
+
+```text
+uv run python scripts/onboarding_handoff.py discover ...
+uv run python scripts/onboarding_handoff.py validate ...
+uv run python scripts/onboarding_handoff.py promote ...
+uv run python scripts/onboarding_handoff.py bundle ...
+uv run python scripts/onboarding_handoff.py cleanup ...
+```
+
+`discover` searches committed `onboarding_reports/` only. `promote` accepts exactly
+`workflow.json`, the selected `handoff.json`, and its declared phase-local outputs from managed
+workspace content; external repository outputs are hash-validated in place. Promotion is atomic.
+
+`bundle` creates a normalized external audit archive, an explicit result JSON, and a matching
+`<archive>.sha256` sidecar. The result reports archive cleanliness, TAR and gzip metadata
+normalization, and declared/actual inventory agreement.
+
+`cleanup` deletes only recorded, selected managed paths. Every invocation atomically writes a
+durable receipt under `.torch-dae/reports/onboarding/<workflow-id>/cleanup/` and returns its path and
+SHA-256. Retained diagnostics must first be moved under that workflow diagnostics root. A retained
+child below a deletion root blocks the whole execution and is reported in `retention_conflicts`.
+Existing external audit paths are protected before mutation when their supplied path or resolved
+target overlaps a deletion root in either direction; the receipt reports these conflicts in
+`external_protection_conflicts`. Non-conflicting external paths are never selected for deletion and
+distinguish retained files, directories, symlinks, and missing outputs. Cleanup JSON with errors is
+emitted before the command exits unsuccessfully.

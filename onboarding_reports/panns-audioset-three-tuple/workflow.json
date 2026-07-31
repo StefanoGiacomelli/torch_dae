@@ -1,0 +1,33 @@
+{
+  "accepted_phase_paths": [
+    {
+      "handoff_path": "onboarding_reports/panns-audioset-three-tuple/analyze/handoff.json",
+      "phase": "analyze"
+    },
+    {
+      "handoff_path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/handoff.json",
+      "phase": "resolve-environment"
+    }
+  ],
+  "created_repository_commit": "c156433b2432b2549ed5169fb5dada7386005d3b",
+  "current_accepted_phase": "resolve-environment",
+  "model_family": "PANNs",
+  "schema_version": "1.0.0",
+  "status": "active",
+  "target_card_ids": [
+    "panns-cnn14-16k-map-0438",
+    "panns-resnet38-map-0434",
+    "panns-wavegram-logmel-cnn14-map-0439"
+  ],
+  "target_checkpoint_ids": [
+    "panns-cnn14-16k-map-0438",
+    "panns-resnet38-map-0434",
+    "panns-wavegram-logmel-cnn14-map-0439"
+  ],
+  "target_variant_ids": [
+    "panns-cnn14-16k",
+    "panns-resnet38",
+    "panns-wavegram-logmel-cnn14"
+  ],
+  "workflow_id": "panns-audioset-three-tuple"
+}

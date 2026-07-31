@@ -7,7 +7,9 @@
   preprocessing, and wrapper-output rules.
 - `torch_dae.environment` materializes locked, fingerprinted environments under ignored runtime
   state.
-- `torch_dae.onboarding` provides deterministic static inspection and evidence-backed reports.
+- `torch_dae.onboarding` provides deterministic static inspection, evidence-backed reports, strict
+  cross-phase handoffs, deterministic review bundles, exact promotion allowlists, and
+  receipt-backed managed-workspace cleanup.
 - the canonical skill coordinates mode-specific agent work.
 
 Public wrapper modules must import without model-specific dependencies. Heavy dependencies are

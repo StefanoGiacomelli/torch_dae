@@ -62,12 +62,19 @@ Enum values
    * - ``PublishedChecksumAlgorithm``
      - ``md5``, ``sha1``, ``sha256``, ``sha512``, ``blake2b``, ``other``, ``unknown``
      - Exact host-published algorithm; nonstandard or unknown values require an explanation.
+   * - ``OnboardingPhase``
+     - ``analyze``, ``resolve-environment``, ``integrate``, ``card``
+     - Accepted pre-runtime handoff phases.
+   * - ``WorkflowStatus`` / ``HandoffStatus``
+     - ``active``, ``completed`` / ``draft``, ``accepted``, ``superseded``
+     - Workflow and phase-review state.
 
 ``FailureClassification`` values are ``python_constraint``, ``dependency_conflict``,
 ``resolution_failure``, ``removed_api``, ``deprecated_api``, ``binary_or_abi_incompatibility``,
 ``missing_binary_wheel``, ``torch_torchaudio_mismatch``, ``numpy_compatibility``,
 ``checkpoint_incompatibility``, ``source_build_failure``, ``import_failure``, ``runtime_failure``,
-``platform_incompatibility``, ``access_or_authentication_blocker``, and
+``platform_incompatibility``, ``access_or_authentication_blocker``,
+``sandbox_or_execution_policy``, ``network_or_dns``, ``package_index``, ``rate_limit``, and
 ``insufficient_evidence``. They normalize observed causes without exposing secrets or treating raw
 diagnostics as proof.
 
@@ -154,6 +161,27 @@ artifact locations.
      - Selected candidate exists; successful resolution requires exact principal versions, evidence,
        all five committed artifacts, materialization and verification success, fingerprint, valid
        report reference, and no unresolved blocker.
+   * - ``WorkflowRecord``
+     - schema/workflow identity, model and target scopes, creation commit, accepted phase paths,
+       current phase, status
+     - Canonical phase paths are unique, workflow-local, and agree with the current accepted phase.
+   * - ``PhaseHandoffManifest``
+     - workflow/phase/status, commit, specification and skill hashes, input/output artifacts, target
+       scopes, decisions, unresolved items, validation, next modes, optional lifecycle/supersession
+     - Accepted status requires passed validation; output roles and paths are canonical; workflows
+       cannot be mixed; supersession and lifecycle claims remain explicit.
+   * - ``HandoffArtifactReference``
+     - local path or external label, SHA-256, media type, origin phase, optional canonical role
+     - Exactly one local or external identity is present; local paths are repository-relative.
+   * - ``ManagedRunManifest``
+     - run/workflow/phase identities, start time, repository commit, created/reused/external/retained
+       paths, retained reasons, optional cleanup result
+     - Ignored runtime control state scopes safe cleanup without making runtime paths canonical.
+   * - ``CleanupReceipt``
+     - operation/workflow identity, time and mode, finalized source manifests, planned/removed paths,
+       conflicts, retained managed/external paths and cache classes, verification, errors
+     - Atomically persisted outside deletable workspaces; dry runs never claim removal, and conflicts
+       or errors cannot claim verified cleanup.
    * - ``SkillEvaluationScenario``
      - scenario ID, ``synthetic=true``, optional expected strategy/failure/next mode, decision and
        embedding expectations, checkpoint IDs
@@ -234,6 +262,32 @@ compatible :class:`EvidenceItem`.
 .. autoclass:: torch_dae.onboarding.contracts.EnvironmentCandidateGenerationResult
 
 .. autoclass:: torch_dae.onboarding.contracts.EnvironmentResolutionReport
+
+.. autoclass:: torch_dae.onboarding.contracts.OnboardingPhase
+
+.. autoclass:: torch_dae.onboarding.contracts.WorkflowStatus
+
+.. autoclass:: torch_dae.onboarding.contracts.HandoffStatus
+
+.. autoclass:: torch_dae.onboarding.contracts.ArtifactOriginPhase
+
+.. autoclass:: torch_dae.onboarding.contracts.AcceptedPhaseReference
+
+.. autoclass:: torch_dae.onboarding.contracts.WorkflowRecord
+
+.. autoclass:: torch_dae.onboarding.contracts.HandoffArtifactReference
+
+.. autoclass:: torch_dae.onboarding.contracts.ConsumedUserDecision
+
+.. autoclass:: torch_dae.onboarding.contracts.CarriedUnresolvedItem
+
+.. autoclass:: torch_dae.onboarding.contracts.HandoffValidationSummary
+
+.. autoclass:: torch_dae.onboarding.contracts.PhaseHandoffManifest
+
+.. autoclass:: torch_dae.onboarding.contracts.ManagedRunManifest
+
+.. autoclass:: torch_dae.onboarding.contracts.CleanupReceipt
 
 .. autoclass:: torch_dae.onboarding.contracts.SkillEvaluationScenario
 

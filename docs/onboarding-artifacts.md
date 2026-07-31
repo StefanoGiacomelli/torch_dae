@@ -1,8 +1,65 @@
 # Onboarding Artifacts
 
 The onboarding workflow provides strict machine-readable contracts for technical analysis reports,
-environment-candidate generation results, and environment-resolution reports. Schemas are generated
-through `scripts/generate_schemas.py`; do not hand-edit generated schemas.
+environment-candidate generation results, environment-resolution reports, stable workflow records,
+and phase-handoff manifests. Schemas are generated through `scripts/generate_schemas.py`; do not
+hand-edit generated schemas.
+
+Accepted pre-runtime phase artifacts are committed as:
+
+```text
+onboarding_reports/<workflow-id>/
+├── workflow.json
+├── analyze/handoff.json
+├── resolve-environment/handoff.json
+├── integrate/handoff.json
+└── card/handoff.json
+```
+
+Only accepted phase directories need exist. Handoffs use repository-relative paths and SHA-256
+digests, carry consumed user decisions and unresolved items, and record allowed next modes. External
+attachments may remain digest-only evidence and never become required future local paths. Explicit
+supersession records the prior accepted handoff digest.
+
+Use the root control-plane command to discover, validate, promote, bundle, and clean:
+
+```bash
+uv run python scripts/onboarding_handoff.py discover \
+  --workflow-id <workflow-id> \
+  --required-phase <phase> \
+  --json
+```
+
+Promotion uses an exact allowlist: `workflow.json`, the selected phase's `handoff.json`, and every
+declared phase-local output. All declared files and hashes are validated before mutation. Any other
+regular file, including an unreferenced JSON or Markdown file in a nested directory, and every
+symlink are rejected. Outputs under canonical external repository roots such as `environments/`,
+`src/`, `tests/`, `docs/`, and `model_cards/` are hash-validated at their repository paths and are
+never copied from the managed promotion source. Promotion remains atomic and refuses to overwrite an
+accepted handoff without explicit supersession.
+
+Bundles normalize TAR and gzip metadata, independently compare declared and actual inventories, and
+write a `<archive>.sha256` sidecar. The external result JSON explicitly reports archive cleanliness,
+metadata normalization, inventory agreement, repository cleanliness, and handoff validation.
+`metadata/artifact-manifest.json` hashes every staged archive file that exists when the manifest is
+created. It intentionally excludes itself and the subsequently generated `bundle-result.json`,
+`declared-archive-inventory.json`, and `actual-archive-inventory.json`; those four exclusions are
+recorded in the bundled result metadata, while the declared and actual inventories still cover every
+archive member.
+
+Cleanup consumes only managed run manifests. Retained diagnostics must be moved to and explicitly
+recorded under `.torch-dae/reports/onboarding/<workflow-id>/` before workspace deletion. A retained
+path at or below a planned deletion root is a blocking `retention_conflict`, and conflict handling
+performs no deletion. Existing external audit outputs are checked before mutation against every
+planned deletion root: equality, containment in either direction, and both the supplied and
+symlink-resolved paths are protected. A conflict instructs the caller to move the audit output
+outside managed deletion roots, update `external_paths`, and rerun cleanup. Each dry run or execution
+atomically persists a durable cleanup receipt under
+`.torch-dae/reports/onboarding/<workflow-id>/cleanup/` before eligible execution deletion begins.
+The final receipt embeds finalized source manifests, planned and removed paths, retained managed and
+external paths, external protection conflicts, cache retention classes, verification, errors, and
+applicable SHA-256 values. External audit paths preserve the manifest spelling, are never selected by
+cleanup flags, and report existing files, directories, symlinks, and missing outputs distinctly.
 
 Analysis claims and embedding candidates may carry optional `variant_ids` and `checkpoint_ids`.
 Empty tuples mean report-wide applicability; nonempty IDs must resolve to candidates declared in the
@@ -45,9 +102,11 @@ Checkpoint hashes are compared only with hashes statically associated with the e
 file, helper symbol, URL, and filename candidate; repository-global hashes do not satisfy a report.
 
 Committed production artifacts remain governed by existing repository contracts: model cards under
-`model_cards/`, environments under `environments/`, and verification reports under
-`verification_reports/`. Runtime state, checkpoints, reports, materialized environments, and
-coverage JSON remain under ignored `.torch-dae/`.
+`model_cards/`, environments under `environments/`, accepted pre-runtime handoffs under
+`onboarding_reports/`, and checkpoint-specific runtime observations created by `verify` under
+`verification_reports/`. Diagnostic reports, managed workspaces, checkpoints, materialized
+environments, and coverage JSON remain under ignored `.torch-dae/`. Review bundles are generated
+outside the repository and are not duplicated under `onboarding_reports/`.
 Environment-resolution reports may reference committed verification reports as
 `verification_reports/<card-id>/<report>.json` or environment diagnostics relative to `.torch-dae` as
 `reports/environments/<card-id>/<fingerprint>/<report>.json`; checkpoint and source report paths are
