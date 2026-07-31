@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0.0",
+  "workflow_id": "panns-audioset-three-tuple",
+  "prior_phase": "resolve-environment",
+  "superseding_phase": "integrate",
+  "prior_handoff_path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/handoff.json",
+  "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+  "transitions": [
+    {
+      "path": "environments/panns-cnn14-16k-map-0438/sources.json",
+      "prior_sha256": "2d5c42a3ac7a94d55d2c5bf6aac22eb2b7b6d1efa356582cc9db23cbfdc68df4",
+      "new_sha256": "f29ea6262f3bcb2f241e00b157991dce7a602bdef9fc3dbe98a5292a5e4d6729"
+    },
+    {
+      "path": "environments/panns-cnn14-16k-map-0438/verify_environment.py",
+      "prior_sha256": "f776272f55c43a7da9f8f06d71e7e25ff982d32b927aa8814e52d0b3cea3be97",
+      "new_sha256": "ae2a3282db09ad74cc25bee9813d834d3f95007b91e061158020bce4aa0347db"
+    },
+    {
+      "path": "environments/panns-resnet38-map-0434/sources.json",
+      "prior_sha256": "da5f3221b2e8e59a99f90ea95c868ea637e445580b33a3270b77ad2e429567bd",
+      "new_sha256": "0ba554a609371bc950b80f0525e7fe4a0b2c3d38c7814711da3b0d665389b994"
+    },
+    {
+      "path": "environments/panns-resnet38-map-0434/verify_environment.py",
+      "prior_sha256": "2c5d31f2621a49098156d9d7fad355e23e50386d28a9774d475fa0e1aad4e5a2",
+      "new_sha256": "ff660209698988256f3d5a7b829630659317c47bee9f488129e143006ebc57aa"
+    },
+    {
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/sources.json",
+      "prior_sha256": "b5333be614396cad2afa3def3d5a701faf446b35629bf24a042a8eeae0473b6f",
+      "new_sha256": "a76db3dc217ad376d5b0cecedf03c067f2da2414d057ec563e3503ebf329f08f"
+    },
+    {
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/verify_environment.py",
+      "prior_sha256": "fba1a1276a75952b2bf033702e4f9a720733c4fdb1cb59dcdeee1c82ecd4ad72",
+      "new_sha256": "ffde27bdb9eaa17946c17ed15146eb5be0ff9ef5cf3a70f115ba9f0980a39297"
+    }
+  ],
+  "validation": {
+    "transition_count": 6,
+    "paths_unique": true,
+    "prior_hashes_match_historical_handoff": true,
+    "historical_handoff_bytes_unchanged": true,
+    "new_hashes_match_integrate_outputs": true,
+    "new_hashes_match_current_repository_files": true,
+    "phase_order_legal": true,
+    "protected_paths_absent": true,
+    "chain_unique_and_ordered": true
+  }
+}

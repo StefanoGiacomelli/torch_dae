@@ -49,10 +49,12 @@ ROOT = Path(__file__).resolve().parents[1]
 MODEL_DEPS = {"torch", "torchaudio", "torchvision", "transformers", "tensorflow", "jax", "librosa"}
 BINARY_MODEL_SUFFIXES = {".pt", ".pth", ".ckpt", ".bin", ".safetensors", ".onnx"}
 REQUIRED = [
+    ".gitattributes",
     "project_spec.md",
     "pyproject.toml",
     "uv.lock",
     "scripts/onboarding_handoff.py",
+    "scripts/check_worktree_patch.py",
     "skills/audio-model-onboarding/SKILL.md",
     ".agents/skills/audio-model-onboarding",
     ".claude/skills/audio-model-onboarding",
@@ -379,7 +381,7 @@ def validate_onboarding_reports(root: Path, failures: list[str]) -> None:
     for path in reports_root.rglob("*"):
         if not path.is_file():
             continue
-        if path.suffix not in {".json", ".md"}:
+        if path.suffix not in {".diff", ".json", ".md"}:
             fail(f"forbidden onboarding report artifact: {path.relative_to(root)}", failures)
 
 
@@ -656,6 +658,20 @@ def main() -> int:
     for relative in REQUIRED:
         if not (ROOT / relative).exists():
             fail(f"missing required path: {relative}", failures)
+
+    worktree_patch = subprocess.run(
+        [sys.executable, "scripts/check_worktree_patch.py", "--json"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if worktree_patch.returncode != 0:
+        try:
+            detail = json.loads(worktree_patch.stdout)
+        except json.JSONDecodeError:
+            detail = worktree_patch.stderr.strip() or worktree_patch.stdout.strip()
+        fail(f"staged-equivalent worktree validation failed: {detail}", failures)
 
     if list(ROOT.glob("**/*backbone*.json")):
         fail("legacy backbone JSON files are present", failures)

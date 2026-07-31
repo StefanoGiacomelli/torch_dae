@@ -1,0 +1,33 @@
+{
+  "boundaries": {
+    "checkpoint_accessed": false,
+    "panns_runtime_source_changed": false,
+    "root_model_dependency_added": false,
+    "vendored_source_changed": false
+  },
+  "classification": "root_coverage_scope",
+  "initial_result": {
+    "branch_coverage_percent": 71.14,
+    "branch_threshold_passed": true,
+    "line_coverage_percent": 81.27,
+    "line_threshold_passed": false
+  },
+  "phase": "integrate",
+  "prepromotion_result": {
+    "branch_coverage_percent": 74.48,
+    "branch_threshold_passed": true,
+    "line_coverage_percent": 88.0,
+    "line_threshold_passed": true,
+    "tests": "399 passed, 1 skipped, 1 deselected"
+  },
+  "resolution": {
+    "configuration": "pyproject.toml tool.coverage.run.omit",
+    "omitted_paths": [
+      "src/torch_dae/models/panns/_vendor/*",
+      "src/torch_dae/models/panns/model.py"
+    ],
+    "rationale": "The model-agnostic root environment intentionally lacks PyTorch; isolated model runtime and byte-preserved vendored code are verified by focused model-environment tests rather than the root control-plane coverage gate."
+  },
+  "schema_version": "1.0.0",
+  "workflow_id": "panns-audioset-three-tuple"
+}

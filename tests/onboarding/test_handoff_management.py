@@ -12,6 +12,7 @@ from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
 
 import torch_dae.onboarding.handoff as handoff_module
 from torch_dae.onboarding.contracts import (
+    ArtifactSupersession,
     CleanupReceipt,
     HandoffArtifactReference,
     HandoffStatus,
@@ -160,6 +161,125 @@ def _source(
     (source / "workflow.json").write_text(canonical_json_text(workflow.model_dump(mode="json")))
     (phase_root / "handoff.json").write_text(canonical_json_text(handoff.model_dump(mode="json")))
     return source
+
+
+def _source_with_external_output(
+    root: Path,
+    workflow_id: str,
+    phase: OnboardingPhase,
+    *,
+    accepted_phases: tuple[OnboardingPhase, ...],
+    relative_path: str,
+    content: bytes,
+    supersessions: tuple[ArtifactSupersession, ...] = (),
+) -> Path:
+    external = root / relative_path
+    external.parent.mkdir(parents=True, exist_ok=True)
+    external.write_bytes(content)
+    source = _source(
+        root,
+        workflow_id,
+        phase,
+        accepted_phases=accepted_phases,
+    )
+    handoff_path = source / phase.value / "handoff.json"
+    handoff = PhaseHandoffManifest.model_validate_json(handoff_path.read_text())
+    output = HandoffArtifactReference(
+        path=relative_path,
+        sha256=sha256_file(external),
+        media_type="application/json",
+        originating_phase=phase.value,
+        canonical_role="shared-artifact",
+    )
+    updated = PhaseHandoffManifest.model_validate(
+        {
+            **handoff.model_dump(mode="json"),
+            "output_artifacts": [
+                *(item.model_dump(mode="json") for item in handoff.output_artifacts),
+                output.model_dump(mode="json"),
+            ],
+            "artifact_supersessions": [item.model_dump(mode="json") for item in supersessions],
+        }
+    )
+    handoff_path.write_text(canonical_json_text(updated.model_dump(mode="json")))
+    return source
+
+
+def test_integrate_handoff_allows_only_the_exact_generic_validation_outputs(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    accepted = (OnboardingPhase.INTEGRATE,)
+    exact = _source_with_external_output(
+        root,
+        "workflow-one",
+        OnboardingPhase.INTEGRATE,
+        accepted_phases=accepted,
+        relative_path=".gitattributes",
+        content=b"selected/path -whitespace\n",
+    )
+    assert (exact / "integrate/handoff.json").is_file()
+
+    with pytest.raises(ValueError, match="output artifacts must be canonical"):
+        _source_with_external_output(
+            root,
+            "workflow-two",
+            OnboardingPhase.INTEGRATE,
+            accepted_phases=accepted,
+            relative_path="scripts/unrelated.py",
+            content=b"print('unrelated')\n",
+        )
+
+
+def test_repeated_same_phase_supersession_preserves_complete_handoff_history(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    first = _source(root, "workflow-one", OnboardingPhase.ANALYZE)
+    promote_phase(
+        root,
+        source_dir=first,
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+    )
+    canonical = root / "onboarding_reports/workflow-one/analyze/handoff.json"
+    first_hash = sha256_file(canonical)
+    second = _source(
+        root,
+        "workflow-one",
+        OnboardingPhase.ANALYZE,
+        content='{"result": "second"}\n',
+        superseded_handoff_sha256=first_hash,
+    )
+    promote_phase(
+        root,
+        source_dir=second,
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+        supersede=True,
+    )
+    second_hash = sha256_file(canonical)
+    third = _source(
+        root,
+        "workflow-one",
+        OnboardingPhase.ANALYZE,
+        content='{"result": "third"}\n',
+        superseded_handoff_sha256=second_hash,
+    )
+    promote_phase(
+        root,
+        source_dir=third,
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+        supersede=True,
+    )
+
+    phase_root = canonical.parent
+    assert (phase_root / f"handoff.{first_hash}.superseded.json").is_file()
+    assert (phase_root / f"handoff.{second_hash}.superseded.json").is_file()
+    validate_workflow(root, "workflow-one")
 
 
 def test_discover_validates_hashes_missing_phases_and_duplicate_attachments(
@@ -341,6 +461,425 @@ def test_promotion_is_atomic_and_supersession_is_explicit(
     validate_workflow(root, "workflow-one")
 
 
+def test_external_artifact_requires_explicit_ordered_supersession(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    workflow_id = "workflow-one"
+    relative = "environments/shared/artifact.json"
+    original = b'{"version": 1}\n'
+    updated = b'{"version": 2}\n'
+    first = _source_with_external_output(
+        root,
+        workflow_id,
+        OnboardingPhase.RESOLVE_ENVIRONMENT,
+        accepted_phases=(OnboardingPhase.RESOLVE_ENVIRONMENT,),
+        relative_path=relative,
+        content=original,
+    )
+    promote_phase(
+        root,
+        source_dir=first,
+        workflow_id=workflow_id,
+        phase=OnboardingPhase.RESOLVE_ENVIRONMENT,
+    )
+    workflow_root = root / f"onboarding_reports/{workflow_id}"
+    workflow_before = {
+        path.relative_to(workflow_root).as_posix(): path.read_bytes()
+        for path in workflow_root.rglob("*")
+        if path.is_file()
+    }
+
+    undeclared = _source_with_external_output(
+        root,
+        workflow_id,
+        OnboardingPhase.INTEGRATE,
+        accepted_phases=(
+            OnboardingPhase.RESOLVE_ENVIRONMENT,
+            OnboardingPhase.INTEGRATE,
+        ),
+        relative_path=relative,
+        content=updated,
+    )
+    with pytest.raises(HandoffManagementError, match="lacks explicit supersession"):
+        promote_phase(
+            root,
+            source_dir=undeclared,
+            workflow_id=workflow_id,
+            phase=OnboardingPhase.INTEGRATE,
+        )
+    assert {
+        path.relative_to(workflow_root).as_posix(): path.read_bytes()
+        for path in workflow_root.rglob("*")
+        if path.is_file()
+    } == workflow_before
+
+    prior_handoff = workflow_root / "resolve-environment/handoff.json"
+    transition = ArtifactSupersession(
+        path=relative,
+        prior_originating_phase=OnboardingPhase.RESOLVE_ENVIRONMENT,
+        prior_sha256=sha256_file_bytes(original),
+        new_sha256=sha256_file_bytes(updated),
+        reason="The later phase extends the shared production artifact.",
+        prior_handoff_sha256=sha256_file(prior_handoff),
+    )
+    valid = _source_with_external_output(
+        root,
+        workflow_id,
+        OnboardingPhase.INTEGRATE,
+        accepted_phases=(
+            OnboardingPhase.RESOLVE_ENVIRONMENT,
+            OnboardingPhase.INTEGRATE,
+        ),
+        relative_path=relative,
+        content=updated,
+        supersessions=(transition,),
+    )
+    promoted = promote_phase(
+        root,
+        source_dir=valid,
+        workflow_id=workflow_id,
+        phase=OnboardingPhase.INTEGRATE,
+    )
+    assert promoted["validated_supersession_count"] == 1
+    result = validate_workflow(root, workflow_id)
+    assert result["validated_supersession_count"] == 1
+    assert result["superseded_artifact_paths"] == [relative]
+    assert (root / relative).read_bytes() == updated
+
+
+def sha256_file_bytes(value: bytes) -> str:
+    import hashlib
+
+    return hashlib.sha256(value).hexdigest()
+
+
+def test_unchanged_external_artifact_needs_no_supersession(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    workflow_id = "workflow-one"
+    relative = "environments/shared/artifact.json"
+    content = b'{"stable": true}\n'
+    promote_phase(
+        root,
+        source_dir=_source_with_external_output(
+            root,
+            workflow_id,
+            OnboardingPhase.RESOLVE_ENVIRONMENT,
+            accepted_phases=(OnboardingPhase.RESOLVE_ENVIRONMENT,),
+            relative_path=relative,
+            content=content,
+        ),
+        workflow_id=workflow_id,
+        phase=OnboardingPhase.RESOLVE_ENVIRONMENT,
+    )
+    promote_phase(
+        root,
+        source_dir=_source_with_external_output(
+            root,
+            workflow_id,
+            OnboardingPhase.INTEGRATE,
+            accepted_phases=(
+                OnboardingPhase.RESOLVE_ENVIRONMENT,
+                OnboardingPhase.INTEGRATE,
+            ),
+            relative_path=relative,
+            content=content,
+        ),
+        workflow_id=workflow_id,
+        phase=OnboardingPhase.INTEGRATE,
+    )
+    assert validate_workflow(root, workflow_id)["validated_supersession_count"] == 0
+
+
+def test_supersession_contract_rejects_stale_incorrect_duplicate_and_protected_edges(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    workflow_id = "workflow-one"
+    relative = "environments/shared/artifact.json"
+    original = b'{"version": 1}\n'
+    updated = b'{"version": 2}\n'
+    promote_phase(
+        root,
+        source_dir=_source_with_external_output(
+            root,
+            workflow_id,
+            OnboardingPhase.RESOLVE_ENVIRONMENT,
+            accepted_phases=(OnboardingPhase.RESOLVE_ENVIRONMENT,),
+            relative_path=relative,
+            content=original,
+        ),
+        workflow_id=workflow_id,
+        phase=OnboardingPhase.RESOLVE_ENVIRONMENT,
+    )
+    stale = ArtifactSupersession(
+        path=relative,
+        prior_originating_phase=OnboardingPhase.RESOLVE_ENVIRONMENT,
+        prior_sha256="1" * 64,
+        new_sha256=sha256_file_bytes(updated),
+        reason="Synthetic stale lineage test.",
+    )
+    stale_source = _source_with_external_output(
+        root,
+        workflow_id,
+        OnboardingPhase.INTEGRATE,
+        accepted_phases=(
+            OnboardingPhase.RESOLVE_ENVIRONMENT,
+            OnboardingPhase.INTEGRATE,
+        ),
+        relative_path=relative,
+        content=updated,
+        supersessions=(stale,),
+    )
+    with pytest.raises(HandoffManagementError, match="prior_sha256 is stale"):
+        promote_phase(
+            root,
+            source_dir=stale_source,
+            workflow_id=workflow_id,
+            phase=OnboardingPhase.INTEGRATE,
+        )
+
+    base = PhaseHandoffManifest.model_validate_json(
+        (stale_source / "integrate/handoff.json").read_text()
+    ).model_dump(mode="json")
+    valid_transition = {
+        **stale.model_dump(mode="json"),
+        "prior_sha256": sha256_file_bytes(original),
+    }
+    with pytest.raises(ValueError, match="paths must be unique"):
+        PhaseHandoffManifest.model_validate(
+            {**base, "artifact_supersessions": [valid_transition, valid_transition]}
+        )
+    with pytest.raises(ValueError, match="superseding output hash"):
+        PhaseHandoffManifest.model_validate(
+            {
+                **base,
+                "artifact_supersessions": [{**valid_transition, "new_sha256": "2" * 64}],
+            }
+        )
+    with pytest.raises(ValueError, match="current phase output"):
+        PhaseHandoffManifest.model_validate(
+            {
+                **base,
+                "output_artifacts": base["output_artifacts"][:-1],
+                "artifact_supersessions": [valid_transition],
+            }
+        )
+    with pytest.raises(ValueError, match="legal later workflow phase"):
+        PhaseHandoffManifest.model_validate(
+            {
+                **base,
+                "artifact_supersessions": [
+                    {
+                        **valid_transition,
+                        "prior_originating_phase": OnboardingPhase.CARD.value,
+                    }
+                ],
+            }
+        )
+    protected_output = {
+        **base["output_artifacts"][-1],
+        "path": f"onboarding_reports/{workflow_id}/integrate/shared.json",
+    }
+    with pytest.raises(ValueError, match="protected canonical"):
+        PhaseHandoffManifest.model_validate(
+            {
+                **base,
+                "output_artifacts": [*base["output_artifacts"][:-1], protected_output],
+                "artifact_supersessions": [
+                    {
+                        **valid_transition,
+                        "path": protected_output["path"],
+                        "new_sha256": protected_output["sha256"],
+                    }
+                ],
+            }
+        )
+
+
+def test_discovery_and_bundle_expose_the_latest_superseded_artifact(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    workflow_id = "workflow-one"
+    relative = "environments/shared/artifact.json"
+    original = b'{"version": 1}\n'
+    updated = b'{"version": 2}\n'
+    promote_phase(
+        root,
+        source_dir=_source_with_external_output(
+            root,
+            workflow_id,
+            OnboardingPhase.RESOLVE_ENVIRONMENT,
+            accepted_phases=(OnboardingPhase.RESOLVE_ENVIRONMENT,),
+            relative_path=relative,
+            content=original,
+        ),
+        workflow_id=workflow_id,
+        phase=OnboardingPhase.RESOLVE_ENVIRONMENT,
+    )
+    prior_handoff = root / f"onboarding_reports/{workflow_id}/resolve-environment/handoff.json"
+    promote_phase(
+        root,
+        source_dir=_source_with_external_output(
+            root,
+            workflow_id,
+            OnboardingPhase.INTEGRATE,
+            accepted_phases=(
+                OnboardingPhase.RESOLVE_ENVIRONMENT,
+                OnboardingPhase.INTEGRATE,
+            ),
+            relative_path=relative,
+            content=updated,
+            supersessions=(
+                ArtifactSupersession(
+                    path=relative,
+                    prior_originating_phase=OnboardingPhase.RESOLVE_ENVIRONMENT,
+                    prior_sha256=sha256_file_bytes(original),
+                    new_sha256=sha256_file_bytes(updated),
+                    reason="Synthetic discovery and bundle coverage.",
+                    prior_handoff_sha256=sha256_file(prior_handoff),
+                ),
+            ),
+        ),
+        workflow_id=workflow_id,
+        phase=OnboardingPhase.INTEGRATE,
+    )
+    discovered = discover_handoff(
+        root,
+        workflow_id=workflow_id,
+        required_phase=OnboardingPhase.RESOLVE_ENVIRONMENT,
+    )
+    assert discovered["superseded_external_artifacts"] == [
+        {
+            "path": relative,
+            "historical_originating_phase": "resolve-environment",
+            "historical_sha256": sha256_file_bytes(original),
+            "latest_originating_phase": "integrate",
+            "latest_sha256": sha256_file_bytes(updated),
+            "status": "accepted_supersession",
+        }
+    ]
+    bundle = bundle_workflow(
+        root,
+        workflow_id=workflow_id,
+        through_phase=OnboardingPhase.INTEGRATE,
+        output_dir=tmp_path / "review",
+        include_working_tree=False,
+    )
+    assert bundle["validated_supersession_count"] == 1
+    with tarfile.open(str(bundle["archive_path"]), "r:gz") as archive:
+        latest = archive.extractfile(f"artifacts/{relative}")
+        transitions = archive.extractfile("metadata/artifact-supersessions.json")
+        assert latest is not None
+        assert transitions is not None
+        assert latest.read() == updated
+        assert json.loads(transitions.read())[0]["prior_sha256"] == sha256_file_bytes(original)
+
+
+def test_multi_phase_chain_is_ordered_and_fork_is_rejected(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    relative = "environments/shared/artifact.json"
+    hashes = ("1" * 64, "2" * 64, "3" * 64)
+
+    def handoff_with_state(
+        phase: OnboardingPhase,
+        sha256: str,
+        supersessions: tuple[ArtifactSupersession, ...] = (),
+    ) -> PhaseHandoffManifest:
+        source = _source(root, "workflow-one", phase)
+        handoff = PhaseHandoffManifest.model_validate_json(
+            (source / phase.value / "handoff.json").read_text()
+        )
+        return handoff.model_copy(
+            update={
+                "output_artifacts": (
+                    *handoff.output_artifacts,
+                    HandoffArtifactReference(
+                        path=relative,
+                        sha256=sha256,
+                        media_type="application/json",
+                        originating_phase=phase.value,
+                        canonical_role="shared-artifact",
+                    ),
+                ),
+                "artifact_supersessions": supersessions,
+            }
+        )
+
+    resolve = handoff_with_state(OnboardingPhase.RESOLVE_ENVIRONMENT, hashes[0])
+    integrate = handoff_with_state(
+        OnboardingPhase.INTEGRATE,
+        hashes[1],
+        (
+            ArtifactSupersession(
+                path=relative,
+                prior_originating_phase=OnboardingPhase.RESOLVE_ENVIRONMENT,
+                prior_sha256=hashes[0],
+                new_sha256=hashes[1],
+                reason="First ordered transition.",
+            ),
+        ),
+    )
+    card = handoff_with_state(
+        OnboardingPhase.CARD,
+        hashes[2],
+        (
+            ArtifactSupersession(
+                path=relative,
+                prior_originating_phase=OnboardingPhase.INTEGRATE,
+                prior_sha256=hashes[1],
+                new_sha256=hashes[2],
+                reason="Second ordered transition.",
+            ),
+        ),
+    )
+    errors, latest, transitions = handoff_module._validate_artifact_supersession_chains(
+        {
+            OnboardingPhase.RESOLVE_ENVIRONMENT: resolve,
+            OnboardingPhase.INTEGRATE: integrate,
+            OnboardingPhase.CARD: card,
+        },
+        {},
+    )
+    assert errors == []
+    assert latest[relative] == (OnboardingPhase.CARD, hashes[2])
+    assert [item["superseding_phase"] for item in transitions] == ["integrate", "card"]
+
+    fork = card.model_copy(
+        update={
+            "artifact_supersessions": (
+                ArtifactSupersession(
+                    path=relative,
+                    prior_originating_phase=OnboardingPhase.RESOLVE_ENVIRONMENT,
+                    prior_sha256=hashes[0],
+                    new_sha256=hashes[2],
+                    reason="Fork from a stale state.",
+                ),
+            )
+        }
+    )
+    fork_errors, _, _ = handoff_module._validate_artifact_supersession_chains(
+        {
+            OnboardingPhase.RESOLVE_ENVIRONMENT: resolve,
+            OnboardingPhase.INTEGRATE: integrate,
+            OnboardingPhase.CARD: fork,
+        },
+        {},
+    )
+    assert any("prior phase is not latest" in error for error in fork_errors)
+    assert any("prior_sha256 is stale" in error for error in fork_errors)
+
+
 def test_bundle_is_deterministic_normalized_and_inventory_exact(
     tmp_path: Path,
     repo_root: Path,
@@ -351,6 +890,21 @@ def test_bundle_is_deterministic_normalized_and_inventory_exact(
         source_dir=_source(root, "workflow-one", OnboardingPhase.ANALYZE),
         workflow_id="workflow-one",
         phase=OnboardingPhase.ANALYZE,
+    )
+    prior_handoff = root / "onboarding_reports/workflow-one/analyze/handoff.json"
+    prior_handoff_sha256 = sha256_file(prior_handoff)
+    promote_phase(
+        root,
+        source_dir=_source(
+            root,
+            "workflow-one",
+            OnboardingPhase.ANALYZE,
+            content='{"result": "replacement"}\n',
+            superseded_handoff_sha256=prior_handoff_sha256,
+        ),
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+        supersede=True,
     )
     first = bundle_workflow(
         root,
@@ -391,6 +945,10 @@ def test_bundle_is_deterministic_normalized_and_inventory_exact(
         actual = json.loads(actual_file.read())
         artifact_manifest = json.loads(artifact_manifest_file.read())
         bundle_result = json.loads(bundle_result_file.read())
+        assert archive.getmember(
+            "artifacts/onboarding_reports/workflow-one/analyze/"
+            f"handoff.{prior_handoff_sha256}.superseded.json"
+        ).isfile()
     assert declared == actual == sorted(member.name for member in members)
     manifested_paths = {item["path"] for item in artifact_manifest}
     assert set(
@@ -915,10 +1473,22 @@ def test_cleanup_refuses_an_unrecorded_run_root(
 
 def test_panns_migration_is_valid_and_preserves_accepted_artifacts(repo_root: Path) -> None:
     result = validate_workflow(repo_root, "panns-audioset-three-tuple")
-    assert result["validated_phases"] == ["analyze", "resolve-environment"]
+    assert result["validated_phases"] == [
+        "analyze",
+        "resolve-environment",
+        "integrate",
+    ]
+    assert result["validated_supersession_count"] == 6
+    assert result["superseded_artifact_paths"] == [
+        "environments/panns-cnn14-16k-map-0438/sources.json",
+        "environments/panns-cnn14-16k-map-0438/verify_environment.py",
+        "environments/panns-resnet38-map-0434/sources.json",
+        "environments/panns-resnet38-map-0434/verify_environment.py",
+        "environments/panns-wavegram-logmel-cnn14-map-0439/sources.json",
+        "environments/panns-wavegram-logmel-cnn14-map-0439/verify_environment.py",
+    ]
     root = repo_root / "onboarding_reports/panns-audioset-three-tuple"
     expected_hashes = {
-        "workflow.json": "ad5fea06d032d2a20ca422b807333674f1419bd65cc4c901505a3b8c8d1ba39a",
         "analyze/handoff.json": (
             "dee4f8fcfbc20a47d5c86ebce71e2c25a745b6f19faf5a1b4efc510cf29cece2"
         ),
@@ -945,6 +1515,21 @@ def test_panns_migration_is_valid_and_preserves_accepted_artifacts(repo_root: Pa
         ),
     }
     assert {path: sha256_file(root / path) for path in expected_hashes} == expected_hashes
+    workflow = json.loads((root / "workflow.json").read_text())
+    assert workflow["current_accepted_phase"] == "integrate"
+    assert workflow["accepted_phase_paths"][-1] == {
+        "phase": "integrate",
+        "handoff_path": "onboarding_reports/panns-audioset-three-tuple/integrate/handoff.json",
+    }
+    integrate = PhaseHandoffManifest.model_validate_json(
+        (root / "integrate/handoff.json").read_text()
+    )
+    assert len(integrate.artifact_supersessions) == 6
+    assert all(
+        item.prior_handoff_sha256
+        == "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c"
+        for item in integrate.artifact_supersessions
+    )
     report = json.loads(
         (root / "resolve-environment/environment-resolution-report.json").read_text()
     )

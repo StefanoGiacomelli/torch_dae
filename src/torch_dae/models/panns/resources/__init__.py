@@ -1,0 +1,1 @@
+"""Authoritative PANNs package resources."""

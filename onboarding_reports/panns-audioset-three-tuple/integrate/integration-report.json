@@ -1,0 +1,169 @@
+{
+  "schema_version": "1.0.0",
+  "report_id": "panns-three-tuple-production-integration-recovery",
+  "workflow_id": "panns-audioset-three-tuple",
+  "created_at": "2026-07-31T14:21:15Z",
+  "repository_commit": "56258501cdc334cdfb511058bc362a45dd81c27c",
+  "source_revision": "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0",
+  "recovery": {
+    "retained_blocked_run": ".torch-dae/reports/onboarding/panns-audioset-three-tuple/integrate-blocked/20260731T115557Z",
+    "existing_integration_reused": true,
+    "generic_blocker_resolved": "strict cross-phase artifact supersession",
+    "panns_files_changed_after_baseline": [
+      {
+        "path": "src/torch_dae/models/panns/model.py",
+        "reason": "new isolated boundary probes demonstrated opaque failures below deterministic architecture minima and for incompatible Wavegram branch lengths; explicit validation was added"
+      },
+      {
+        "path": "tests/models/test_panns_runtime.py",
+        "reason": "added the requested 0.64, 1.0, and 2.0 second duration sweep plus minimum and alignment regression tests"
+      },
+      {
+        "path": "docs/models/panns.md",
+        "reason": "documented the directly observed and architecture-derived duration constraints"
+      },
+      {
+        "path": "tests/test_public_metadata.py",
+        "reason": "updated the byte-preservation fixture to the explicitly authorized normative project_spec.md revision after the complete Python 3.12 suite exposed the stale Git blob pin"
+      }
+    ]
+  },
+  "consumed_handoffs": [
+    {
+      "phase": "analyze",
+      "path": "onboarding_reports/panns-audioset-three-tuple/analyze/handoff.json",
+      "sha256": "dee4f8fcfbc20a47d5c86ebce71e2c25a745b6f19faf5a1b4efc510cf29cece2"
+    },
+    {
+      "phase": "resolve-environment",
+      "path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/handoff.json",
+      "sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c"
+    }
+  ],
+  "public_model_identities": [
+    {
+      "model_id": "panns-cnn14-16k-map-0438",
+      "variant_id": "panns-cnn14-16k",
+      "upstream_class": "Cnn14_16k",
+      "checkpoint_filename": "Cnn14_16k_mAP=0.438.pth",
+      "wrapper_class": "torch_dae.models.panns:PannsCnn14_16kMap0438",
+      "sample_rate": 16000
+    },
+    {
+      "model_id": "panns-resnet38-map-0434",
+      "variant_id": "panns-resnet38",
+      "upstream_class": "ResNet38",
+      "checkpoint_filename": "ResNet38_mAP=0.434.pth",
+      "wrapper_class": "torch_dae.models.panns:PannsResNet38Map0434",
+      "sample_rate": 32000
+    },
+    {
+      "model_id": "panns-wavegram-logmel-cnn14-map-0439",
+      "variant_id": "panns-wavegram-logmel-cnn14",
+      "upstream_class": "Wavegram_Logmel_Cnn14",
+      "checkpoint_filename": "Wavegram_Logmel_Cnn14_mAP=0.439.pth",
+      "wrapper_class": "torch_dae.models.panns:PannsWavegramLogmelCnn14Map0439",
+      "sample_rate": 32000
+    }
+  ],
+  "package_architecture": {
+    "shared_adapter": "src/torch_dae/models/panns/model.py::_PannsAudioTagger",
+    "dependency_free_identity_module": "src/torch_dae/models/panns/identities.py",
+    "lazy_package_module": "src/torch_dae/models/panns/__init__.py",
+    "label_loader": "src/torch_dae/models/panns/labels.py",
+    "vendor_root": "src/torch_dae/models/panns/_vendor",
+    "root_import_requires_model_dependencies": false
+  },
+  "waveform_contract": {
+    "shape": "B,C,T",
+    "channels": 1,
+    "floating_point_required": true,
+    "automatic_resampling": false,
+    "automatic_downmixing": false,
+    "amplitude_normalization": false,
+    "automatic_crop_pad_or_truncate": false,
+    "valid_lengths": "accepted only when every value equals T; padded unequal lengths rejected",
+    "duration_constraints": {
+      "panns-cnn14-16k-map-0438": "T >= 4960",
+      "panns-resnet38-map-0434": "T >= 9920",
+      "panns-wavegram-logmel-cnn14-map-0439": "T >= 10236 and T % 640 is 0..319 or 636..639"
+    }
+  },
+  "outputs": {
+    "logits": "raw pre-sigmoid fc_audioset output [B,527]",
+    "probabilities": "native sigmoid multi-label probabilities [B,527]",
+    "default_embedding": "upstream post-fc1 pre-classifier [B,2048] embedding",
+    "class_metadata": "ordered 527-row AudioSet label resource"
+  },
+  "direct_dependencies": {
+    "python": "3.12.13",
+    "numpy": "2.4.6",
+    "torch": "2.13.0",
+    "torchlibrosa": "0.1.0",
+    "root_dependency_graph_changed": false
+  },
+  "artifact_supersession": {
+    "count": 6,
+    "prior_phase": "resolve-environment",
+    "superseding_phase": "integrate",
+    "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+    "historical_handoff_modified": false,
+    "report": "supersession-validation-report.json"
+  },
+  "source_provenance": {
+    "report": "source-provenance.json",
+    "transformation_record": "source-transformation.json",
+    "deterministic_diff": "source-reduction.diff",
+    "upstream_complete_hashes_verified": true,
+    "selected_range_and_ast_hashes_verified": true,
+    "integrated_hashes_verified": true
+  },
+  "synthetic_integration": {
+    "kind": "random-initialized synthetic integration checks",
+    "all_three_variants_passed": true,
+    "durations_seconds": [0.64, 1.0, 2.0],
+    "checkpoint_used": false,
+    "result_artifact": "synthetic-integration-result.json"
+  },
+  "environment_lifecycle": {
+    "outcome": "A",
+    "environment_materialization_succeeded": false,
+    "environment_verification_succeeded": false,
+    "environment_fingerprint": null,
+    "lifecycle_promotion": null,
+    "reason": "model card prerequisite is absent and model-card creation is prohibited in integrate mode"
+  },
+  "checkpoint_boundary": {
+    "checkpoint_requests": 0,
+    "checkpoint_downloads": 0,
+    "checkpoint_loads": 0,
+    "checkpoint_inspections": 0,
+    "pretrained_inference_runs": 0
+  },
+  "validation_completed_before_promotion": [
+    "exact repository and accepted-handoff baseline",
+    "focused generic artifact-supersession regression tests",
+    "strict phase-handoff Draft 2020-12 schema tests",
+    "strict mypy for supersession implementation",
+    "PANNs metadata tests: 5 passed",
+    "isolated PANNs runtime and duration tests: 13 passed",
+    "three isolated committed environment verification scripts",
+    "immutable upstream cache revision, cleanliness, full hashes, selected range hashes, and AST hashes",
+    "deterministic source-reduction diff byte reproduction"
+  ],
+  "unresolved_risks": [
+    "Exact checkpoint-to-source equivalence remains unresolved for all three tuples.",
+    "Cnn14_16k source semantics differ from the retained chronological comparison revision.",
+    "The paper Hamming versus source Hann discrepancy remains unresolved.",
+    "No checkpoint payload was acquired, loaded, hashed locally, or inspected.",
+    "Padded variable-length batch semantics remain unsupported.",
+    "Temporal embedding timing and branch embedding contracts remain unresolved.",
+    "CUDA, MPS, Linux, and other Python/platform combinations remain unverified.",
+    "Checkpoint compatibility and pretrained numerical behavior remain unverified."
+  ],
+  "canonical_handoff": {
+    "path": "onboarding_reports/panns-audioset-three-tuple/integrate/handoff.json",
+    "candidate_validation_required_before_atomic_promotion": true
+  },
+  "recommended_next_mode_after_promotion": "verify"
+}

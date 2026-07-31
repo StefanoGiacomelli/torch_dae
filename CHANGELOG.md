@@ -4,8 +4,20 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Staged-equivalent whitespace validation
+
+- Added exact `.gitattributes` whitespace exemptions for the byte-preserved PANNs vendored
+  substrate and deterministic source-reduction patch without weakening validation elsewhere.
+- Added a temporary-index working-tree validator so untracked non-ignored outputs receive the same
+  whitespace gate as the future staged commit while the real Git index remains unchanged.
+- Added Git-fixture regressions for tracked, untracked, ignored, deleted, renamed, exempt, and
+  non-exempt paths plus temporary-index cleanup on success and failure.
+
 ### Onboarding phase-handoff hardening
 
+- Added strict cross-phase artifact supersession for shared repository outputs, including ordered
+  lineage validation, protected canonical paths, atomic pending-handoff validation, historical
+  discovery status, and bundle metadata resolving the latest accepted file.
 - Closed promotion to an exact declared-artifact allowlist, with byte-preserving rejection of
   unreferenced JSON, Markdown, nested runtime content, and symlinks.
 - Made cleanup conflict-aware and all-or-nothing for retained paths and existing external outputs;

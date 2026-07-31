@@ -13,9 +13,9 @@
 
 `torch-dae 0.1.0` is the first public release of the generic framework. Its typed control
 plane, isolated environment and checkpoint subsystems, and evidence-grounded audio-model onboarding
-skill are implemented and validated. No model-specific integrations are distributed in the current
-release. Model support is added through the canonical onboarding workflow and isolated
-model-specific environments.
+skill are implemented and validated. The source tree now includes the production PANNs adapters for
+three accepted AudioSet model/checkpoint identities; checkpoint-specific cards and pretrained
+payload verification remain later onboarding phases.
 
 ## Overview
 
@@ -46,10 +46,12 @@ One model card always describes exactly one model family, variant, and checkpoin
 - Static upstream inspection and evidence-grounded analysis without importing untrusted model code.
 - A canonical agent-neutral onboarding skill shared by Codex and Claude.
 - Synthetic grounded evaluations, repository safety validation, and strict quality gates.
+- Lazy, isolated PANNs adapters for Cnn14_16k, ResNet38, and Wavegram_Logmel_Cnn14 with raw logits,
+  native sigmoid probabilities, the upstream post-fc1 embedding, and ordered AudioSet labels.
 
 ## Not available yet
 
-- No real audio model or checkpoint is included.
+- No pretrained checkpoint payload or checkpoint-specific model card is included.
 - The `model inspect` and `model verify` CLI placeholders do not execute model workflows yet.
 - Profiling is reserved until a model is runtime-verified and a profiling workflow is explicitly
   implemented and invoked.
@@ -116,10 +118,9 @@ environment specification. No such production artifact is included yet.
 
 ## Illustrative model-wrapper usage
 
-The public registry is empty in `0.1.0`. The placeholder `model_name` below denotes the identifier
-of a future checkpoint-specific model card. This non-executable interface example illustrates how
-an integrated wrapper is expected to be resolved and used once its model card, checkpoint, wrapper,
-and isolated runtime have been committed and activated.
+The public registry remains empty until checkpoint-specific cards are authored. The placeholder
+`model_name` below denotes a future card identifier. This non-executable interface example
+illustrates how a wrapper is resolved once its card, checkpoint, and isolated runtime are activated.
 
 ```python
 from pathlib import Path
@@ -285,6 +286,7 @@ uv run ruff check
 uv run mypy src scripts
 uv run pytest
 uv run python scripts/generate_schemas.py --check
+uv run python scripts/check_worktree_patch.py --json
 uv run python scripts/validate_repository.py
 uv run python skills/audio-model-onboarding/scripts/validate_skill_artifacts.py . --json
 ```

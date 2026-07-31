@@ -106,6 +106,10 @@ ignore_missing_imports = true
 [tool.coverage.run]
 branch = true
 source = ["torch_dae"]
+omit = [
+  "src/torch_dae/models/panns/_vendor/*",
+  "src/torch_dae/models/panns/model.py",
+]
 
 [tool.coverage.report]
 show_missing = true

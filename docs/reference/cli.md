@@ -33,10 +33,15 @@ uv run python scripts/onboarding_handoff.py cleanup ...
 `discover` searches committed `onboarding_reports/` only. `promote` accepts exactly
 `workflow.json`, the selected `handoff.json`, and its declared phase-local outputs from managed
 workspace content; external repository outputs are hash-validated in place. Promotion is atomic.
+Valid later-phase artifact supersessions are resolved before promotion; failures leave the accepted
+workflow unchanged. `discover` reports superseded external outputs when an earlier accepted phase
+is requested after the later phase has been accepted.
 
 `bundle` creates a normalized external audit archive, an explicit result JSON, and a matching
 `<archive>.sha256` sidecar. The result reports archive cleanliness, TAR and gzip metadata
 normalization, and declared/actual inventory agreement.
+It also reports the validated supersession count and paths, and includes explicit supersession and
+latest-external-artifact metadata.
 
 `cleanup` deletes only recorded, selected managed paths. Every invocation atomically writes a
 durable receipt under `.torch-dae/reports/onboarding/<workflow-id>/cleanup/` and returns its path and

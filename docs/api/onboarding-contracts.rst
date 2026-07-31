@@ -167,9 +167,15 @@ artifact locations.
      - Canonical phase paths are unique, workflow-local, and agree with the current accepted phase.
    * - ``PhaseHandoffManifest``
      - workflow/phase/status, commit, specification and skill hashes, input/output artifacts, target
-       scopes, decisions, unresolved items, validation, next modes, optional lifecycle/supersession
+       scopes, decisions, unresolved items, validation, next modes, optional lifecycle/handoff
+       supersession, artifact supersessions
      - Accepted status requires passed validation; output roles and paths are canonical; workflows
-       cannot be mixed; supersession and lifecycle claims remain explicit.
+       cannot be mixed; artifact transitions require unique later outputs and protect canonical
+       control, report, schema, credential, checkpoint, and runtime paths.
+   * - ``ArtifactSupersession``
+     - repository-relative path, prior phase/hash, new hash, reason, optional prior handoff hash
+     - The full accepted workflow proves a unique ordered chain and validates current bytes only
+       against its latest declaration while retaining every historical record.
    * - ``HandoffArtifactReference``
      - local path or external label, SHA-256, media type, origin phase, optional canonical role
      - Exactly one local or external identity is present; local paths are repository-relative.

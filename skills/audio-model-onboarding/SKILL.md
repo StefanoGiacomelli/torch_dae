@@ -69,6 +69,13 @@ cleanup removes only recorded ephemeral workspaces and completed/failed trial en
 selected workflow. Report reusable repository/package caches, materialized model environments,
 checkpoint caches, and external audit outputs that remain. Never delete an unrecorded path.
 
+When a legal later phase changes a shared repository output declared by an earlier accepted phase,
+the later handoff must declare a strict `artifact_supersessions` edge with the exact prior phase and
+hash, exact new hash, and a reason. Historical handoffs remain immutable evidence. Discovery,
+promotion, workflow validation, and bundling must resolve current bytes only through the unique
+ordered accepted chain; never use artifact supersession for canonical reports, workflow history,
+the project specification, schemas, credentials, checkpoints, or runtime state.
+
 ## Evidence Vocabulary
 
 Every material claim must be classified as one of:
@@ -241,8 +248,11 @@ silently beginning verification or another workflow mode, creating a Git commit,
 reimplementation without provenance, or presenting logits/task decisions as embeddings.
 
 Completion criteria: integration plan is reviewable, evidence-backed, declares verification
-requirements, carries unresolved items forward, is promoted with an accepted handoff, is bundled,
-and has completed scoped cleanup.
+requirements, carries unresolved items forward, passes
+`uv run python scripts/check_worktree_patch.py --json` against a temporary index, is promoted with
+an accepted handoff, is bundled, and has completed scoped cleanup. `git diff --check` remains useful
+for tracked unstaged changes, but it is not the complete phase gate when untracked outputs exist.
+The real Git index must remain unchanged.
 
 Next allowed lifecycle transition: none. `integrate` is a workflow mode, not a lifecycle state.
 Existing committed lifecycle states remain authoritative.

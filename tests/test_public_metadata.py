@@ -38,7 +38,7 @@ def markdown_link_errors(root: Path, paths: list[Path]) -> list[str]:
 
 def test_project_spec_is_byte_preserved(repo_root: Path) -> None:
     assert (
-        git_blob_hash(repo_root / "project_spec.md") == "66e6ae9bcb77b1e67be03fb91edf0ec57d764c18"
+        git_blob_hash(repo_root / "project_spec.md") == "2906ce3d8173ef90db8972ba5b3e1875481f9c43"
     )
 
 
@@ -188,9 +188,8 @@ def test_readme_badges_sections_and_public_status(repo_root: Path) -> None:
     assert "pip install torch-deepaudioembedding" in text
 
     normalized_text = " ".join(text.split())
-    assert (
-        "No model-specific integrations are distributed in the current release." in normalized_text
-    )
+    assert "production PANNs adapters" in normalized_text
+    assert "No pretrained checkpoint payload or checkpoint-specific model card" in normalized_text
     assert "uv run torch-dae card list" in text
     assert "uv run torch-dae env create" in text
     assert "uv run torch-dae checkpoint ensure" in text
@@ -351,8 +350,6 @@ def test_no_future_integration_roadmap_terminology(repo_root: Path) -> None:
     prohibited_terms = (
         "pi" + "lot",
         "pi" + "lots",
-        "pa" + "nns",
-        "cn" + "n14",
         "byol" + "-a",
         "en" + "codec",
         "audio" + "clip",

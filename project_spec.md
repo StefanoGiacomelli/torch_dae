@@ -577,16 +577,36 @@ artifacts, consumed user decisions, carried unresolved items, validation result,
 allowed next modes. An accepted handoff MUST have passed its required validation. A superseding
 handoff MUST record the SHA-256 of the prior accepted handoff.
 
-All referenced canonical local files MUST exist and match their recorded hashes. External
-attachments MAY be retained as digest-only evidence, but MUST NOT become required future local
-paths. Handoffs from different workflows MUST NOT be combined silently. A handoff MUST NOT claim a
-model-card lifecycle promotion that its underlying report does not claim.
+Each handoff MAY carry a strict `artifact_supersessions` collection for shared repository outputs
+that legally evolve in a later workflow phase. Every entry MUST record one repository-relative
+path, its latest accepted originating phase and SHA-256, the new SHA-256, a non-empty reason, and an
+optional prior handoff SHA-256 when needed for unambiguous lineage. The containing later phase MUST
+declare that path as its own output with the new hash. Duplicate, stale, ambiguous, cyclic, forked,
+or backward transitions MUST be rejected.
+
+Historical handoffs, canonical phase reports, and their recorded artifact declarations MUST remain
+immutable evidence. Full-workflow validation MUST preserve their hashes while checking the current
+filesystem against the latest accepted declaration in each explicit supersession chain. A changed
+shared artifact without a valid supersession MUST fail. Discovery of an earlier accepted phase after
+a later transition MUST report the affected external artifact as superseded, not corrupted. The
+current accepted handoff MUST match the current `project_spec.md` and canonical skill fingerprints;
+earlier handoffs retain the fingerprints observed when they were accepted.
+
+Artifact supersession MUST NOT target accepted handoffs, canonical phase reports, workflow history,
+`project_spec.md`, generated schemas, verification reports, checkpoints, credentials, or ignored
+runtime state. External attachments MAY be retained as digest-only evidence, but MUST NOT become
+required future local paths. Handoffs from different workflows MUST NOT be combined silently. A
+handoff MUST NOT claim a model-card lifecycle promotion that its underlying report does not claim.
 
 The root control plane MUST provide deterministic `discover`, `validate`, `promote`, `bundle`, and
 `cleanup` operations through `scripts/onboarding_handoff.py`. Discovery MUST search only the
 committed `onboarding_reports/` root. Promotion MUST validate before mutation, use an atomic
 temporary sibling and rename, reject partial or arbitrary runtime content, and require explicit
 supersession before replacing an accepted handoff.
+Promotion of a later phase with artifact supersessions MUST validate the complete accepted history
+plus the pending handoff, exact prior and new hashes, the later output declaration, and the current
+repository file before mutation. Failure MUST leave the accepted workflow byte-identical and MUST
+NOT weaken the exact promotion allowlist.
 
 Every phase execution MUST use either a context-managed system temporary directory or:
 
@@ -616,6 +636,10 @@ manifest, specification and skill fingerprints, artifact hashes and sizes, decla
 archive inventories, and a bundle result. When requested, the bundle MUST include a working-tree
 snapshot excluding Git metadata and ignored runtime/build/cache/checkpoint state. Declared and
 actual inventories MUST be compared independently.
+For a bundle through a superseding phase, every historical handoff and declaration MUST remain
+present, supersession chains and affected paths MUST be explicit, and each shared external artifact
+MUST appear with its latest accepted repository bytes without claiming that an earlier hash equals
+the current file.
 
 ---
 

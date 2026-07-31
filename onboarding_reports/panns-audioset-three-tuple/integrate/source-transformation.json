@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0.0",
+  "workflow_id": "panns-audioset-three-tuple",
+  "upstream_revision": "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0",
+  "deterministic_order": [
+    "pytorch/models.py ranges 1-8, 10-68, 569-635, 697-768, 858-942, 2189-2223, 2314-2425, 2542-2636",
+    "pytorch/pytorch_utils.py AST symbol do_mixup",
+    "LICENSE.MIT complete file",
+    "metadata/class_labels_indices.csv complete file"
+  ],
+  "operations": [
+    {
+      "order": 0,
+      "scope": "vendored Python files",
+      "operation": "prepend behavior-neutral Ruff, formatter, and mypy directives"
+    },
+    {
+      "order": 1,
+      "scope": "pytorch/models.py import",
+      "operation": "replace exact absolute import",
+      "before": "from pytorch_utils import do_mixup, interpolate, pad_framewise_output",
+      "after": "from .pytorch_utils import do_mixup"
+    },
+    {
+      "order": 2,
+      "scope": "ResNet38.forward, Wavegram_Logmel_Cnn14.forward, Cnn14_16k.forward",
+      "operation": "bind classifier output once as logits, apply the original sigmoid to logits, and add logits to output_dict",
+      "semantic_constraint": "fc_audioset is evaluated exactly once and native clipwise_output remains sigmoid(fc_audioset(x))"
+    },
+    {
+      "order": 3,
+      "scope": "selected range boundary between _ResnetBasicBlock and _ResNet",
+      "operation": "insert two blank lines for valid top-level Python separation"
+    }
+  ],
+  "diff_artifact": "onboarding_reports/panns-audioset-three-tuple/integrate/source-reduction.diff",
+  "diff_sha256": "d1d8ceec68cc059b563ba9abb5ceac71b2275a592c14308fa558f48f61798033",
+  "diff_reproduction_matches": true,
+  "outputs": [
+    {
+      "path": "src/torch_dae/models/panns/_vendor/models.py",
+      "sha256": "9fd2d078c9dbc47843919c61ba94943844f1a74cd92e56d5873d2d51d7e748a5"
+    },
+    {
+      "path": "src/torch_dae/models/panns/_vendor/pytorch_utils.py",
+      "sha256": "447880ffe7a6bd3e2dadb336d38267d6b20a38f48cc1e094f220af44d237ea23"
+    }
+  ]
+}

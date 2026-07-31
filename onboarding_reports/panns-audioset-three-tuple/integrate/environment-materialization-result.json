@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "workflow_id": "panns-audioset-three-tuple",
+  "outcome": "A",
+  "environment_materialization_succeeded": false,
+  "environment_verification_succeeded": false,
+  "environment_fingerprint": null,
+  "lifecycle_promotion": null,
+  "reason": "The canonical environment manager requires a checkpoint-specific model card. Integrate mode explicitly prohibits creating model cards, and no generic lifecycle change was authorized.",
+  "observed_command": "uv run torch-dae env info panns-cnn14-16k-map-0438",
+  "observed_exit_code": 4,
+  "observed_diagnostic": "model card not found: panns-cnn14-16k-map-0438",
+  "isolated_integration_test_environment": {
+    "path_category": "ignored temporary model-specific environment",
+    "python": "3.12.13",
+    "direct_model_dependencies": {
+      "numpy": "2.4.6",
+      "torch": "2.13.0",
+      "torchlibrosa": "0.1.0"
+    },
+    "purpose": "random-weight constructor, forward, duration, and environment-script validation only",
+    "canonical_materialization_claimed": false,
+    "cleanup_required": true
+  }
+}

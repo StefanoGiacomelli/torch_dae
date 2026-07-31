@@ -2,19 +2,12 @@ from __future__ import annotations
 
 from importlib import metadata
 
-from torch_dae.models.panns._vendor.models import ResNet38
+from torch_dae.models.panns.model import PannsResNet38Map0434
 
+assert metadata.version("numpy") == "2.4.6"
 assert metadata.version("torch") == "2.13.0"
 assert metadata.version("torchlibrosa") == "0.1.0"
 
-model = ResNet38(
-    sample_rate=32000,
-    window_size=1024,
-    hop_size=320,
-    mel_bins=64,
-    fmin=50,
-    fmax=14000,
-    classes_num=527,
-)
+model = PannsResNet38Map0434.from_random()
 assert next(model.parameters()).device.type == "cpu"
-print("PANNs ResNet38 import and constructor verification passed")
+print("PANNs ResNet38 wrapper import and constructor verification passed")

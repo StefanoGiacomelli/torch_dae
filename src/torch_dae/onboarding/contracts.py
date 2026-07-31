@@ -15,6 +15,7 @@ from pydantic import Field, HttpUrl, field_validator, model_validator
 from torch_dae.cards.models import ModelCardLifecycle
 from torch_dae.contracts import (
     GIT_REVISION_PATTERN,
+    REPO_RELATIVE_OR_DOTFILE_PATTERN,
     REPO_RELATIVE_PATTERN,
     SHA256_PATTERN,
     CanonicalId,
@@ -1179,7 +1180,7 @@ class WorkflowRecord(StrictBaseModel):
 class HandoffArtifactReference(StrictBaseModel):
     """Hash-addressed local or external artifact used by a phase handoff."""
 
-    path: Annotated[str | None, Field(pattern=REPO_RELATIVE_PATTERN)] = None
+    path: Annotated[str | None, Field(pattern=REPO_RELATIVE_OR_DOTFILE_PATTERN)] = None
     sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
     media_type: Annotated[str, Field(pattern=r"^[a-z0-9.+-]+/[a-z0-9.+-]+$")]
     originating_phase: ArtifactOriginPhase
@@ -1199,6 +1200,35 @@ class HandoffArtifactReference(StrictBaseModel):
             raise ValueError("digest-only artifacts must have external origin")
         if self.path is not None and self.external_label is not None:
             raise ValueError("local artifacts must not carry an external label")
+        return self
+
+
+class ArtifactSupersession(StrictBaseModel):
+    """One explicit transition between accepted repository artifact states."""
+
+    path: Annotated[str, Field(pattern=REPO_RELATIVE_PATTERN)]
+    prior_originating_phase: OnboardingPhase
+    prior_sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    new_sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    reason: str
+    prior_handoff_sha256: Annotated[str | None, Field(pattern=SHA256_PATTERN)] = None
+
+    @field_validator("path")
+    @classmethod
+    def path_repository_relative(cls, value: str) -> str:
+        return ensure_repository_relative(value) or value
+
+    @field_validator("reason")
+    @classmethod
+    def reason_has_content(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("artifact supersession reason must contain non-whitespace text")
+        return value
+
+    @model_validator(mode="after")
+    def hash_transition_changes_content(self) -> ArtifactSupersession:
+        if self.prior_sha256 == self.new_sha256:
+            raise ValueError("artifact supersession must change the artifact SHA-256")
         return self
 
 
@@ -1251,6 +1281,7 @@ class PhaseHandoffManifest(StrictBaseModel):
     canonical_skill_fingerprint: Annotated[str, Field(pattern=SHA256_PATTERN)]
     input_artifacts: tuple[HandoffArtifactReference, ...] = ()
     output_artifacts: tuple[HandoffArtifactReference, ...]
+    artifact_supersessions: tuple[ArtifactSupersession, ...] = ()
     target_variant_ids: tuple[CanonicalId, ...]
     target_checkpoint_ids: tuple[CanonicalId, ...]
     target_card_ids: tuple[CanonicalId, ...] = ()
@@ -1269,6 +1300,12 @@ class PhaseHandoffManifest(StrictBaseModel):
             raise ValueError("phase handoffs require output artifacts")
         if any(item.canonical_role is None for item in self.output_artifacts):
             raise ValueError("output artifacts require canonical_role")
+        output_paths = [item.path for item in self.output_artifacts if item.path is not None]
+        if len(output_paths) != len(set(output_paths)):
+            raise ValueError("output artifact paths must be unique")
+        supersession_paths = [item.path for item in self.artifact_supersessions]
+        if len(supersession_paths) != len(set(supersession_paths)):
+            raise ValueError("artifact supersession paths must be unique within a handoff")
         if len(self.allowed_next_modes) != len(set(self.allowed_next_modes)):
             raise ValueError("allowed next modes must be unique")
         for label, values in (
@@ -1296,10 +1333,29 @@ class PhaseHandoffManifest(StrictBaseModel):
             ),
             OnboardingPhase.CARD: ("model_cards/",),
         }[self.phase]
+        allowed_exact_output_paths = {
+            OnboardingPhase.ANALYZE: (),
+            OnboardingPhase.RESOLVE_ENVIRONMENT: (),
+            OnboardingPhase.INTEGRATE: (
+                ".gitattributes",
+                "CHANGELOG.md",
+                "README.md",
+                "pyproject.toml",
+                "schemas/phase-handoff.schema.json",
+                "scripts/check_worktree_patch.py",
+                "scripts/validate_repository.py",
+                "skills/audio-model-onboarding/SKILL.md",
+                "skills/audio-model-onboarding/references/integration-planning.md",
+                "skills/audio-model-onboarding/templates/agent-request.md",
+                "skills/audio-model-onboarding/templates/agent-response.md",
+            ),
+            OnboardingPhase.CARD: (),
+        }[self.phase]
         for artifact in self.output_artifacts:
             if artifact.path is None or not (
                 artifact.path.startswith(phase_prefix)
                 or artifact.path.startswith(allowed_external_output_roots)
+                or artifact.path in allowed_exact_output_paths
             ):
                 raise ValueError("output artifacts must be canonical for the handoff phase")
         if not any(
@@ -1307,6 +1363,53 @@ class PhaseHandoffManifest(StrictBaseModel):
             for artifact in self.output_artifacts
         ):
             raise ValueError("handoff requires at least one phase-local canonical output")
+        phase_order = {
+            OnboardingPhase.ANALYZE: 0,
+            OnboardingPhase.RESOLVE_ENVIRONMENT: 1,
+            OnboardingPhase.INTEGRATE: 2,
+            OnboardingPhase.CARD: 3,
+        }
+        output_by_path = {
+            artifact.path: artifact
+            for artifact in self.output_artifacts
+            if artifact.path is not None
+        }
+        protected_prefixes = (
+            ".git/",
+            ".torch-dae/",
+            ".venv/",
+            "checkpoints/",
+            "onboarding_reports/",
+            "reports/",
+            "schemas/",
+            "verification_reports/",
+        )
+        protected_names = {
+            ".env",
+            "credentials.json",
+            "project_spec.md",
+            "secrets.json",
+        }
+        for supersession in self.artifact_supersessions:
+            if phase_order[supersession.prior_originating_phase] >= phase_order[self.phase]:
+                raise ValueError("artifact supersession must move to a legal later workflow phase")
+            path_parts = set(supersession.path.split("/"))
+            credential_parts = {".env", "credentials", "credentials.json", "secrets.json"}
+            if (
+                supersession.path in protected_names
+                or supersession.path.startswith(protected_prefixes)
+                or not path_parts.isdisjoint(credential_parts)
+            ):
+                raise ValueError("protected canonical or runtime artifacts cannot be superseded")
+            output = output_by_path.get(supersession.path)
+            if output is None:
+                raise ValueError("superseded artifact must be declared as a current phase output")
+            if output.originating_phase.value != self.phase.value:
+                raise ValueError(
+                    "superseding output must originate in the containing handoff phase"
+                )
+            if output.sha256 != supersession.new_sha256:
+                raise ValueError("superseding output hash must match new_sha256")
         return self
 
 

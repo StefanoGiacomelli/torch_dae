@@ -11,10 +11,11 @@
       "copied_files": [
         "src/torch_dae/models/panns/_vendor/LICENSE.MIT",
         "src/torch_dae/models/panns/_vendor/models.py",
-        "src/torch_dae/models/panns/_vendor/pytorch_utils.py"
+        "src/torch_dae/models/panns/_vendor/pytorch_utils.py",
+        "src/torch_dae/models/panns/resources/class_labels_indices.csv"
       ],
-      "adaptation_description": "Draft expected copy set. Production files are intentionally absent until integrate mode. The only planned source edit is a namespace-relative import from .pytorch_utils in models.py; no model behavior is to change.",
-      "justification": "The official repository is not packaged, the official inference package omits the requested classes, and these are the two runtime Python files plus license needed for the selected minimal vendored source substrate."
+      "adaptation_description": "Production minimal source reduction retains only the upstream symbols required by Cnn14_16k, ResNet38, and Wavegram_Logmel_Cnn14; adapts the pytorch_utils import to package-relative form; and exposes the existing fc_audioset result as raw logits before applying the unchanged sigmoid. The authoritative ordered AudioSet class metadata is copied unchanged.",
+      "justification": "The official repository is not packaged, the official inference package omits the requested classes, and the retained source dependency closure, license, and authoritative 527-class metadata form the minimal production substrate for all three accepted identities."
     }
   ]
 }

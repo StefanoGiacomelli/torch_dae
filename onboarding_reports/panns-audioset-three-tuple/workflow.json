@@ -7,10 +7,14 @@
     {
       "handoff_path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/handoff.json",
       "phase": "resolve-environment"
+    },
+    {
+      "handoff_path": "onboarding_reports/panns-audioset-three-tuple/integrate/handoff.json",
+      "phase": "integrate"
     }
   ],
   "created_repository_commit": "c156433b2432b2549ed5169fb5dada7386005d3b",
-  "current_accepted_phase": "resolve-environment",
+  "current_accepted_phase": "integrate",
   "model_family": "PANNs",
   "schema_version": "1.0.0",
   "status": "active",

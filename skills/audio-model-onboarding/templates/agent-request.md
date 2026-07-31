@@ -23,8 +23,11 @@ Requirements:
 - Record evidence and provenance for every material conclusion
 - Use isolated model-specific environments
 - Validate every generated artifact
+- Run `uv run python scripts/check_worktree_patch.py --json` before phase completion so untracked
+  non-ignored outputs receive staged-equivalent whitespace validation without changing the real index
 - Discover and validate accepted prerequisite handoffs before requesting attachments
 - Promote accepted pre-runtime outputs before declaring a phase complete
+- Declare exact artifact supersessions when a later phase changes a shared repository output
 - Generate the deterministic review bundle and run scoped cleanup
 - Execute only the requested workflow mode
 - Do not create a Git commit

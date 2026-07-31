@@ -1,0 +1,61 @@
+{
+  "baseline": {
+    "accepted_phase": "integrate",
+    "artifact_supersession_count": 6,
+    "branch": "main",
+    "staged_file_count": 0,
+    "tracked_modification_count": 28,
+    "untracked_non_ignored_count": 24,
+    "worktree_count": 1
+  },
+  "boundaries": {
+    "artifact_supersessions_unchanged": true,
+    "checkpoint_accessed": false,
+    "model_card_created": false,
+    "runtime_verification_report_created": false,
+    "workflow_phase_after_closure": "integrate"
+  },
+  "closure_scope": "preserved-source whitespace policy and staged-equivalent validation",
+  "diagnosis": {
+    "classification": "generic_validation_blind_spot",
+    "description": "git diff --check omitted untracked files that would later be staged; four byte-preserved artifacts then produced expected whitespace diagnostics"
+  },
+  "git_attributes": {
+    "exempt_paths": [
+      "src/torch_dae/models/panns/_vendor/LICENSE.MIT",
+      "src/torch_dae/models/panns/_vendor/models.py",
+      "src/torch_dae/models/panns/_vendor/pytorch_utils.py",
+      "onboarding_reports/panns-audioset-three-tuple/integrate/source-reduction.diff"
+    ],
+    "normal_source_attribute": "whitespace: unspecified",
+    "observed_attribute": "whitespace: unset",
+    "policy_path": ".gitattributes",
+    "repository_wide_disable": false
+  },
+  "phase": "integrate",
+  "preserved_sha256": {
+    "onboarding_reports/panns-audioset-three-tuple/integrate/source-reduction.diff": "d1d8ceec68cc059b563ba9abb5ceac71b2275a592c14308fa558f48f61798033",
+    "src/torch_dae/models/panns/_vendor/LICENSE.MIT": "98c2ef776f248a1363e9230ceee291673a0fca3f2bf3ca364ddcb51d3efd0e80",
+    "src/torch_dae/models/panns/_vendor/models.py": "9fd2d078c9dbc47843919c61ba94943844f1a74cd92e56d5873d2d51d7e748a5",
+    "src/torch_dae/models/panns/_vendor/pytorch_utils.py": "447880ffe7a6bd3e2dadb336d38267d6b20a38f48cc1e094f220af44d237ea23"
+  },
+  "prior_accepted_handoff_sha256": "30182b01060b707c7e83516e0541291a5f06b6de223f973fdde9bec58dcaf77a",
+  "regression_validation": {
+    "focused_validator_handoff_and_panns_tests": "45 passed, 1 skipped",
+    "validator_tests": "16 passed"
+  },
+  "repository_commit": "56258501cdc334cdfb511058bc362a45dd81c27c",
+  "schema_version": "1.0.0",
+  "staged_equivalent_validation": {
+    "classification": "passed",
+    "command": "uv run python scripts/check_worktree_patch.py --json",
+    "diagnostics": "",
+    "real_index_after_sha256": "ceb6fa7a8e2947ae0e3c9f8f5292c3d49c009c0d57bcc91aae575bd2cae88ded",
+    "real_index_before_sha256": "ceb6fa7a8e2947ae0e3c9f8f5292c3d49c009c0d57bcc91aae575bd2cae88ded",
+    "real_index_unchanged": true,
+    "staged_equivalent_file_count": 57,
+    "temporary_index_path": "/var/folders/1z/hy16g5492sx551k_bmtjfk740000gn/T/torch-dae-index-tmss_va7",
+    "temporary_index_removed": true
+  },
+  "workflow_id": "panns-audioset-three-tuple"
+}

@@ -22,3 +22,7 @@ Every mode accepts `WORKFLOW_ID`. Accepted prerequisites are discovered and hash
 `onboarding_reports/` before attachments are requested. Phase runs use recorded managed workspaces,
 promote accepted canonical outputs, generate a deterministic external review bundle, and finish with
 scoped cleanup.
+
+When a shared repository output legitimately changes in a later phase, the later handoff records a
+strict artifact-supersession edge. Historical handoffs and their hashes remain evidence; workflow
+validation and bundles resolve the current file only through the unique ordered accepted chain.

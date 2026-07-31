@@ -37,3 +37,9 @@ Validate there, promote accepted pre-runtime outputs under `onboarding_reports/`
 deterministic external review bundle, then run scoped cleanup. Reusable repository/package caches,
 materialized model environments, and checkpoint caches are managed runtime state, not accidental
 contamination, and are not removed by default.
+
+Shared repository outputs may evolve only through a later handoff's strict artifact-supersession
+record. The record names the exact latest accepted phase/hash and new output/hash. Historical
+handoffs remain unchanged; validation, discovery, promotion, and bundles resolve the current file
+through the unique ordered chain. Canonical control/report artifacts, the specification, schemas,
+credentials, checkpoints, and runtime state cannot be superseded this way.

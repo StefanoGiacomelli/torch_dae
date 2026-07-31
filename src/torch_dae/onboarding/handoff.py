@@ -17,7 +17,7 @@ import uuid
 from collections.abc import Iterable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 from pydantic import ValidationError
 
@@ -167,7 +167,8 @@ def validate_workflow(
     if workflow.workflow_id != workflow_id:
         raise HandoffManagementError("workflow ID does not match its directory")
     references = {item.phase: item for item in workflow.accepted_phase_paths}
-    selected_phases = (phase,) if phase is not None else tuple(references)
+    accepted_phases = tuple(sorted(references, key=PHASE_INDEX.__getitem__))
+    selected_phases = (phase,) if phase is not None else accepted_phases
     if phase is not None and phase not in references:
         raise HandoffManagementError(
             f"required phase is missing for workflow {workflow_id}: {phase.value}"
@@ -176,8 +177,10 @@ def validate_workflow(
     validated: list[str] = []
     expected_spec_hash = sha256_file(repository_root / "project_spec.md")
     expected_skill_hash = skill_fingerprint(repository_root)
-    for selected_phase in sorted(selected_phases, key=PHASE_INDEX.__getitem__):
-        reference = references[selected_phase]
+    handoffs: dict[OnboardingPhase, PhaseHandoffManifest] = {}
+    handoff_hashes: dict[OnboardingPhase, str] = {}
+    for accepted_phase in accepted_phases:
+        reference = references[accepted_phase]
         handoff_path = _resolve_artifact_path(
             repository_root,
             workflow_id,
@@ -192,13 +195,14 @@ def validate_workflow(
         except HandoffManagementError as exc:
             errors.append(str(exc))
             continue
-        if handoff.workflow_id != workflow_id or handoff.phase != selected_phase:
+        if handoff.workflow_id != workflow_id or handoff.phase != accepted_phase:
             errors.append(f"handoff identity mismatch: {reference.handoff_path}")
         if handoff.handoff_status != HandoffStatus.ACCEPTED:
             errors.append(f"canonical handoff is not accepted: {reference.handoff_path}")
-        if handoff.project_spec_sha256 != expected_spec_hash:
+        is_current_phase = accepted_phase == workflow.current_accepted_phase
+        if is_current_phase and handoff.project_spec_sha256 != expected_spec_hash:
             errors.append(f"project specification hash mismatch: {reference.handoff_path}")
-        if handoff.canonical_skill_fingerprint != expected_skill_hash:
+        if is_current_phase and handoff.canonical_skill_fingerprint != expected_skill_hash:
             errors.append(f"canonical skill fingerprint mismatch: {reference.handoff_path}")
         if (
             handoff.target_variant_ids != workflow.target_variant_ids
@@ -206,15 +210,35 @@ def validate_workflow(
             or handoff.target_card_ids != workflow.target_card_ids
         ):
             errors.append(f"handoff target scope mismatch: {reference.handoff_path}")
+        handoffs[accepted_phase] = handoff
+        handoff_hashes[accepted_phase] = sha256_file(handoff_path)
+        if accepted_phase in selected_phases:
+            validated.append(reference.handoff_path)
+
+    supersession_errors, latest_external, supersessions = _validate_artifact_supersession_chains(
+        handoffs,
+        handoff_hashes,
+    )
+    errors.extend(supersession_errors)
+    for selected_phase in selected_phases:
+        selected_handoff = handoffs.get(selected_phase)
+        if selected_handoff is None:
+            continue
         errors.extend(
             _validate_handoff_artifacts(
                 repository_root,
                 workflow_id,
                 workflow_root,
-                handoff,
+                selected_handoff,
+                latest_external=latest_external,
             )
         )
-        validated.append(reference.handoff_path)
+    errors.extend(
+        _validate_latest_external_artifacts(
+            repository_root,
+            latest_external,
+        )
+    )
     if errors:
         raise HandoffManagementError("; ".join(sorted(set(errors))))
     return {
@@ -227,7 +251,75 @@ def validate_workflow(
         "validated_handoffs": validated,
         "project_spec_sha256": expected_spec_hash,
         "canonical_skill_fingerprint": expected_skill_hash,
+        "validated_supersession_count": len(supersessions),
+        "superseded_artifact_paths": sorted({str(item["path"]) for item in supersessions}),
+        "artifact_supersessions": supersessions,
+        "current_external_artifacts": [
+            {
+                "path": path,
+                "originating_phase": state[0].value,
+                "sha256": state[1],
+            }
+            for path, state in sorted(latest_external.items())
+        ],
     }
+
+
+def _validate_artifact_supersession_chains(
+    handoffs: dict[OnboardingPhase, PhaseHandoffManifest],
+    handoff_hashes: dict[OnboardingPhase, str],
+) -> tuple[
+    list[str],
+    dict[str, tuple[OnboardingPhase, str]],
+    list[dict[str, object]],
+]:
+    """Validate ordered external-output declarations and explicit hash transitions."""
+
+    errors: list[str] = []
+    latest: dict[str, tuple[OnboardingPhase, str]] = {}
+    supersessions: list[dict[str, object]] = []
+    for phase in sorted(handoffs, key=PHASE_INDEX.__getitem__):
+        handoff = handoffs[phase]
+        declared = {item.path: item for item in handoff.artifact_supersessions}
+        external_outputs = [
+            item
+            for item in handoff.output_artifacts
+            if item.path is not None and not item.path.startswith(f"{ONBOARDING_REPORTS}/")
+        ]
+        output_by_path = {item.path: item for item in external_outputs}
+        for path, transition in declared.items():
+            prior = latest.get(path)
+            if prior is None:
+                errors.append(f"artifact supersession has no earlier accepted declaration: {path}")
+                continue
+            if transition.prior_originating_phase != prior[0]:
+                errors.append(f"artifact supersession prior phase is not latest for path: {path}")
+            if transition.prior_sha256 != prior[1]:
+                errors.append(f"artifact supersession prior_sha256 is stale for path: {path}")
+            if transition.prior_handoff_sha256 is not None:
+                expected_handoff_hash = handoff_hashes.get(transition.prior_originating_phase)
+                if transition.prior_handoff_sha256 != expected_handoff_hash:
+                    errors.append(f"artifact supersession prior handoff hash mismatch: {path}")
+            output = output_by_path.get(path)
+            if output is None:
+                errors.append(f"artifact supersession lacks a later output declaration: {path}")
+                continue
+            if output.sha256 != transition.new_sha256:
+                errors.append(f"artifact supersession new_sha256 disagrees with output: {path}")
+            supersessions.append(
+                {
+                    **transition.model_dump(mode="json"),
+                    "superseding_phase": phase.value,
+                }
+            )
+        for output in external_outputs:
+            assert output.path is not None
+            prior = latest.get(output.path)
+            declared_transition = declared.get(output.path)
+            if prior is not None and output.sha256 != prior[1] and declared_transition is None:
+                errors.append(f"changed artifact lacks explicit supersession: {output.path}")
+            latest[output.path] = (phase, output.sha256)
+    return errors, latest, supersessions
 
 
 def _validate_handoff_artifacts(
@@ -235,6 +327,8 @@ def _validate_handoff_artifacts(
     workflow_id: str,
     workflow_root: Path,
     handoff: PhaseHandoffManifest,
+    *,
+    latest_external: dict[str, tuple[OnboardingPhase, str]],
 ) -> list[str]:
     errors: list[str] = []
     local_artifacts = [
@@ -244,6 +338,9 @@ def _validate_handoff_artifacts(
     ]
     for artifact in local_artifacts:
         assert artifact.path is not None
+        if not artifact.path.startswith(f"{ONBOARDING_REPORTS}/"):
+            if artifact.path in latest_external:
+                continue
         path = _resolve_artifact_path(
             repository_root,
             workflow_id,
@@ -282,6 +379,23 @@ def _validate_handoff_artifacts(
             else:
                 if report.next_lifecycle_status != handoff.lifecycle_promotion:
                     errors.append("handoff lifecycle promotion is not claimed by its report")
+    return errors
+
+
+def _validate_latest_external_artifacts(
+    repository_root: Path,
+    latest_external: dict[str, tuple[OnboardingPhase, str]],
+) -> list[str]:
+    """Validate the filesystem only against each accepted chain's latest declaration."""
+
+    errors: list[str] = []
+    for relative, state in sorted(latest_external.items()):
+        path = contained_path(repository_root, relative)
+        if path.is_symlink() or not path.is_file():
+            errors.append(f"referenced artifact is missing: {relative}")
+            continue
+        if sha256_file(path) != state[1]:
+            errors.append(f"artifact hash mismatch: {relative}")
     return errors
 
 
@@ -324,6 +438,29 @@ def discover_handoff(
     canonical = [
         item.path for item in (*handoff.input_artifacts, *handoff.output_artifacts) if item.path
     ]
+    current_entries = cast(
+        list[dict[str, object]],
+        validation["current_external_artifacts"],
+    )
+    current_external = {str(item["path"]): item for item in current_entries}
+    superseded_external: list[dict[str, object]] = []
+    superseded_paths = set(cast(list[str], validation["superseded_artifact_paths"]))
+    for artifact in handoff.output_artifacts:
+        if artifact.path is None or artifact.path not in superseded_paths:
+            continue
+        current = current_external[artifact.path]
+        if current["sha256"] == artifact.sha256:
+            continue
+        superseded_external.append(
+            {
+                "path": artifact.path,
+                "historical_originating_phase": handoff.phase.value,
+                "historical_sha256": artifact.sha256,
+                "latest_originating_phase": current["originating_phase"],
+                "latest_sha256": current["sha256"],
+                "status": "accepted_supersession",
+            }
+        )
     _validate_duplicate_attachments(repository_root, handoff, attachments)
     payload: dict[str, object] = {
         **validation,
@@ -337,6 +474,7 @@ def discover_handoff(
         "user_decisions": [
             item.model_dump(mode="json") for item in handoff.user_decisions_consumed
         ],
+        "superseded_external_artifacts": superseded_external,
     }
     if include_superseded:
         payload["superseded_handoffs"] = [
@@ -438,6 +576,7 @@ def promote_phase(
     if candidate.exists() or backup.exists():
         raise HandoffManagementError("promotion temporary path collision")
     previous_hash: str | None = None
+    candidate_validation: dict[str, object] | None = None
     try:
         if destination.exists():
             shutil.copytree(destination, candidate, symlinks=True)
@@ -456,9 +595,16 @@ def promote_phase(
                     update={"handoff_status": HandoffStatus.SUPERSEDED}
                 )
             candidate_phase = candidate / phase.value
+            historical_handoffs = (
+                tuple(sorted((destination / phase.value).glob("handoff.*.superseded.json")))
+                if (destination / phase.value).is_dir()
+                else ()
+            )
             if candidate_phase.exists():
                 shutil.rmtree(candidate_phase)
             shutil.copytree(source_phase, candidate_phase)
+            for historical_handoff in historical_handoffs:
+                shutil.copy2(historical_handoff, candidate_phase / historical_handoff.name)
             if previous_hash is not None:
                 archive_path = candidate_phase / f"handoff.{previous_hash}.superseded.json"
                 archive_path.write_text(
@@ -469,7 +615,11 @@ def promote_phase(
         else:
             shutil.copytree(source, candidate, symlinks=True)
         _canonicalize_control_records(candidate, phase)
-        validate_workflow(repository_root, workflow_id, workflow_root_override=candidate)
+        candidate_validation = validate_workflow(
+            repository_root,
+            workflow_id,
+            workflow_root_override=candidate,
+        )
         if destination.exists():
             os.replace(destination, backup)
         try:
@@ -485,6 +635,7 @@ def promote_phase(
             shutil.rmtree(candidate)
         if backup.exists() and destination.exists():
             shutil.rmtree(backup)
+    assert candidate_validation is not None
     return {
         "promoted": True,
         "workflow_id": workflow_id,
@@ -493,6 +644,8 @@ def promote_phase(
         .relative_to(repository_root)
         .as_posix(),
         "superseded_handoff_sha256": previous_hash,
+        "validated_supersession_count": candidate_validation["validated_supersession_count"],
+        "superseded_artifact_paths": candidate_validation["superseded_artifact_paths"],
     }
 
 
@@ -638,6 +791,14 @@ def bundle_workflow(
             metadata / "skill-fingerprint.txt",
             f"{skill_fingerprint(repository_root)}  skills/audio-model-onboarding\n",
         )
+        _write_json(
+            metadata / "artifact-supersessions.json",
+            validation["artifact_supersessions"],
+        )
+        _write_json(
+            metadata / "current-external-artifacts.json",
+            validation["current_external_artifacts"],
+        )
 
         artifact_paths = _bundle_artifact_paths(
             repository_root,
@@ -676,6 +837,8 @@ def bundle_workflow(
                     "metadata/actual-archive-inventory.json",
                 ],
             },
+            "validated_supersession_count": validation["validated_supersession_count"],
+            "superseded_artifact_paths": validation["superseded_artifact_paths"],
         }
         _write_json(metadata / "bundle-result.json", internal_result)
         inventory_names = _staging_member_names(staging)
@@ -730,6 +893,8 @@ def bundle_workflow(
         "gzip_metadata_normalized": gzip_metadata_normalized,
         "declared_actual_inventory_match": True,
         "validation": validation,
+        "validated_supersession_count": validation["validated_supersession_count"],
+        "superseded_artifact_paths": validation["superseded_artifact_paths"],
         "declared_actual_inventory_equal": True,
     }
     write_json_atomic(result_path, result)
@@ -746,6 +911,12 @@ def _bundle_artifact_paths(
         reference = next(item for item in workflow.accepted_phase_paths if item.phase == phase)
         paths.add(reference.handoff_path)
         handoff = load_handoff(repository_root / reference.handoff_path)
+        phase_root = repository_root / ONBOARDING_REPORTS / workflow.workflow_id / phase.value
+        paths.update(
+            path.relative_to(repository_root).as_posix()
+            for path in phase_root.glob("handoff.*.superseded.json")
+            if path.is_file() and not path.is_symlink()
+        )
         for artifact in (*handoff.input_artifacts, *handoff.output_artifacts):
             if artifact.path:
                 paths.add(artifact.path)

@@ -20,6 +20,23 @@ Only accepted phase directories need exist. Handoffs use repository-relative pat
 digests, carry consumed user decisions and unresolved items, and record allowed next modes. External
 attachments may remain digest-only evidence and never become required future local paths. Explicit
 supersession records the prior accepted handoff digest.
+Canonical phase reports use JSON or Markdown; deterministic source-reduction evidence may also use
+the narrowly allowed `.diff` suffix when declared and hash-addressed by the phase handoff.
+
+Shared repository outputs may evolve across legal later phases only through an
+`artifact_supersessions` entry in the later handoff. Each entry records the repository-relative
+path, latest accepted originating phase and SHA-256, new SHA-256, non-empty reason, and optionally
+the prior handoff SHA-256. The same path must be a declared output of the containing later phase.
+Validation preserves every historical declaration while checking the current filesystem against
+the latest accepted hash. Missing, stale, duplicate, backward, ambiguous, cyclic, or forked
+transitions fail validation.
+
+Artifact supersession cannot target accepted handoffs, canonical phase reports, workflow history,
+`project_spec.md`, generated schemas, verification reports, checkpoints, credentials, or ignored
+runtime state. Discovery of an earlier accepted phase reports affected repository outputs as
+superseded instead of calling the immutable historical handoff corrupt. Bundle metadata includes
+the validated transition list and the latest external-artifact resolution; the archive contains
+all historical handoffs and only the current repository bytes for a superseded shared path.
 
 Use the root control-plane command to discover, validate, promote, bundle, and clean:
 
@@ -37,6 +54,9 @@ symlink are rejected. Outputs under canonical external repository roots such as 
 `src/`, `tests/`, `docs/`, and `model_cards/` are hash-validated at their repository paths and are
 never copied from the managed promotion source. Promotion remains atomic and refuses to overwrite an
 accepted handoff without explicit supersession.
+Candidate validation resolves the complete accepted history plus the pending handoff before the
+atomic rename, so stale prior hashes, undeclared changes, absent later outputs, and new-hash
+mismatches leave the accepted workflow byte-identical.
 
 Bundles normalize TAR and gzip metadata, independently compare declared and actual inventories, and
 write a `<archive>.sha256` sidecar. The external result JSON explicitly reports archive cleanliness,
