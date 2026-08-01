@@ -18,3 +18,8 @@ semantics, technical access/authentication blockers, license metadata issues,
 distribution/publication decisions, or wrapper equivalence.
 
 Do not ask for decisions that objective evidence can resolve.
+
+Control-plane drift across accepted onboarding phases is not a lifecycle transition or a decision
+gate. Accepted hashes remain historical provenance, while every pending phase candidate must use the
+current skill and specification hashes. A later phase may consume older accepted prerequisites and
+must expose that transition without rewriting them or relaxing current contracts.

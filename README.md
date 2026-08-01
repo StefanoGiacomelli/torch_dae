@@ -252,6 +252,11 @@ uv run python scripts/onboarding_handoff.py discover \
   --json
 ```
 
+Accepted handoffs retain the skill fingerprint and specification SHA-256 observed for their phase.
+Discovery and validation report those historical values beside the current control plane, including
+separate skill/specification drift flags. Historical drift is informational; pending phase candidates
+must still match the current values exactly before promotion.
+
 Build a normalized deterministic external review bundle through an accepted phase:
 
 ```bash

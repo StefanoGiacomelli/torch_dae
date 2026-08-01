@@ -614,10 +614,22 @@ changed workflow-owned artifact without a valid supersession MUST fail. Shared c
 MAY evolve outside a model workflow; their accepted declarations remain historical evidence and
 their current state is validated by repository-wide schema, test, and static validation instead of
 being misreported as a model-artifact mutation. Discovery of an earlier accepted phase after a later
-transition MUST report the affected external artifact as superseded, not corrupted. The current
-accepted handoff MUST match either the current specification/skill fingerprints or the exact
-fingerprints recoverable from its producing Git revision; earlier handoffs retain the fingerprints
-observed when they were accepted.
+transition MUST report the affected external artifact as superseded, not corrupted.
+
+Accepted handoff control-plane hashes are immutable historical provenance. Validation MUST require
+their presence and valid SHA-256 syntax, preserve them byte-for-byte, and report separately whether
+the recorded canonical-skill fingerprint or project-specification hash differs from the current
+repository. Such drift is informational and MUST NOT invalidate an accepted handoff. A historical
+hash proves the control-plane identity declared by the phase; by itself it does not retain or
+reconstruct those bytes. A producing Git revision MUST NOT be claimed as the source of uncommitted
+control-plane bytes merely because the handoff records that repository commit.
+
+Pending handoff control-plane hashes are current-repository validation inputs. Before promotion, the
+pending phase MUST record and exactly match the current canonical-skill fingerprint and current
+`project_spec.md` SHA-256. It MUST NOT copy a prerequisite handoff's historical control-plane hashes.
+A mismatch MUST fail before atomic promotion changes accepted workflow bytes. A new phase MAY consume
+accepted prerequisites from older control planes without rewriting them; its own current hashes and
+the reported historical/current identities make that control-plane transition explicit.
 
 Artifact supersession MUST NOT target accepted handoffs, canonical phase reports, workflow history,
 `project_spec.md`, generated schemas, verification reports, checkpoints, credentials, or ignored
@@ -663,6 +675,10 @@ manifest, specification and skill fingerprints, artifact hashes and sizes, decla
 archive inventories, and a bundle result. When requested, the bundle MUST include a working-tree
 snapshot excluding Git metadata and ignored runtime/build/cache/checkpoint state. Declared and
 actual inventories MUST be compared independently.
+Bundle metadata and results MUST report every included phase's historical canonical-skill
+fingerprint and project-specification SHA-256, the current values, and separate skill,
+specification, and aggregate drift states. Historical and current values MUST NOT be presented as
+identical when drift exists.
 For a bundle through a superseding phase, every historical handoff and declaration MUST remain
 present, supersession chains and affected paths MUST be explicit, and each shared external artifact
 MUST appear with its latest accepted repository bytes without claiming that an earlier hash equals

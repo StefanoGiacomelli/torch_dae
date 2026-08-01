@@ -326,6 +326,284 @@ def test_discover_validates_hashes_missing_phases_and_duplicate_attachments(
         validate_workflow(root, "workflow-one")
 
 
+def test_accepted_handoff_current_control_plane_reports_no_drift(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    promote_phase(
+        root,
+        source_dir=_source(root, "workflow-one", OnboardingPhase.ANALYZE),
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+    )
+
+    result = validate_workflow(root, "workflow-one")
+
+    assert result["control_plane_drift"] is False
+    assert result["canonical_skill_drift"] is False
+    assert result["project_spec_drift"] is False
+    assert result["historical_control_plane"] == {
+        "phase": "analyze",
+        **result["current_control_plane"],
+        "canonical_skill_drift": False,
+        "project_spec_drift": False,
+        "control_plane_drift": False,
+    }
+
+
+@pytest.mark.parametrize(
+    ("changed_path", "expected_skill_drift", "expected_spec_drift"),
+    [
+        ("skills/audio-model-onboarding/references/workflow-overview.md", True, False),
+        ("project_spec.md", False, True),
+    ],
+)
+def test_accepted_handoff_control_plane_drift_is_informational(
+    tmp_path: Path,
+    repo_root: Path,
+    changed_path: str,
+    expected_skill_drift: bool,
+    expected_spec_drift: bool,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    promote_phase(
+        root,
+        source_dir=_source(root, "workflow-one", OnboardingPhase.ANALYZE),
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+    )
+    accepted = root / "onboarding_reports/workflow-one/analyze/handoff.json"
+    accepted_bytes = accepted.read_bytes()
+    changed = root / changed_path
+    changed.write_bytes(changed.read_bytes() + b"\nLater generic hardening.\n")
+
+    result = validate_workflow(root, "workflow-one")
+
+    assert accepted.read_bytes() == accepted_bytes
+    assert result["valid"] is True
+    assert result["control_plane_drift"] is True
+    assert result["canonical_skill_drift"] is expected_skill_drift
+    assert result["project_spec_drift"] is expected_spec_drift
+
+
+def test_malformed_historical_control_plane_hash_still_fails(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    promote_phase(
+        root,
+        source_dir=_source(root, "workflow-one", OnboardingPhase.ANALYZE),
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+    )
+    accepted = root / "onboarding_reports/workflow-one/analyze/handoff.json"
+    payload = json.loads(accepted.read_text())
+    payload["canonical_skill_fingerprint"] = "malformed"
+    accepted.write_text(json.dumps(payload))
+
+    with pytest.raises(HandoffManagementError, match="invalid handoff manifest"):
+        validate_workflow(root, "workflow-one")
+
+
+def test_historical_control_plane_drift_does_not_mask_invalid_lineage(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    workflow_id = "workflow-one"
+    relative = "environments/shared/artifact.json"
+    original = b'{"version": 1}\n'
+    updated = b'{"version": 2}\n'
+    promote_phase(
+        root,
+        source_dir=_source_with_external_output(
+            root,
+            workflow_id,
+            OnboardingPhase.RESOLVE_ENVIRONMENT,
+            accepted_phases=(OnboardingPhase.RESOLVE_ENVIRONMENT,),
+            relative_path=relative,
+            content=original,
+        ),
+        workflow_id=workflow_id,
+        phase=OnboardingPhase.RESOLVE_ENVIRONMENT,
+    )
+    prior_handoff = root / f"onboarding_reports/{workflow_id}/resolve-environment/handoff.json"
+    transition = ArtifactSupersession(
+        path=relative,
+        prior_originating_phase=OnboardingPhase.RESOLVE_ENVIRONMENT,
+        prior_sha256=sha256_file_bytes(original),
+        new_sha256=sha256_file_bytes(updated),
+        reason="Synthetic historical-lineage validation.",
+        prior_handoff_sha256=sha256_file(prior_handoff),
+    )
+    promote_phase(
+        root,
+        source_dir=_source_with_external_output(
+            root,
+            workflow_id,
+            OnboardingPhase.INTEGRATE,
+            accepted_phases=(
+                OnboardingPhase.RESOLVE_ENVIRONMENT,
+                OnboardingPhase.INTEGRATE,
+            ),
+            relative_path=relative,
+            content=updated,
+            supersessions=(transition,),
+        ),
+        workflow_id=workflow_id,
+        phase=OnboardingPhase.INTEGRATE,
+    )
+    accepted = root / f"onboarding_reports/{workflow_id}/integrate/handoff.json"
+    payload = json.loads(accepted.read_text())
+    payload["artifact_supersessions"][0]["prior_sha256"] = "0" * 64
+    accepted.write_text(canonical_json_text(payload))
+    (root / "project_spec.md").write_text("later specification\n")
+
+    with pytest.raises(HandoffManagementError, match="prior_sha256 is stale"):
+        validate_workflow(root, workflow_id)
+
+
+@pytest.mark.parametrize(
+    ("field", "message"),
+    [
+        (
+            "canonical_skill_fingerprint",
+            "pending candidate canonical skill fingerprint mismatch",
+        ),
+        ("project_spec_sha256", "pending candidate project specification hash mismatch"),
+    ],
+)
+def test_pending_candidate_requires_current_control_plane_and_fails_atomically(
+    tmp_path: Path,
+    repo_root: Path,
+    field: str,
+    message: str,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    workflow_id = "workflow-one"
+    promote_phase(
+        root,
+        source_dir=_source(root, workflow_id, OnboardingPhase.ANALYZE),
+        workflow_id=workflow_id,
+        phase=OnboardingPhase.ANALYZE,
+    )
+    destination = root / f"onboarding_reports/{workflow_id}"
+    destination_snapshot = {
+        path.relative_to(destination).as_posix(): path.read_bytes()
+        for path in destination.rglob("*")
+        if path.is_file()
+    }
+    source = _source(
+        root,
+        workflow_id,
+        OnboardingPhase.RESOLVE_ENVIRONMENT,
+        accepted_phases=(OnboardingPhase.ANALYZE, OnboardingPhase.RESOLVE_ENVIRONMENT),
+    )
+    handoff_path = source / "resolve-environment/handoff.json"
+    handoff = json.loads(handoff_path.read_text())
+    handoff[field] = "0" * 64
+    handoff_path.write_text(canonical_json_text(handoff))
+
+    with pytest.raises(HandoffManagementError, match=message):
+        promote_phase(
+            root,
+            source_dir=source,
+            workflow_id=workflow_id,
+            phase=OnboardingPhase.RESOLVE_ENVIRONMENT,
+        )
+
+    assert {
+        path.relative_to(destination).as_posix(): path.read_bytes()
+        for path in destination.rglob("*")
+        if path.is_file()
+    } == destination_snapshot
+    assert not (destination / "resolve-environment").exists()
+
+
+def test_new_phase_accepts_older_prerequisite_control_plane_and_records_transition(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    workflow_id = "workflow-one"
+    promote_phase(
+        root,
+        source_dir=_source(root, workflow_id, OnboardingPhase.ANALYZE),
+        workflow_id=workflow_id,
+        phase=OnboardingPhase.ANALYZE,
+    )
+    accepted = root / f"onboarding_reports/{workflow_id}/analyze/handoff.json"
+    accepted_bytes = accepted.read_bytes()
+    (root / "project_spec.md").write_text("later specification\n")
+    skill = root / "skills/audio-model-onboarding/references/workflow-overview.md"
+    skill.write_bytes(skill.read_bytes() + b"\nLater skill revision.\n")
+
+    promoted = promote_phase(
+        root,
+        source_dir=_source(
+            root,
+            workflow_id,
+            OnboardingPhase.RESOLVE_ENVIRONMENT,
+            accepted_phases=(OnboardingPhase.ANALYZE, OnboardingPhase.RESOLVE_ENVIRONMENT),
+        ),
+        workflow_id=workflow_id,
+        phase=OnboardingPhase.RESOLVE_ENVIRONMENT,
+    )
+    result = validate_workflow(root, workflow_id)
+
+    assert promoted["promoted"] is True
+    assert accepted.read_bytes() == accepted_bytes
+    assert result["historical_control_planes"][0]["control_plane_drift"] is True
+    assert result["historical_control_planes"][1]["control_plane_drift"] is False
+    assert result["historical_control_plane"]["phase"] == "resolve-environment"
+
+
+def test_bundle_reports_historical_and_current_control_planes_separately(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    promote_phase(
+        root,
+        source_dir=_source(root, "workflow-one", OnboardingPhase.ANALYZE),
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+    )
+    (root / "project_spec.md").write_text("later specification\n")
+    skill = root / "skills/audio-model-onboarding/references/workflow-overview.md"
+    skill.write_bytes(skill.read_bytes() + b"\nLater skill revision.\n")
+
+    bundle = bundle_workflow(
+        root,
+        workflow_id="workflow-one",
+        through_phase=OnboardingPhase.ANALYZE,
+        output_dir=tmp_path / "review",
+        include_working_tree=False,
+    )
+
+    assert bundle["control_plane_drift"] is True
+    assert bundle["canonical_skill_drift"] is True
+    assert bundle["project_spec_drift"] is True
+    assert bundle["historical_control_planes"][0]["phase"] == "analyze"
+    assert bundle["historical_control_planes"][0]["control_plane_drift"] is True
+    assert bundle["current_control_plane"] != {
+        key: bundle["historical_control_planes"][0][key]
+        for key in ("canonical_skill_fingerprint", "project_spec_sha256")
+    }
+    with tarfile.open(str(bundle["archive_path"]), "r:gz") as archive:
+        drift = archive.extractfile("metadata/control-plane-drift.json")
+        historical = archive.extractfile("metadata/historical-control-planes.json")
+        current = archive.extractfile("metadata/current-control-plane.json")
+        assert drift is not None
+        assert historical is not None
+        assert current is not None
+        assert json.loads(drift.read())["control_plane_drift"] is True
+        assert json.loads(historical.read())[0]["phase"] == "analyze"
+        assert json.loads(current.read()) == bundle["current_control_plane"]
+
+
 def test_discovery_rejects_ambiguous_active_workflows(
     tmp_path: Path,
     repo_root: Path,
@@ -1513,6 +1791,9 @@ def test_panns_migration_is_valid_and_preserves_accepted_artifacts(repo_root: Pa
         "resolve-environment/source-revision-comparison.json": (
             "04f419093df438cff3d1bd1e8629d1b099cb48495d03c6f6b035943146fd2938"
         ),
+        "integrate/handoff.json": (
+            "1682fc586ab4aa34518213c9df58d298a914fc8a339f86051aa7cdbd92a064fc"
+        ),
     }
     assert {path: sha256_file(root / path) for path in expected_hashes} == expected_hashes
     workflow = json.loads((root / "workflow.json").read_text())
@@ -1521,6 +1802,9 @@ def test_panns_migration_is_valid_and_preserves_accepted_artifacts(repo_root: Pa
         "phase": "integrate",
         "handoff_path": "onboarding_reports/panns-audioset-three-tuple/integrate/handoff.json",
     }
+    assert not (root / "verify").exists()
+    assert not list((repo_root / "model_cards").rglob("*panns*"))
+    assert not list((repo_root / "verification_reports").rglob("*panns*"))
     integrate = PhaseHandoffManifest.model_validate_json(
         (root / "integrate/handoff.json").read_text()
     )

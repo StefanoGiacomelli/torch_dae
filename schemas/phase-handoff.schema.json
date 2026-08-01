@@ -312,6 +312,7 @@
       "type": "array"
     },
     "canonical_skill_fingerprint": {
+      "description": "Canonical onboarding-skill fingerprint when this phase candidate was prepared; after acceptance this value is immutable historical provenance.",
       "minLength": 1,
       "pattern": "^[0-9a-f]{64}$",
       "title": "Canonical Skill Fingerprint",
@@ -350,6 +351,7 @@
       "$ref": "#/$defs/OnboardingPhase"
     },
     "project_spec_sha256": {
+      "description": "SHA-256 of project_spec.md when this phase candidate was prepared; after acceptance this value is immutable historical provenance.",
       "minLength": 1,
       "pattern": "^[0-9a-f]{64}$",
       "title": "Project Spec Sha256",

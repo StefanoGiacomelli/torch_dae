@@ -15,6 +15,10 @@ checkpoint-specific report paths separately.]
 [Environment materialization/result/fingerprint and checkpoint-specific target/report associations,
 including required/optional check-contract agreement and complete passed required-check coverage.]
 
+## Control-plane provenance
+[Historical skill/specification hashes consumed, current skill/specification hashes recorded,
+separate drift flags, and any phase transition. State that hashes alone do not reconstruct bytes.]
+
 ## Artifact supersessions
 [Validated count and affected repository-relative paths, or None.]
 

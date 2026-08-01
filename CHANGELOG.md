@@ -4,6 +4,15 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Historical control-plane provenance
+
+- Treated accepted handoff skill and specification hashes as immutable historical provenance, so
+  later generic control-plane hardening no longer retroactively invalidates accepted workflows.
+- Kept exact current-hash enforcement for pending promotion candidates and atomic mismatch failure,
+  while permitting later phases to consume prerequisites created under older control planes.
+- Added deterministic validation, discovery, repository-report, and bundle metadata that separates
+  per-phase historical hashes from current hashes and reports skill and specification drift.
+
 ### Card-independent environment lifecycle
 
 - Made accepted environment definitions the authority for direct resolution, materialization, and

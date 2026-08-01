@@ -1279,8 +1279,26 @@ class PhaseHandoffManifest(StrictBaseModel):
     phase: OnboardingPhase
     handoff_status: HandoffStatus
     repository_commit: Annotated[str, Field(pattern=GIT_REVISION_PATTERN)]
-    project_spec_sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
-    canonical_skill_fingerprint: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    project_spec_sha256: Annotated[
+        str,
+        Field(
+            pattern=SHA256_PATTERN,
+            description=(
+                "SHA-256 of project_spec.md when this phase candidate was prepared; after "
+                "acceptance this value is immutable historical provenance."
+            ),
+        ),
+    ]
+    canonical_skill_fingerprint: Annotated[
+        str,
+        Field(
+            pattern=SHA256_PATTERN,
+            description=(
+                "Canonical onboarding-skill fingerprint when this phase candidate was prepared; "
+                "after acceptance this value is immutable historical provenance."
+            ),
+        ),
+    ]
     input_artifacts: tuple[HandoffArtifactReference, ...] = ()
     output_artifacts: tuple[HandoffArtifactReference, ...]
     artifact_supersessions: tuple[ArtifactSupersession, ...] = ()

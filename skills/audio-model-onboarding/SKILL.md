@@ -50,12 +50,22 @@ uv run python scripts/onboarding_handoff.py discover \
   --json
 ```
 
-Validate the discovered manifest, every local artifact hash, `project_spec.md` hash, and canonical
-skill fingerprint. Consume recorded user decisions and unresolved items. Do not ask the user to
+Validate the discovered manifest, every local artifact hash, and its historical control-plane
+provenance. Accepted handoff control-plane hashes are immutable historical provenance: require
+valid SHA-256 values, preserve them, and report drift from the current skill or specification
+without treating it as corruption. Pending handoff control-plane hashes are current-repository
+validation inputs and must exactly match the current canonical skill fingerprint and
+`project_spec.md` SHA-256 before promotion. Consume recorded user decisions and unresolved items. Do not ask the user to
 reattach a canonical artifact that is already present. When a duplicate attachment is supplied,
 compare its SHA-256 with the canonical artifact and stop on mismatch. Never search Desktop,
 Downloads, home, or product-specific attachment directories. Without `WORKFLOW_ID`, auto-select
 only when exactly one compatible active workflow exists; otherwise open a decision gate.
+
+A later phase may consume accepted prerequisites created under an older control-plane identity.
+Record the later phase's current hashes, expose the historical/current transition, and do not
+rewrite the prerequisites. Historical hashes identify declared provenance but do not automatically
+reconstruct historical bytes; preserve existing bundle or audit references where available and do
+not infer a Git mapping for uncommitted control-plane content.
 
 Perform phase work in `.torch-dae/workspaces/<workflow-id>/<phase>/<run-id>/` or a context-managed
 system temporary directory. Record a managed run manifest, validate outputs in the workspace, and

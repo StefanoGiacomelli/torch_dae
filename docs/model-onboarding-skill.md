@@ -52,10 +52,18 @@ checkpoint binaries, silently begins another mode, or creates a Git commit.
 ## Cross-conversation handoffs
 
 Every request accepts `WORKFLOW_ID`. The skill first discovers the required accepted phase through
-`scripts/onboarding_handoff.py`, validates local artifact hashes, the specification hash, and the
-canonical skill fingerprint, then consumes recorded decisions and unresolved items. It asks for an
+`scripts/onboarding_handoff.py`, validates local artifact hashes and historical control-plane hash
+syntax, reports skill/specification drift from the current repository, then consumes recorded
+decisions and unresolved items. Accepted hashes remain immutable historical provenance; a later
+control-plane revision does not retroactively invalidate the handoff. It asks for an
 attachment only when the canonical prerequisite is genuinely absent. Duplicate attachments must
 match the canonical digest.
+
+Pending phase candidates use different semantics: their canonical-skill fingerprint and
+`project_spec.md` SHA-256 must match the current repository exactly before atomic promotion. A new
+phase can consume accepted prerequisites with older hashes, but records current hashes for itself.
+Historical hashes identify the declared control plane and do not, without retained files or audit
+evidence, reconstruct its bytes or establish a Git revision mapping.
 
 Phase execution uses a managed `.torch-dae/workspaces/<workflow-id>/<phase>/<run-id>/` manifest.
 Accepted pre-runtime output is atomically promoted under `onboarding_reports/`, followed by a

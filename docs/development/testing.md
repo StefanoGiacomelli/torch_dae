@@ -22,3 +22,9 @@ unchanged.
 
 Coverage gates require at least 85% line coverage and 70% branch coverage. Synthetic integration
 fixtures must not require a network connection, checkpoint download, or model-specific dependency.
+
+Handoff regressions distinguish immutable accepted history from pending promotion candidates.
+Accepted control-plane hashes may drift from current files and are reported without failure;
+malformed hashes, invalid lineage, and stale candidate hashes still fail. Atomic-promotion tests must
+prove that a control-plane mismatch leaves accepted workflow bytes unchanged, and bundle tests must
+assert separate historical/current identities and drift flags.

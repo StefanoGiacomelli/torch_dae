@@ -579,13 +579,17 @@ def validate_integration_artifacts(root: Path, failures: list[str]) -> None:
             )
 
 
-def validate_onboarding_reports(root: Path, failures: list[str]) -> None:
-    """Validate committed pre-runtime handoffs without changing verification semantics."""
+def validate_onboarding_reports(
+    root: Path,
+    failures: list[str],
+) -> list[dict[str, object]]:
+    """Validate committed handoffs and return informational control-plane drift."""
 
+    control_plane_drift: list[dict[str, object]] = []
     reports_root = root / "onboarding_reports"
     if not reports_root.exists():
         fail("committed onboarding_reports root is missing", failures)
-        return
+        return control_plane_drift
     schema_root = root / "schemas"
     for workflow_path in sorted(reports_root.glob("*/workflow.json")):
         workflow_id = workflow_path.parent.name
@@ -602,7 +606,17 @@ def validate_onboarding_reports(root: Path, failures: list[str]) -> None:
                     schema_root / "phase-handoff.schema.json",
                     PhaseHandoffManifest,
                 )
-            validate_workflow(root, workflow_id)
+            validation = validate_workflow(root, workflow_id)
+            if validation["control_plane_drift"] is True:
+                control_plane_drift.append(
+                    {
+                        "workflow_id": workflow_id,
+                        "canonical_skill_drift": validation["canonical_skill_drift"],
+                        "project_spec_drift": validation["project_spec_drift"],
+                        "historical_control_planes": validation["historical_control_planes"],
+                        "current_control_plane": validation["current_control_plane"],
+                    }
+                )
         except Exception as exc:
             fail(f"invalid onboarding workflow {workflow_id}: {exc}", failures)
     for path in reports_root.rglob("*"):
@@ -610,6 +624,7 @@ def validate_onboarding_reports(root: Path, failures: list[str]) -> None:
             continue
         if path.suffix not in {".diff", ".json", ".md"}:
             fail(f"forbidden onboarding report artifact: {path.relative_to(root)}", failures)
+    return control_plane_drift
 
 
 def root_dependency_errors(root: Path) -> list[str]:
@@ -905,7 +920,7 @@ def main() -> int:
     failures.extend(numbered_stage_errors(ROOT))
     failures.extend(root_dependency_errors(ROOT))
     validate_integration_artifacts(ROOT, failures)
-    validate_onboarding_reports(ROOT, failures)
+    control_plane_drift = validate_onboarding_reports(ROOT, failures)
     if subprocess.run(
         ["git", "ls-files", "._*"], cwd=ROOT, check=False, capture_output=True, text=True
     ).stdout:
@@ -1368,7 +1383,11 @@ def main() -> int:
     ):
         if required not in checkpoint_module:
             fail(f"checkpoint failure normalization is missing: {required}", failures)
-    report: dict[str, Any] = {"ok": not failures, "failures": failures}
+    report: dict[str, Any] = {
+        "ok": not failures,
+        "failures": failures,
+        "historical_control_plane_drift": control_plane_drift,
+    }
     report_dir = ROOT / ".torch-dae/reports"
     report_dir.mkdir(parents=True, exist_ok=True)
     (report_dir / "repository-validation.json").write_text(json.dumps(report, indent=2))
@@ -1377,7 +1396,13 @@ def main() -> int:
         for item in failures:
             print(f"FAIL: {item}")
         return 1
-    print("Repository validation passed")
+    if control_plane_drift:
+        print(
+            "Repository validation passed; historical control-plane drift reported for: "
+            + ", ".join(str(item["workflow_id"]) for item in control_plane_drift)
+        )
+    else:
+        print("Repository validation passed; no historical control-plane drift")
     return 0
 
 

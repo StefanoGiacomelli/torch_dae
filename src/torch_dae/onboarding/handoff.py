@@ -148,70 +148,6 @@ def skill_fingerprint(repository_root: Path) -> str:
     return digest.hexdigest()
 
 
-def skill_fingerprint_at_revision(repository_root: Path, revision: str) -> str | None:
-    """Hash the canonical skill tree as recorded at one Git revision when available."""
-
-    listing = subprocess.run(
-        [
-            "git",
-            "ls-tree",
-            "-r",
-            "--name-only",
-            revision,
-            "--",
-            "skills/audio-model-onboarding",
-        ],
-        cwd=repository_root,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    if listing.returncode != 0:
-        return None
-    prefix = "skills/audio-model-onboarding/"
-    paths = sorted(
-        path
-        for path in listing.stdout.splitlines()
-        if path.startswith(prefix)
-        and "__pycache__" not in Path(path).parts
-        and Path(path).suffix != ".pyc"
-    )
-    if not paths:
-        return None
-    digest = hashlib.sha256()
-    for path in paths:
-        content = subprocess.run(
-            ["git", "show", f"{revision}:{path}"],
-            cwd=repository_root,
-            check=False,
-            capture_output=True,
-        )
-        if content.returncode != 0:
-            return None
-        relative = path.removeprefix(prefix).encode()
-        digest.update(len(relative).to_bytes(8, "big"))
-        digest.update(relative)
-        digest.update(len(content.stdout).to_bytes(8, "big"))
-        digest.update(content.stdout)
-    return digest.hexdigest()
-
-
-def file_sha256_at_revision(
-    repository_root: Path,
-    revision: str,
-    relative_path: str,
-) -> str | None:
-    """Return a tracked file digest at one revision, or ``None`` when unavailable."""
-
-    content = subprocess.run(
-        ["git", "show", f"{revision}:{relative_path}"],
-        cwd=repository_root,
-        check=False,
-        capture_output=True,
-    )
-    return hashlib.sha256(content.stdout).hexdigest() if content.returncode == 0 else None
-
-
 def discover_repository_root(start: Path | None = None) -> Path:
     """Locate the repository containing the normative specification."""
 
@@ -246,8 +182,9 @@ def validate_workflow(
     *,
     phase: OnboardingPhase | None = None,
     workflow_root_override: Path | None = None,
+    pending_candidate_phase: OnboardingPhase | None = None,
 ) -> dict[str, object]:
-    """Validate one committed workflow or a selected accepted phase."""
+    """Validate accepted history and, when supplied, one pending promotion candidate."""
 
     canonical_root = repository_root / ONBOARDING_REPORTS / workflow_id
     workflow_root = workflow_root_override or canonical_root
@@ -265,8 +202,6 @@ def validate_workflow(
     validated: list[str] = []
     expected_spec_hash = sha256_file(repository_root / "project_spec.md")
     expected_skill_hash = skill_fingerprint(repository_root)
-    head_spec_hash = file_sha256_at_revision(repository_root, "HEAD", "project_spec.md")
-    head_skill_hash = skill_fingerprint_at_revision(repository_root, "HEAD")
     handoffs: dict[OnboardingPhase, PhaseHandoffManifest] = {}
     handoff_hashes: dict[OnboardingPhase, str] = {}
     for accepted_phase in accepted_phases:
@@ -289,28 +224,17 @@ def validate_workflow(
             errors.append(f"handoff identity mismatch: {reference.handoff_path}")
         if handoff.handoff_status != HandoffStatus.ACCEPTED:
             errors.append(f"canonical handoff is not accepted: {reference.handoff_path}")
-        is_current_phase = accepted_phase == workflow.current_accepted_phase
-        historical_spec_hash = file_sha256_at_revision(
-            repository_root,
-            handoff.repository_commit,
-            "project_spec.md",
-        )
-        historical_skill_hash = skill_fingerprint_at_revision(
-            repository_root,
-            handoff.repository_commit,
-        )
-        if is_current_phase and handoff.project_spec_sha256 not in {
-            expected_spec_hash,
-            head_spec_hash,
-            historical_spec_hash,
-        }:
-            errors.append(f"project specification hash mismatch: {reference.handoff_path}")
-        if is_current_phase and handoff.canonical_skill_fingerprint not in {
-            expected_skill_hash,
-            head_skill_hash,
-            historical_skill_hash,
-        }:
-            errors.append(f"canonical skill fingerprint mismatch: {reference.handoff_path}")
+        if accepted_phase == pending_candidate_phase:
+            if handoff.project_spec_sha256 != expected_spec_hash:
+                errors.append(
+                    "pending candidate project specification hash mismatch: "
+                    f"{reference.handoff_path}"
+                )
+            if handoff.canonical_skill_fingerprint != expected_skill_hash:
+                errors.append(
+                    "pending candidate canonical skill fingerprint mismatch: "
+                    f"{reference.handoff_path}"
+                )
         if (
             handoff.target_variant_ids != workflow.target_variant_ids
             or handoff.target_checkpoint_ids != workflow.target_checkpoint_ids
@@ -348,6 +272,38 @@ def validate_workflow(
     )
     if errors:
         raise HandoffManagementError("; ".join(sorted(set(errors))))
+    historical_control_planes = [
+        _historical_control_plane(
+            handoffs[item],
+            current_spec_hash=expected_spec_hash,
+            current_skill_hash=expected_skill_hash,
+        )
+        for item in accepted_phases
+        if item in handoffs
+    ]
+    selected_control_planes = [
+        item
+        for item in historical_control_planes
+        if item["phase"] in {selected.value for selected in selected_phases}
+    ]
+    current_control_plane = {
+        "canonical_skill_fingerprint": expected_skill_hash,
+        "project_spec_sha256": expected_spec_hash,
+    }
+    control_plane_drift = _control_plane_drift_summary(selected_control_planes)
+    selected_historical_phase = phase or workflow.current_accepted_phase
+    selected_historical_control_plane = (
+        next(
+            (
+                item
+                for item in historical_control_planes
+                if item["phase"] == selected_historical_phase.value
+            ),
+            None,
+        )
+        if selected_historical_phase is not None
+        else None
+    )
     return {
         "valid": True,
         "workflow_id": workflow_id,
@@ -358,6 +314,10 @@ def validate_workflow(
         "validated_handoffs": validated,
         "project_spec_sha256": expected_spec_hash,
         "canonical_skill_fingerprint": expected_skill_hash,
+        "historical_control_plane": selected_historical_control_plane,
+        "historical_control_planes": historical_control_planes,
+        "current_control_plane": current_control_plane,
+        **control_plane_drift,
         "validated_supersession_count": len(supersessions),
         "superseded_artifact_paths": sorted({str(item["path"]) for item in supersessions}),
         "artifact_supersessions": supersessions,
@@ -374,6 +334,44 @@ def validate_workflow(
             }
             for path, state in sorted(latest_external.items())
         ],
+    }
+
+
+def _historical_control_plane(
+    handoff: PhaseHandoffManifest,
+    *,
+    current_spec_hash: str,
+    current_skill_hash: str,
+) -> dict[str, object]:
+    """Describe one immutable accepted handoff's declared control-plane identity."""
+
+    canonical_skill_drift = handoff.canonical_skill_fingerprint != current_skill_hash
+    project_spec_drift = handoff.project_spec_sha256 != current_spec_hash
+    return {
+        "phase": handoff.phase.value,
+        "canonical_skill_fingerprint": handoff.canonical_skill_fingerprint,
+        "project_spec_sha256": handoff.project_spec_sha256,
+        "canonical_skill_drift": canonical_skill_drift,
+        "project_spec_drift": project_spec_drift,
+        "control_plane_drift": canonical_skill_drift or project_spec_drift,
+    }
+
+
+def _control_plane_drift_summary(
+    historical_control_planes: Sequence[dict[str, object]],
+) -> dict[str, bool]:
+    """Summarize skill and specification drift without treating either as corruption."""
+
+    canonical_skill_drift = any(
+        item["canonical_skill_drift"] is True for item in historical_control_planes
+    )
+    project_spec_drift = any(
+        item["project_spec_drift"] is True for item in historical_control_planes
+    )
+    return {
+        "canonical_skill_drift": canonical_skill_drift,
+        "project_spec_drift": project_spec_drift,
+        "control_plane_drift": canonical_skill_drift or project_spec_drift,
     }
 
 
@@ -733,6 +731,7 @@ def promote_phase(
             repository_root,
             workflow_id,
             workflow_root_override=candidate,
+            pending_candidate_phase=phase,
         )
         if destination.exists():
             os.replace(destination, backup)
@@ -861,6 +860,14 @@ def bundle_workflow(
         raise HandoffManagementError(
             f"through phase is not accepted for workflow {workflow_id}: {through_phase.value}"
         )
+    included_phase_values = {item.value for item in included_phases}
+    historical_control_planes = [
+        item
+        for item in cast(list[dict[str, object]], validation["historical_control_planes"])
+        if item["phase"] in included_phase_values
+    ]
+    current_control_plane = cast(dict[str, str], validation["current_control_plane"])
+    control_plane_drift = _control_plane_drift_summary(historical_control_planes)
     output = output_dir.resolve()
     if output == repository_root or repository_root in output.parents:
         raise HandoffManagementError("review bundle output must be outside the repository")
@@ -913,6 +920,12 @@ def bundle_workflow(
             metadata / "current-external-artifacts.json",
             validation["current_external_artifacts"],
         )
+        _write_json(
+            metadata / "historical-control-planes.json",
+            historical_control_planes,
+        )
+        _write_json(metadata / "current-control-plane.json", current_control_plane)
+        _write_json(metadata / "control-plane-drift.json", control_plane_drift)
 
         artifact_paths = _bundle_artifact_paths(
             repository_root,
@@ -953,6 +966,9 @@ def bundle_workflow(
             },
             "validated_supersession_count": validation["validated_supersession_count"],
             "superseded_artifact_paths": validation["superseded_artifact_paths"],
+            "historical_control_planes": historical_control_planes,
+            "current_control_plane": current_control_plane,
+            **control_plane_drift,
         }
         _write_json(metadata / "bundle-result.json", internal_result)
         inventory_names = _staging_member_names(staging)
@@ -1009,6 +1025,9 @@ def bundle_workflow(
         "validation": validation,
         "validated_supersession_count": validation["validated_supersession_count"],
         "superseded_artifact_paths": validation["superseded_artifact_paths"],
+        "historical_control_planes": historical_control_planes,
+        "current_control_plane": current_control_plane,
+        **control_plane_drift,
         "declared_actual_inventory_equal": True,
     }
     write_json_atomic(result_path, result)

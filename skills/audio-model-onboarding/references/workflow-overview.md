@@ -29,8 +29,17 @@ profiling workflow exist.
 
 Every mode accepts `WORKFLOW_ID`. Use `scripts/onboarding_handoff.py discover` before requesting a
 prerequisite attachment. The command searches only `onboarding_reports/`, validates the accepted
-handoff and all local hashes, and returns canonical artifact paths. Without `WORKFLOW_ID`, automatic
-selection is allowed only when exactly one compatible active workflow exists.
+handoff and all local hashes, and returns canonical artifact paths. Accepted handoff skill and
+specification hashes remain immutable historical provenance; discovery reports any difference from
+the current control plane as informational drift. Without `WORKFLOW_ID`, automatic selection is
+allowed only when exactly one compatible active workflow exists.
+
+Before promotion, the pending phase candidate must record the current canonical skill fingerprint
+and current `project_spec.md` SHA-256 exactly. Older accepted prerequisites may retain different
+historical values. Promotion validates the pending candidate against the current repository without
+rewriting those prerequisites, so a legal phase transition also exposes any control-plane change.
+Hash provenance alone does not reconstruct historical bytes, and a handoff prepared with uncommitted
+control-plane changes must not be falsely mapped to its recorded repository commit.
 
 Phase runs use `.torch-dae/workspaces/<workflow-id>/<phase>/<run-id>/` with a managed run manifest.
 Validate there, promote accepted pre-runtime outputs under `onboarding_reports/`, build the

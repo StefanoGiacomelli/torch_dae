@@ -58,9 +58,24 @@ Candidate validation resolves the complete accepted history plus the pending han
 atomic rename, so stale prior hashes, undeclared changes, absent later outputs, and new-hash
 mismatches leave the accepted workflow byte-identical.
 
+Accepted handoff control-plane hashes are immutable historical provenance. Their SHA-256 syntax is
+validated, but equality with today's canonical skill or `project_spec.md` is not required. Validation
+and discovery return each phase's recorded hashes, current hashes, and separate skill/specification
+drift flags. Drift is informational for accepted records and does not request migration or
+same-phase supersession.
+
+Pending handoff control-plane hashes are current-repository validation inputs. The phase being
+promoted must record both current values exactly; it cannot reuse an older prerequisite's hashes.
+This permits a new phase to consume earlier accepted prerequisites while exposing the control-plane
+transition. Hashes prove declared identity only. Historical byte reconstruction requires separately
+retained files or audit evidence, and an uncommitted preparation state must not be assigned falsely
+to the handoff's repository commit.
+
 Bundles normalize TAR and gzip metadata, independently compare declared and actual inventories, and
 write a `<archive>.sha256` sidecar. The external result JSON explicitly reports archive cleanliness,
 metadata normalization, inventory agreement, repository cleanliness, and handoff validation.
+It also reports every included phase's historical control-plane hashes, current hashes, and separate
+skill, specification, and aggregate drift states; the same records are included as bundle metadata.
 `metadata/artifact-manifest.json` hashes every staged archive file that exists when the manifest is
 created. It intentionally excludes itself and the subsequently generated `bundle-result.json`,
 `declared-archive-inventory.json`, and `actual-archive-inventory.json`; those four exclusions are
