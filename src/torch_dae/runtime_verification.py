@@ -14,7 +14,7 @@ from torch_dae.contracts import (
     ensure_repository_relative,
     ensure_wrapper_entry_point,
 )
-from torch_dae.core.checkpoint import CheckpointSpec
+from torch_dae.core.checkpoint import CheckpointAcquisitionPolicy, CheckpointSpec
 from torch_dae.environment.results import ArtifactEvidence
 
 
@@ -46,15 +46,6 @@ class ExpectedRuntimeEmbedding(StrictBaseModel):
 
     embedding_id: CanonicalId
     dimension: int = Field(gt=0)
-
-
-class CheckpointAcquisitionPolicy(StrictBaseModel):
-    """Bounded acquisition policy applied only after environment verification."""
-
-    allow_network: bool
-    allow_authentication: bool
-    maximum_bytes: int | None = Field(default=None, gt=0)
-    require_expected_sha256: bool = False
 
 
 class RuntimeVerificationLimits(StrictBaseModel):
@@ -137,6 +128,24 @@ class RuntimeVerificationTarget(StrictBaseModel):
                 "legacy runtime targets cannot declare completeness-aware check contracts; "
                 "migrate to schema 2.0.0"
             )
+        policy = self.checkpoint_acquisition_policy
+        if self.schema_version == "2.0.0" and policy.require_authority:
+            if self.checkpoint.authority is None:
+                raise ValueError("authority-complete runtime target requires checkpoint authority")
+            if not (
+                policy.require_exact_size
+                and policy.require_published_checksums
+                and policy.require_observed_sha256
+            ):
+                raise ValueError(
+                    "authority-complete runtime target must require exact size, published "
+                    "checksums, and observed SHA-256"
+                )
+            if (
+                policy.maximum_bytes is not None
+                and policy.maximum_bytes < self.checkpoint.authority.expected_size_bytes
+            ):
+                raise ValueError("maximum_bytes cannot be smaller than authoritative exact size")
         return self
 
 

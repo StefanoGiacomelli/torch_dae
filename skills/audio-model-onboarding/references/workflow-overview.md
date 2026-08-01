@@ -18,6 +18,10 @@ control-plane document-analysis dependency. Report creation of the root environm
 but do not call the legitimate root `.venv` contamination. Bytecode and tool caches remain ignored
 and must not enter audit archives.
 
+For the Python 3.11 validation leg, switch the root interpreter only through
+`uv sync --all-groups --frozen --python 3.11` before running the complete suite so documentation and
+all optional validation groups are present.
+
 Supplied local papers may be read with `scripts/extract_pdf_text.py`. The utility extracts only an
 available text layer, preserves page boundaries, and provides no OCR. Extracted text is a reading
 aid, not automatically verified evidence, and is not stored in the repository unless explicitly
@@ -46,6 +50,12 @@ Validate there, promote accepted pre-runtime outputs under `onboarding_reports/`
 deterministic external review bundle, then run scoped cleanup. Reusable repository/package caches,
 materialized model environments, and checkpoint caches are managed runtime state, not accidental
 contamination, and are not removed by default.
+
+`retained_paths` is only for bounded diagnostics already copied under the permitted workflow
+onboarding-report root. Categorized environments and caches are retained by category and are not
+redeclared as diagnostic retained paths. For final Git inventory under intentionally non-writable
+Git metadata, use read-only cached-diff/status inventory or the staged-equivalent validator; do not
+require `git write-tree` as a read-only check.
 
 Shared repository outputs may evolve only through a later handoff's strict artifact-supersession
 record. The record names the exact latest accepted phase/hash and new output/hash. Historical

@@ -10,7 +10,11 @@ from typing import Any
 from pydantic import BaseModel
 
 from torch_dae.cards.models import ModelCard
-from torch_dae.core.checkpoint import CheckpointSpec
+from torch_dae.core.checkpoint import (
+    CheckpointAuthorityResolution,
+    CheckpointMaterializationRecord,
+    CheckpointSpec,
+)
 from torch_dae.core.embeddings import EmbeddingSpec
 from torch_dae.environment.results import (
     EnvironmentMaterializationResult,
@@ -35,6 +39,14 @@ SCHEMAS: dict[str, tuple[str, type[BaseModel]]] = {
     "checkpoint.schema.json": (
         "https://torch-dae.local/schemas/checkpoint.schema.json",
         CheckpointSpec,
+    ),
+    "checkpoint-authority-resolution.schema.json": (
+        "https://torch-dae.local/schemas/checkpoint-authority-resolution.schema.json",
+        CheckpointAuthorityResolution,
+    ),
+    "checkpoint-materialization.schema.json": (
+        "https://torch-dae.local/schemas/checkpoint-materialization.schema.json",
+        CheckpointMaterializationRecord,
     ),
     "environment.schema.json": (
         "https://torch-dae.local/schemas/environment.schema.json",

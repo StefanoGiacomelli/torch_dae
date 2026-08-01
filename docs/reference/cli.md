@@ -17,7 +17,14 @@ torch-dae env run <card-id> -- <command>
 torch-dae checkpoint ensure <card-id>
 torch-dae checkpoint info <card-id>
 torch-dae checkpoint remove <card-id>
+torch-dae checkpoint resolve --spec <checkpoint-spec.json> [--offline] [--json]
+torch-dae checkpoint ensure-spec --spec <checkpoint-spec.json> [--offline] [--maximum-bytes N] [--json]
+torch-dae checkpoint info-spec --spec <checkpoint-spec.json> [--json]
 ```
+
+The `--spec` commands are card-independent. `resolve` is metadata-only, `ensure-spec` uses the same
+canonical manager primitive as card-based `ensure`, and `info-spec` inspects authority/cache state
+without network access.
 
 Run `uv run torch-dae <group> --help` for option details. Model inspection and verification CLI
 entries are unavailable-feature placeholders in this release.
@@ -58,3 +65,8 @@ target overlaps a deletion root in either direction; the receipt reports these c
 `external_protection_conflicts`. Non-conflicting external paths are never selected for deletion and
 distinguish retained files, directories, symlinks, and missing outputs. Cleanup JSON with errors is
 emitted before the command exits unsuccessfully.
+
+`retained_paths` is only for bounded diagnostics already copied under the workflow onboarding-report
+root. Environments and caches are retained by category and are not redundantly declared as retained
+diagnostics. Under intentionally non-writable Git metadata, final inventory uses read-only status and
+cached-diff checks or the staged-equivalent validator rather than `git write-tree`.

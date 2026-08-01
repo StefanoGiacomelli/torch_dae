@@ -85,5 +85,21 @@ class CheckpointHashMismatchError(CheckpointAcquisitionError):
     """Raised when a checkpoint hash does not match the specification."""
 
 
+class CheckpointAuthorityResolutionError(CheckpointAcquisitionError):
+    """Raised when authoritative provider metadata is unsafe, incomplete, or inconsistent."""
+
+
+class CheckpointSizeMismatchError(CheckpointAcquisitionError):
+    """Raised when observed bytes differ from an authoritative exact size."""
+
+
+class CheckpointPublishedChecksumMismatchError(CheckpointHashMismatchError):
+    """Raised when local bytes disagree with a provider-published checksum."""
+
+
+class CheckpointResponseTooLargeError(CheckpointAcquisitionError):
+    """Raised when an acquisition exceeds its independent resource-safety ceiling."""
+
+
 class CheckpointNotFoundError(CheckpointAcquisitionError):
     """Raised when no local checkpoint cache entry is available."""

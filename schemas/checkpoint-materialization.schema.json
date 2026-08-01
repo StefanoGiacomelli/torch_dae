@@ -1,0 +1,387 @@
+{
+  "$defs": {
+    "CheckpointAuthority": {
+      "additionalProperties": false,
+      "description": "Immutable authoritative identity for one provider record file.",
+      "properties": {
+        "expected_size_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Expected Size Bytes",
+          "type": "integer"
+        },
+        "filename": {
+          "minLength": 1,
+          "title": "Filename",
+          "type": "string"
+        },
+        "provenance_status": {
+          "const": "authoritative_provider_declared",
+          "minLength": 1,
+          "title": "Provenance Status",
+          "type": "string"
+        },
+        "provider": {
+          "const": "zenodo",
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        },
+        "published_checksums": {
+          "items": {
+            "$ref": "#/$defs/PublishedChecksum"
+          },
+          "title": "Published Checksums",
+          "type": "array"
+        },
+        "record_id": {
+          "minLength": 1,
+          "pattern": "^[1-9][0-9]*$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Record Url"
+        }
+      },
+      "required": [
+        "provider",
+        "record_id",
+        "filename",
+        "expected_size_bytes",
+        "published_checksums",
+        "provenance_status"
+      ],
+      "title": "CheckpointAuthority",
+      "type": "object"
+    },
+    "CheckpointSourceType": {
+      "description": "Enumerate supported checkpoint acquisition categories.\n\n``https`` streams a direct URL; ``github_release`` resolves a repository, tag, and filename;\n``huggingface`` resolves a repository, optional revision, and filename; ``package_bundle``\nreads a file from an exact installed package; and ``local_path`` copies a repository-relative\nfile. The enum selects validation and acquisition behavior.",
+      "enum": [
+        "https",
+        "github_release",
+        "huggingface",
+        "package_bundle",
+        "local_path"
+      ],
+      "minLength": 1,
+      "title": "CheckpointSourceType",
+      "type": "string"
+    },
+    "ChecksumAlgorithm": {
+      "description": "Published digest algorithms understood by the checkpoint authority contract.",
+      "enum": [
+        "md5",
+        "sha256"
+      ],
+      "minLength": 1,
+      "title": "ChecksumAlgorithm",
+      "type": "string"
+    },
+    "ObservedChecksum": {
+      "additionalProperties": false,
+      "description": "One digest calculated from acquired or cached local bytes.",
+      "properties": {
+        "algorithm": {
+          "$ref": "#/$defs/ChecksumAlgorithm"
+        },
+        "digest": {
+          "minLength": 1,
+          "title": "Digest",
+          "type": "string"
+        }
+      },
+      "required": [
+        "algorithm",
+        "digest"
+      ],
+      "title": "ObservedChecksum",
+      "type": "object"
+    },
+    "PublishedChecksum": {
+      "additionalProperties": false,
+      "description": "One digest explicitly published by an authoritative provider.",
+      "properties": {
+        "algorithm": {
+          "$ref": "#/$defs/ChecksumAlgorithm"
+        },
+        "digest": {
+          "minLength": 1,
+          "title": "Digest",
+          "type": "string"
+        }
+      },
+      "required": [
+        "algorithm",
+        "digest"
+      ],
+      "title": "PublishedChecksum",
+      "type": "object"
+    }
+  },
+  "$id": "https://torch-dae.local/schemas/checkpoint-materialization.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Persist sanitized runtime metadata for a cached checkpoint.\n\nAttributes\n----------\nschema_version, checkpoint_id, source_type\n    Record schema and source identity.\nsource_description, resolved_url_or_location, filename\n    Sanitized acquisition description and stored filename.\nsha256, size_bytes, acquired_at, cache_path\n    Observed integrity, byte count, timestamp, and runtime-relative cache location.\nexpected_sha256, observed_sha256\n    Hash evidence copied from the specification.\nenvironment_id\n    Optional isolated environment used for package-bundle acquisition.\nspecification_fingerprint\n    SHA-256 identity of the canonical checkpoint specification.\ncommand_log_references\n    Runtime-report references with secrets removed.",
+  "properties": {
+    "acquired_at": {
+      "minLength": 1,
+      "title": "Acquired At",
+      "type": "string"
+    },
+    "authority": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CheckpointAuthority"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "cache_path": {
+      "minLength": 1,
+      "title": "Cache Path",
+      "type": "string"
+    },
+    "checkpoint_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Checkpoint Id",
+      "type": "string"
+    },
+    "command_log_references": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Command Log References",
+      "type": "array"
+    },
+    "environment_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Environment Id"
+    },
+    "expected_sha256": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expected Sha256"
+    },
+    "expected_size_bytes": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expected Size Bytes"
+    },
+    "filename": {
+      "minLength": 1,
+      "title": "Filename",
+      "type": "string"
+    },
+    "materialization_status": {
+      "anyOf": [
+        {
+          "enum": [
+            "downloaded",
+            "local_copy",
+            "package_bundle"
+          ],
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Materialization Status"
+    },
+    "metadata_resolution_reference": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Metadata Resolution Reference"
+    },
+    "metadata_resolution_sha256": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Metadata Resolution Sha256"
+    },
+    "observed_checksums": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ObservedChecksum"
+      },
+      "title": "Observed Checksums",
+      "type": "array"
+    },
+    "observed_sha256": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Observed Sha256"
+    },
+    "observed_size_bytes": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Observed Size Bytes"
+    },
+    "payload_etag": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Payload Etag"
+    },
+    "payload_last_modified": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Payload Last Modified"
+    },
+    "published_checksums": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PublishedChecksum"
+      },
+      "title": "Published Checksums",
+      "type": "array"
+    },
+    "resolved_url_or_location": {
+      "minLength": 1,
+      "title": "Resolved Url Or Location",
+      "type": "string"
+    },
+    "schema_version": {
+      "enum": [
+        "1.0.0",
+        "2.0.0"
+      ],
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sha256": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "size_bytes": {
+      "title": "Size Bytes",
+      "type": "integer"
+    },
+    "source_description": {
+      "minLength": 1,
+      "title": "Source Description",
+      "type": "string"
+    },
+    "source_type": {
+      "$ref": "#/$defs/CheckpointSourceType"
+    },
+    "specification_fingerprint": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Specification Fingerprint",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "checkpoint_id",
+    "source_type",
+    "source_description",
+    "resolved_url_or_location",
+    "filename",
+    "sha256",
+    "size_bytes",
+    "acquired_at",
+    "cache_path",
+    "specification_fingerprint"
+  ],
+  "title": "CheckpointMaterializationRecord",
+  "type": "object"
+}

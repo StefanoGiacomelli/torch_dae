@@ -4,6 +4,20 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Authoritative checkpoint acquisition
+
+- Added strict schema `2.0.0` checkpoint authority contracts with Zenodo metadata-only resolution,
+  exact file/size identity, algorithm-tagged MD5 and SHA-256 evidence, and bounded response
+  provenance while preserving legacy schema `1.0.0` sources.
+- Enforced exact size, every published checksum, independently observed SHA-256, and maximum-byte
+  ceilings before content-addressed cache installation; offline reuse now revalidates bytes,
+  authority checksums, specification fingerprint, and cached metadata provenance.
+- Added card-independent checkpoint `resolve`, `ensure-spec`, and `info-spec` CLI operations, a
+  dedicated safe provider-filename grammar including metric-bearing `=`, and authority-aware runtime
+  target/report validation.
+- Documented the Python 3.11 all-groups setup gate, category-based cleanup retention, and read-only
+  final Git inventory for intentionally non-writable repository metadata.
+
 ### Historical control-plane provenance
 
 - Treated accepted handoff skill and specification hashes as immutable historical provenance, so

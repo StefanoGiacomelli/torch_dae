@@ -72,6 +72,11 @@ workspaces and trial environments only; reusable caches, materialized environmen
 and external audit bundles remain. External audit outputs are never cleanup targets. Retained
 diagnostics must be moved under `.torch-dae/reports/onboarding/<workflow-id>/`; cleanup writes a
 durable receipt there before deleting an eligible workspace.
+`retained_paths` is reserved for those copied bounded diagnostics; categorized environments and
+caches are retained by category instead. Before the Python 3.11 validation suite, run
+`uv sync --all-groups --frozen --python 3.11`. Final Git inventory may use read-only status/cached
+diffs or staged-equivalent validation and does not require `git write-tree` when Git metadata is
+intentionally non-writable.
 
 Resolve-environment may finish successfully as a draft without lifecycle promotion when isolated
 import/construction passed but production source, wrapper, or card prerequisites are intentionally

@@ -1,5 +1,28 @@
 {
   "$defs": {
+    "ArtifactEvidence": {
+      "additionalProperties": false,
+      "description": "Repository or managed-runtime artifact plus its observed SHA-256.",
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactEvidence",
+      "type": "object"
+    },
     "TensorDimension": {
       "additionalProperties": false,
       "description": "Structured tensor dimension observation.",
@@ -330,11 +353,36 @@
       "default": null,
       "title": "Checkpoint Id"
     },
+    "checkpoint_materialization": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ArtifactEvidence"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "checkpoint_sha256": {
       "minLength": 1,
       "pattern": "^[0-9a-f]{64}$",
       "title": "Checkpoint Sha256",
       "type": "string"
+    },
+    "checkpoint_specification_fingerprint": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Checkpoint Specification Fingerprint"
     },
     "checks": {
       "items": {

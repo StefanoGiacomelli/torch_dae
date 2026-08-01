@@ -33,10 +33,15 @@ symbols = [
 symbols = [
   { path = "torch_dae.core.checkpoint.CheckpointSourceType", display_name = "CheckpointSourceType", category = "checkpoint management", audience = "integrator", methods = [], page = "api/checkpoints.rst" },
   { path = "torch_dae.core.checkpoint.LicenseRecord", display_name = "LicenseRecord", category = "checkpoint management", audience = "integrator", methods = [], page = "api/checkpoints.rst" },
+  { path = "torch_dae.core.checkpoint.PublishedChecksum", display_name = "PublishedChecksum", category = "checkpoint management", audience = "integrator", methods = [], page = "api/checkpoints.rst" },
+  { path = "torch_dae.core.checkpoint.ObservedChecksum", display_name = "ObservedChecksum", category = "checkpoint management", audience = "integrator", methods = [], page = "api/checkpoints.rst" },
+  { path = "torch_dae.core.checkpoint.CheckpointAuthority", display_name = "CheckpointAuthority", category = "checkpoint management", audience = "integrator", methods = [], page = "api/checkpoints.rst" },
+  { path = "torch_dae.core.checkpoint.CheckpointAuthorityResolution", display_name = "CheckpointAuthorityResolution", category = "checkpoint management", audience = "integrator", methods = [], page = "api/checkpoints.rst" },
+  { path = "torch_dae.core.checkpoint.resolve_checkpoint_authority", display_name = "resolve_checkpoint_authority", category = "checkpoint management", audience = "integrator", methods = [], page = "api/checkpoints.rst" },
   { path = "torch_dae.core.checkpoint.CheckpointSpec", display_name = "CheckpointSpec", category = "checkpoint management", audience = "integrator", methods = [], page = "api/checkpoints.rst" },
   { path = "torch_dae.core.checkpoint.ResolvedCheckpoint", display_name = "ResolvedCheckpoint", category = "checkpoint management", audience = "user", methods = [], page = "api/checkpoints.rst" },
   { path = "torch_dae.core.checkpoint.CheckpointMaterializationRecord", display_name = "CheckpointMaterializationRecord", category = "checkpoint management", audience = "developer", methods = [], page = "api/checkpoints.rst" },
-  { path = "torch_dae.core.checkpoint.CheckpointManager", display_name = "CheckpointManager", category = "checkpoint management", audience = "user", methods = ["ensure", "info", "remove"], page = "api/checkpoints.rst" },
+  { path = "torch_dae.core.checkpoint.CheckpointManager", display_name = "CheckpointManager", category = "checkpoint management", audience = "user", methods = ["ensure", "ensure_checkpoint", "resolve_checkpoint_authority", "info", "info_checkpoint", "remove"], page = "api/checkpoints.rst" },
 ]
 
 [model_card_contracts]

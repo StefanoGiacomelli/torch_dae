@@ -79,6 +79,10 @@ Generate the deterministic external review bundle after promotion, then run scop
 cleanup removes only recorded ephemeral workspaces and completed/failed trial environments for the
 selected workflow. Report reusable repository/package caches, materialized model environments,
 checkpoint caches, and external audit outputs that remain. Never delete an unrecorded path.
+Use `retained_paths` only for bounded diagnostics already copied under the workflow onboarding-report
+root; categorized environments and caches are retained by category. Final Git inventory uses
+read-only cached-diff/status checks or the staged-equivalent validator and does not require
+`git write-tree` when Git metadata is intentionally non-writable.
 
 When a legal later phase changes a shared repository output declared by an earlier accepted phase,
 the later handoff must declare a strict `artifact_supersessions` edge with the exact prior phase and
@@ -295,8 +299,12 @@ Ordered procedure:
    `lifecycle_state=environment_verified`. Successful evidence has nonempty import and smoke
    observations, only passed observations, unique names across both collections, and no failure
    classification. Do not acquire a checkpoint before this succeeds.
-4. Acquire only the target checkpoint through the checkpoint subsystem, verify provenance and
-   SHA-256, and then load it in the verified isolated environment.
+4. Resolve structured authoritative metadata without acquiring payload bytes, then acquire only the
+   target checkpoint through the checkpoint subsystem. Enforce exact expected size, every
+   algorithm-tagged published checksum, observed SHA-256, specification fingerprint, and retained
+   metadata provenance before loading it in the verified isolated environment. Maximum bytes remains
+   an independent resource-safety ceiling. A published MD5 and locally observed SHA-256 remain
+   distinct evidence.
 5. Test random initialization when supported, checkpoint initialization, invalid checkpoint behavior,
    model variant agreement, and loading diagnostics.
 6. Test canonical `[B,C,T]` waveform inputs, sample-rate behavior, channels, valid lengths, short and

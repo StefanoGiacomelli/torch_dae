@@ -70,6 +70,41 @@ def test_package_bundle_filename_rejects_unsafe_paths(
         CheckpointSpec.model_validate(data)
 
 
+def test_checkpoint_filename_accepts_safe_metric_separator(
+    valid_fixture_dir: Path,
+) -> None:
+    data = json.loads((valid_fixture_dir / "checkpoint.https.json").read_text())
+    data["filename"] = "Cnn14_16k_mAP=0.438.pth"
+
+    spec = CheckpointSpec.model_validate(data)
+
+    assert spec.filename == "Cnn14_16k_mAP=0.438.pth"
+
+
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "../model_mAP=0.438.pth",
+        "/model_mAP=0.438.pth",
+        "dir//model_mAP=0.438.pth",
+        "dir\\model_mAP=0.438.pth",
+        "dir/model_mAP=0.438.pth?download=1",
+        "dir/model_mAP=0.438.pth#fragment",
+        "C:/model_mAP=0.438.pth",
+        "dir/model_mAP=0.438.pth\x00suffix",
+    ],
+)
+def test_checkpoint_filename_metric_separator_retains_path_safety(
+    valid_fixture_dir: Path,
+    filename: str,
+) -> None:
+    data = json.loads((valid_fixture_dir / "checkpoint.https.json").read_text())
+    data["filename"] = filename
+
+    with pytest.raises(ValidationError):
+        CheckpointSpec.model_validate(data)
+
+
 @pytest.mark.parametrize(
     "name",
     [

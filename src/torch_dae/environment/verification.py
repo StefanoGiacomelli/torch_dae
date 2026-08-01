@@ -13,6 +13,7 @@ from torch_dae.contracts import (
     StrictBaseModel,
     ensure_canonical_id,
 )
+from torch_dae.environment.results import ArtifactEvidence
 
 
 class VerificationCheck(StrictBaseModel):
@@ -72,6 +73,10 @@ class VerificationReport(StrictBaseModel):
     platform: str
     device: str
     checkpoint_sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    checkpoint_specification_fingerprint: Annotated[str | None, Field(pattern=SHA256_PATTERN)] = (
+        None
+    )
+    checkpoint_materialization: ArtifactEvidence | None = None
     input_contracts: tuple[str, ...]
     tensor_observations: tuple[TensorObservation, ...]
     embedding_results: tuple[str, ...]

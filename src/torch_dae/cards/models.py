@@ -17,6 +17,7 @@ from torch_dae.contracts import (
 )
 from torch_dae.core.checkpoint import CheckpointSpec
 from torch_dae.core.embeddings import EmbeddingSpec
+from torch_dae.environment.results import ArtifactEvidence
 
 
 class ModelCardLifecycle(StrEnum):
@@ -394,6 +395,10 @@ class ModelCard(StrictBaseModel):
     card_status: ModelCardLifecycle
     identity: Identity
     checkpoint: CheckpointSpec
+    checkpoint_specification_fingerprint: Annotated[
+        str | None, Field(pattern=r"^[0-9a-f]{64}$")
+    ] = None
+    checkpoint_materialization: ArtifactEvidence | None = None
     sources: Sources
     scientific_reference: ScientificReference
     description: Description
@@ -448,6 +453,23 @@ class ModelCard(StrictBaseModel):
         ):
             raise ValueError(
                 "checkpoint_verified or later cards require observed checkpoint SHA-256"
+            )
+        if (
+            self.card_status
+            in {
+                ModelCardLifecycle.CHECKPOINT_VERIFIED,
+                ModelCardLifecycle.RUNTIME_VERIFIED,
+                ModelCardLifecycle.PROFILED,
+            }
+            and self.checkpoint.schema_version == "2.0.0"
+            and (
+                self.checkpoint_specification_fingerprint is None
+                or self.checkpoint_materialization is None
+            )
+        ):
+            raise ValueError(
+                "authority-complete checkpoint claims require specification fingerprint and "
+                "materialization provenance"
             )
         if self.card_status in {
             ModelCardLifecycle.RUNTIME_VERIFIED,

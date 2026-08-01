@@ -21,7 +21,11 @@ from pydantic import BaseModel
 
 from torch_dae.cards.models import ModelCard, ModelCardLifecycle
 from torch_dae.cards.validation import load_json, validate_model_card_path
-from torch_dae.core.checkpoint import CheckpointMaterializationRecord, CheckpointSpec
+from torch_dae.core.checkpoint import (
+    CheckpointMaterializationRecord,
+    CheckpointSpec,
+    checkpoint_specification_fingerprint,
+)
 from torch_dae.core.embeddings import EmbeddingSpec
 from torch_dae.core.registry import ModelCardRegistry
 from torch_dae.environment.results import (
@@ -70,6 +74,8 @@ REQUIRED = [
     ".claude/skills/audio-model-onboarding",
     "schemas/model-card.schema.json",
     "schemas/checkpoint.schema.json",
+    "schemas/checkpoint-authority-resolution.schema.json",
+    "schemas/checkpoint-materialization.schema.json",
     "schemas/environment.schema.json",
     "schemas/environment-sources.schema.json",
     "schemas/environment-materialization-result.schema.json",
@@ -437,6 +443,53 @@ def validate_integration_artifacts(root: Path, failures: list[str]) -> None:
             for label, values in associations.items():
                 if values[0] != values[1]:
                     fail(f"verification report {label} disagrees for {path}", failures)
+            if target.checkpoint_acquisition_policy.require_authority:
+                if (
+                    verified_report.checkpoint_specification_fingerprint
+                    != checkpoint_specification_fingerprint(target.checkpoint)
+                ):
+                    fail(
+                        f"verification report checkpoint specification fingerprint disagrees "
+                        f"for {path}",
+                        failures,
+                    )
+                evidence = verified_report.checkpoint_materialization
+                if evidence is None:
+                    fail(
+                        f"authoritative verification report lacks checkpoint materialization "
+                        f"provenance: {path}",
+                        failures,
+                    )
+                else:
+                    materialization_path = (root / evidence.path).resolve()
+                    try:
+                        materialization_path.relative_to(root)
+                        if _sha256(materialization_path) != evidence.sha256:
+                            raise ValueError("materialization evidence SHA-256 mismatch")
+                        materialization = CheckpointMaterializationRecord.model_validate_json(
+                            materialization_path.read_text()
+                        )
+                    except Exception as exc:
+                        fail(
+                            f"invalid authoritative checkpoint materialization for {path}: {exc}",
+                            failures,
+                        )
+                    else:
+                        authority = target.checkpoint.authority
+                        if (
+                            authority is None
+                            or materialization.authority != authority
+                            or materialization.expected_size_bytes != authority.expected_size_bytes
+                            or materialization.observed_size_bytes != authority.expected_size_bytes
+                            or materialization.published_checksums != authority.published_checksums
+                            or materialization.observed_sha256 != verified_report.checkpoint_sha256
+                            or materialization.specification_fingerprint
+                            != checkpoint_specification_fingerprint(target.checkpoint)
+                        ):
+                            fail(
+                                f"authoritative checkpoint provenance disagrees for {path}",
+                                failures,
+                            )
             if verified_report.required_check_ids != target.required_check_ids:
                 fail(f"verification report required-check contract disagrees for {path}", failures)
             if verified_report.optional_check_ids != target.optional_check_ids:
@@ -504,6 +557,56 @@ def validate_integration_artifacts(root: Path, failures: list[str]) -> None:
                 fail(f"verification report fingerprint disagrees for {card.card_id}", failures)
 
     for _, card in cards.values():
+        if (
+            card.card_status
+            in {
+                ModelCardLifecycle.CHECKPOINT_VERIFIED,
+                ModelCardLifecycle.RUNTIME_VERIFIED,
+                ModelCardLifecycle.PROFILED,
+            }
+            and card.checkpoint.schema_version == "2.0.0"
+        ):
+            expected_fingerprint = checkpoint_specification_fingerprint(card.checkpoint)
+            if card.checkpoint_specification_fingerprint != expected_fingerprint:
+                fail(
+                    f"authority-complete card checkpoint fingerprint disagrees for {card.card_id}",
+                    failures,
+                )
+            evidence = card.checkpoint_materialization
+            if evidence is None:
+                fail(
+                    f"authority-complete card lacks checkpoint materialization for {card.card_id}",
+                    failures,
+                )
+            else:
+                materialization_path = (root / evidence.path).resolve()
+                try:
+                    materialization_path.relative_to(root)
+                    if _sha256(materialization_path) != evidence.sha256:
+                        raise ValueError("materialization evidence SHA-256 mismatch")
+                    materialization = CheckpointMaterializationRecord.model_validate_json(
+                        materialization_path.read_text()
+                    )
+                except Exception as exc:
+                    fail(
+                        f"invalid card checkpoint materialization for {card.card_id}: {exc}",
+                        failures,
+                    )
+                else:
+                    authority = card.checkpoint.authority
+                    if (
+                        authority is None
+                        or materialization.authority != authority
+                        or materialization.expected_size_bytes != authority.expected_size_bytes
+                        or materialization.observed_size_bytes != authority.expected_size_bytes
+                        or materialization.published_checksums != authority.published_checksums
+                        or materialization.observed_sha256 != card.checkpoint.observed_sha256
+                        or materialization.specification_fingerprint != expected_fingerprint
+                    ):
+                        fail(
+                            f"card checkpoint materialization disagrees for {card.card_id}",
+                            failures,
+                        )
         if card.card_status not in {
             ModelCardLifecycle.RUNTIME_VERIFIED,
             ModelCardLifecycle.PROFILED,

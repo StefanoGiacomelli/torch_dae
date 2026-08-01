@@ -22,6 +22,14 @@ Checkpoint-specific verification then covers construction, checkpoint loading, i
 agreement, inputs, outputs, embeddings, device movement, dtypes, NaN/Inf checks, and repeated-call
 behavior.
 
+An authority-complete target requires structured checkpoint authority, exact-size equality, every
+published checksum, observed SHA-256, explicit network/authentication policy, and an independent
+maximum-byte ceiling. Metadata resolution is card-independent and precedes payload acquisition.
+Successful provenance binds the authority identity, checkpoint specification fingerprint, metadata
+response evidence, exact expected and observed sizes, published and observed checksum sets, and
+content-addressed cache identity. Offline reuse rehashes cached bytes and validates the retained
+metadata provenance; file existence alone is never sufficient.
+
 The structured target-aware report must include explicit overall `verification_status`,
 target/workflow/integration identity, environment specification and source-manifest hashes,
 environment fingerprint, checkpoint identity and hash, source revision, package identity, test

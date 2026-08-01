@@ -871,6 +871,7 @@ The framework MUST avoid unnecessary architecture reimplementation.
 ```python
 @dataclass(frozen=True)
 class CheckpointSpec:
+    schema_version: str
     checkpoint_id: str
     source_type: CheckpointSourceType
     url: str | None
@@ -879,6 +880,7 @@ class CheckpointSpec:
     filename: str | None
     expected_sha256: str | None
     observed_sha256: str | None
+    authority: CheckpointAuthority | None
     format: str
     loader: str
     license: LicenseRecord
@@ -894,6 +896,40 @@ package_bundle
 local_path
 ```
 
+Legacy checkpoint specifications use schema `1.0.0` and remain readable. Authority-complete
+specifications use schema `2.0.0`. They MUST bind a structured `CheckpointAuthority` to the exact
+requested filename and MUST NOT treat an arbitrary direct HTTPS URL as authoritative evidence.
+
+The dedicated checkpoint filename grammar MUST accept safe provider names such as
+`Cnn14_16k_mAP=0.438.pth` and safe nested relative resource paths. It MUST reject absolute paths,
+drive paths, traversal, empty or doubled path segments, backslashes, NULs, URL queries or fragments,
+and paths that escape their package or cache root. The stricter repository-artifact path grammar is
+not a substitute for this provider-filename grammar.
+
+```python
+@dataclass(frozen=True)
+class PublishedChecksum:
+    algorithm: str
+    digest: str
+
+@dataclass(frozen=True)
+class CheckpointAuthority:
+    provider: str
+    record_id: str
+    filename: str
+    expected_size_bytes: int
+    published_checksums: tuple[PublishedChecksum, ...]
+    record_url: str | None
+    provenance_status: str
+```
+
+Authority identifiers MUST be canonical, expected size MUST be positive and exact, checksum
+algorithms MUST be unique, and digests MUST validate for their declared algorithms. MD5 and SHA-256
+MUST be supported. Provider metadata MUST resolve before payload acquisition through an injectable,
+bounded metadata transport. Zenodo resolution MUST use the official record API derived from the
+structured record ID, select exactly one equal filename, reject malformed or duplicate metadata,
+and accept only provider-controlled HTTPS metadata and payload URLs.
+
 ## 12.2 Cache
 
 Resolved checkpoints MUST be stored under:
@@ -908,12 +944,29 @@ Checkpoint files MUST NOT be committed.
 
 The checkpoint manager MUST:
 
-1. resolve the source;
-2. acquire or locate the asset;
-3. compute SHA-256;
-4. compare it with the expected hash when available;
-5. persist acquisition metadata;
-6. return a local immutable path.
+1. resolve structured authority metadata before payload acquisition when authority is declared;
+2. resolve the source;
+3. acquire or locate the asset under an independent maximum-byte safety ceiling;
+4. stream and compute observed byte count, SHA-256, and every authority-published digest algorithm;
+5. require observed bytes to equal the authoritative exact expected size;
+6. compare every published checksum and any expected SHA-256;
+7. persist metadata-response and payload provenance;
+8. install content-addressed cache state only after all required checks pass;
+9. return a local immutable path.
+
+Published checksum means evidence declared by the authoritative provider. Observed checksum means a
+digest calculated from acquired or cached local bytes. Exact expected size is an authority identity
+and integrity constraint. Maximum bytes is a resource-safety ceiling. These concepts MUST remain
+distinct.
+
+When an authority publishes only MD5, acquisition MAY succeed if policy permits and exact size plus
+the published MD5 match. The manager MUST compute SHA-256 locally, use that observed SHA-256 as the
+content-addressed cache identity, and MUST NOT relabel it as provider-published evidence.
+
+Offline reuse MUST revalidate checkpoint ID, specification fingerprint, exact file size, observed
+SHA-256/cache identity, every published checksum, and cached metadata provenance. File existence
+alone MUST NOT establish a valid cache hit. An invalid cache or authority mismatch MUST fail
+explicitly offline.
 
 If no upstream checksum exists, the first verified local hash MAY become the committed observed hash.
 
@@ -1917,12 +1970,20 @@ torch-dae env run <card-id> -- <command>
 torch-dae checkpoint ensure <card-id>
 torch-dae checkpoint info <card-id>
 torch-dae checkpoint remove <card-id>
+torch-dae checkpoint resolve --spec <checkpoint-spec.json>
+torch-dae checkpoint ensure-spec --spec <checkpoint-spec.json>
+torch-dae checkpoint info-spec --spec <checkpoint-spec.json>
 
 torch-dae model inspect <card-id>
 torch-dae model verify <card-id>
 ```
 
 The control-plane CLI MUST remain usable without installing PyTorch in the root environment.
+
+Card-independent checkpoint commands MUST strictly load a `CheckpointSpec`, resolve authoritative
+metadata without acquiring payload bytes, acquire only through `CheckpointManager.ensure_checkpoint`,
+inspect authority/cache state without a model card, emit machine-readable JSON, and honor offline
+policy. Card-based `checkpoint ensure` MUST delegate to the same explicit manager primitive.
 
 ---
 

@@ -8,6 +8,11 @@ optional check IDs. Completeness-aware targets use schema ``2.0.0`` and require 
 required check; optional checks are unique and disjoint. The target makes no success claim and can
 be created before any final model card.
 
+Authority-complete targets bind a schema ``2.0.0`` checkpoint authority and explicitly require
+exact expected size, all published checksum algorithms, observed SHA-256, network/authentication
+policy, and an independent maximum-byte safety ceiling. Passed reports reference matching
+materialization provenance and the checkpoint specification fingerprint.
+
 A target-aware verification report binds observations back to that request, declares explicit
 overall ``verification_status``, and records ``model_card_id``,
 ``environment_id``, ``environment_fingerprint``, and ``checkpoint_sha256``. It also records creation time, platform,

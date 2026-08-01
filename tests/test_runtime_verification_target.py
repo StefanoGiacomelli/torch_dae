@@ -83,6 +83,53 @@ def test_legacy_runtime_target_remains_readable_via_explicit_migration_path(
     assert target.required_check_ids == ()
 
 
+def test_authority_complete_runtime_target_binds_all_integrity_requirements(
+    valid_fixture_dir: Path,
+) -> None:
+    data = load_target(valid_fixture_dir).model_dump(mode="json")
+    data["checkpoint"] = {
+        "schema_version": "2.0.0",
+        "checkpoint_id": "synthetic-checkpoint",
+        "source_type": "https",
+        "filename": "model_mAP=0.438.pth",
+        "authority": {
+            "provider": "zenodo",
+            "record_id": "12345",
+            "filename": "model_mAP=0.438.pth",
+            "expected_size_bytes": 100,
+            "published_checksums": [{"algorithm": "md5", "digest": "a" * 32}],
+            "provenance_status": "authoritative_provider_declared",
+        },
+        "format": "binary",
+        "loader": "manual",
+        "license": {"status": "not_applicable"},
+    }
+    data["checkpoint_acquisition_policy"] = {
+        "allow_network": True,
+        "allow_authentication": False,
+        "maximum_bytes": 100,
+        "require_expected_sha256": False,
+        "require_authority": True,
+        "require_exact_size": True,
+        "require_published_checksums": True,
+        "require_observed_sha256": True,
+    }
+
+    target = RuntimeVerificationTarget.model_validate(data)
+
+    assert target.checkpoint.authority is not None
+
+
+def test_authority_complete_runtime_target_rejects_incomplete_policy(
+    valid_fixture_dir: Path,
+) -> None:
+    data = load_target(valid_fixture_dir).model_dump(mode="json")
+    data["checkpoint_acquisition_policy"]["require_authority"] = True
+
+    with pytest.raises(ValidationError, match="requires checkpoint authority"):
+        RuntimeVerificationTarget.model_validate(data)
+
+
 def test_runtime_target_requires_accepted_integration_handoff(
     tmp_path: Path,
     valid_fixture_dir: Path,

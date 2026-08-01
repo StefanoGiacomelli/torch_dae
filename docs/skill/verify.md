@@ -10,6 +10,11 @@ It then performs controlled checkpoint acquisition, checksum validation, state l
 inference, probability checks where supported, declared embedding checks, device behavior, and
 gradient behavior. Results are written as explicit runtime observations.
 
+For authority-complete targets, metadata-only resolution precedes payload acquisition. Exact
+expected size and every published checksum are independently enforced, observed SHA-256 becomes the
+cache identity without being relabeled as published evidence, and maximum bytes remains a separate
+safety ceiling. Offline reuse revalidates cached bytes plus retained metadata provenance.
+
 A successful import alone is not runtime verification. Every target-required check and declared
 public output must be observed exactly once and pass. Optional checks remain bounded diagnostics and
 may be unsupported only with explicit details and a recorded limitation.

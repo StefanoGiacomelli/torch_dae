@@ -44,6 +44,19 @@ metadata with an explicit algorithm and `published_not_locally_verified` state; 
 SHA-512, and BLAKE2b are not interchangeable. In particular, published MD5 does not satisfy later
 local SHA-256 verification.
 
+Completeness-aware verification carries this evidence through a schema `2.0.0`
+`CheckpointSpec.authority`: provider, canonical record ID, exact filename, exact expected byte
+size, unique algorithm-tagged published checksums, optional persistent record URL, and authoritative
+provenance status. Resolve the authority through the card-independent checkpoint API before payload
+acquisition. For Zenodo, derive the official API URL from the structured record ID; never promote a
+direct HTTPS URL into authority implicitly.
+
+Published checksum is provider-declared evidence. Observed checksum is calculated from acquired or
+cached bytes. Exact expected size is an authority identity and integrity constraint. Maximum bytes
+is an independent resource-safety ceiling. A published MD5 may establish provider checksum agreement
+when policy permits, while the separately observed SHA-256 remains the content-addressed cache
+identity.
+
 ## Source chronology
 
 Keep checkpoint/source revision selection candidate-specific. Prefer an explicit host revision,

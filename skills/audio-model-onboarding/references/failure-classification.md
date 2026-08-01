@@ -16,6 +16,13 @@ preparation, direct-dependency mismatch, verification-script failure, sandbox/ex
 external-command failure. Environment failures never imply checkpoint incompatibility unless a
 checkpoint was actually acquired and inspected in an authorized verify phase.
 
+Authoritative checkpoint operations distinguish `metadata_identity_mismatch`,
+`metadata_response_invalid`, `metadata_response_oversized`, `untrusted_authority_url`,
+`exact_size_mismatch`, `truncated_transfer`, `oversized_response`,
+`published_checksum_mismatch`, `expected_hash_mismatch`, and `offline_cache_miss`. Exact-size or
+published-checksum disagreement is always fatal, removes temporary payload bytes, and creates no
+valid cache entry. Maximum bytes is an independent safety ceiling, not an integrity substitute.
+
 Sandbox, DNS, package-index, authentication, and rate-limit failures are external execution
 failures, not model/dependency incompatibilities. Preserve the original log and classification. When
 execution policy permits, one identical evidence-motivated rerun may be recorded alongside the
