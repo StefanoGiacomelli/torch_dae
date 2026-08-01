@@ -1,0 +1,308 @@
+{
+  "$defs": {
+    "ArtifactEvidence": {
+      "additionalProperties": false,
+      "description": "Repository or managed-runtime artifact plus its observed SHA-256.",
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactEvidence",
+      "type": "object"
+    },
+    "EnvironmentFailureClassification": {
+      "description": "Stable infrastructure failure classes for environment operations.",
+      "enum": [
+        "invalid_specification",
+        "hash_mismatch",
+        "interpreter_unavailable",
+        "platform_incompatibility",
+        "dependency_installation",
+        "source_preparation",
+        "direct_dependency_mismatch",
+        "verification_script",
+        "sandbox_or_execution_policy",
+        "external_command"
+      ],
+      "minLength": 1,
+      "title": "EnvironmentFailureClassification",
+      "type": "string"
+    },
+    "VerificationObservation": {
+      "additionalProperties": false,
+      "description": "One bounded environment-level import or smoke observation.",
+      "properties": {
+        "details": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Details"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "passed",
+            "failed",
+            "unsupported"
+          ],
+          "minLength": 1,
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "status"
+      ],
+      "title": "VerificationObservation",
+      "type": "object"
+    }
+  },
+  "$id": "https://torch-dae.local/schemas/environment-verification-result.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "else": {
+        "properties": {
+          "failure_classification": {
+            "type": "string"
+          },
+          "lifecycle_state": {
+            "const": "materialized"
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "verification_status": {
+            "const": "passed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "environment_smoke_results": {
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/VerificationObservation"
+                },
+                {
+                  "properties": {
+                    "status": {
+                      "const": "passed"
+                    }
+                  }
+                }
+              ]
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "failure_classification": {
+            "type": "null"
+          },
+          "import_results": {
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/VerificationObservation"
+                },
+                {
+                  "properties": {
+                    "status": {
+                      "const": "passed"
+                    }
+                  }
+                }
+              ]
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "lifecycle_state": {
+            "const": "environment_verified"
+          }
+        }
+      }
+    }
+  ],
+  "description": "Infrastructure-only compatibility evidence for a materialized environment.",
+  "properties": {
+    "completed_at": {
+      "format": "date-time",
+      "minLength": 1,
+      "title": "Completed At",
+      "type": "string"
+    },
+    "direct_dependency_versions": {
+      "additionalProperties": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Direct Dependency Versions",
+      "type": "object"
+    },
+    "environment_fingerprint": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Environment Fingerprint",
+      "type": "string"
+    },
+    "environment_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Environment Id",
+      "type": "string"
+    },
+    "environment_smoke_results": {
+      "items": {
+        "$ref": "#/$defs/VerificationObservation"
+      },
+      "title": "Environment Smoke Results",
+      "type": "array"
+    },
+    "environment_spec_sha256": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Environment Spec Sha256",
+      "type": "string"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/ArtifactEvidence"
+      },
+      "title": "Evidence",
+      "type": "array"
+    },
+    "exact_interpreter": {
+      "minLength": 1,
+      "title": "Exact Interpreter",
+      "type": "string"
+    },
+    "failure_classification": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EnvironmentFailureClassification"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "import_results": {
+      "items": {
+        "$ref": "#/$defs/VerificationObservation"
+      },
+      "title": "Import Results",
+      "type": "array"
+    },
+    "lifecycle_state": {
+      "enum": [
+        "materialized",
+        "environment_verified"
+      ],
+      "minLength": 1,
+      "title": "Lifecycle State",
+      "type": "string"
+    },
+    "materialization_result_reference": {
+      "$ref": "#/$defs/ArtifactEvidence"
+    },
+    "platform": {
+      "minLength": 1,
+      "title": "Platform",
+      "type": "string"
+    },
+    "result_path": {
+      "minLength": 1,
+      "title": "Result Path",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "started_at": {
+      "format": "date-time",
+      "minLength": 1,
+      "title": "Started At",
+      "type": "string"
+    },
+    "verification_script_sha256": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Verification Script Sha256",
+      "type": "string"
+    },
+    "verification_status": {
+      "enum": [
+        "passed",
+        "failed"
+      ],
+      "minLength": 1,
+      "title": "Verification Status",
+      "type": "string"
+    },
+    "warnings": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "environment_id",
+    "environment_spec_sha256",
+    "materialization_result_reference",
+    "verification_script_sha256",
+    "exact_interpreter",
+    "platform",
+    "direct_dependency_versions",
+    "import_results",
+    "environment_smoke_results",
+    "verification_status",
+    "lifecycle_state",
+    "environment_fingerprint",
+    "result_path",
+    "evidence",
+    "started_at",
+    "completed_at"
+  ],
+  "title": "EnvironmentVerificationResult",
+  "type": "object"
+}

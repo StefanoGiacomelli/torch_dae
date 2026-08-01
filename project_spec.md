@@ -172,7 +172,8 @@ Unresolved information MAY remain explicit.
 
 ## 5.3 `environment_resolved`
 
-A model-specific environment has been successfully constructed and frozen.
+A referenced environment has been successfully constructed, verified, and frozen before the card
+claims this status.
 
 The committed environment specification MUST include:
 
@@ -182,6 +183,10 @@ The committed environment specification MUST include:
 * source-installation strategy;
 * supported platform evidence;
 * environment-verification command.
+
+The card MUST reference the matching environment fingerprint and hash-addressed
+`EnvironmentVerificationResult`. Environment lifecycle state exists independently of this card
+status.
 
 ## 5.4 `checkpoint_verified`
 
@@ -204,6 +209,13 @@ The wrapper has passed runtime verification for:
 * all declared embeddings;
 * declared device behavior;
 * gradient behavior where applicable.
+
+The card MUST reference a strict `RuntimeVerificationTarget` and its matching checkpoint-specific
+`VerificationReport`, both by repository path and SHA-256. Repository validation MUST reject any
+model, variant, checkpoint, environment, source-manifest, public-entry-point, integration-handoff,
+or future-card association mismatch. It MUST also reject a legacy target/report pair, an empty
+target-aware report, any missing, duplicate, undeclared, failed, or unsupported required check, and
+any target/report required- or optional-check contract mismatch.
 
 ## 5.6 `profiled`
 
@@ -380,7 +392,7 @@ torch-dae/
 │       └── <card-id>.json
 │
 ├── environments/
-│   └── <card-id>/
+│   └── <environment-id>/
 │       ├── environment.json
 │       ├── pyproject.toml
 │       ├── uv.lock
@@ -468,18 +480,19 @@ This minimizes dependency conflicts and allows the environment manager to operat
 
 ## 8.2 Model-specific environments
 
-Every checkpoint-specific integration MUST have its own reproducible environment.
+Every integration tuple MUST reference a reproducible environment. Multiple tuples MAY reference
+one logical environment ID when their accepted dependency and source contracts are identical.
 
 The environment specification is committed under:
 
 ```text
-environments/<card-id>/
+environments/<environment-id>/
 ```
 
 The materialized virtual environment is stored under:
 
 ```text
-.torch-dae/environments/<card-id>/<fingerprint>/
+.torch-dae/environments/<environment-id>/<fingerprint>/
 ```
 
 Model-specific environments MUST install:
@@ -500,7 +513,6 @@ An environment specification MUST include at least:
 {
   "schema_version": "1.0.0",
   "environment_id": "panns-cnn14-audioset",
-  "model_card_id": "panns-cnn14-audioset",
   "python": {
     "constraint": "==3.10.16",
     "resolved_version": "3.10.16"
@@ -520,19 +532,27 @@ An environment specification MUST include at least:
 }
 ```
 
+`model_card_id` is an optional legacy association. It MUST NOT authorize materialization and is not
+required for new environment definitions. The five accepted files under the environment-ID
+directory are the complete materialization authority.
+
 ## 9.1 Environment fingerprint
 
-The environment fingerprint MUST depend on:
+The environment fingerprint is a lowercase SHA-256 of canonically serialized, deterministically
+ordered evidence and MUST depend on:
 
-* canonical environment specification;
-* exact lock-file contents;
-* exact Python version;
-* source URLs and revisions;
-* source-installation strategy;
-* target platform;
-* relevant local `torch-dae` package version or commit.
+* canonical environment ID and exact `environment.json` SHA-256;
+* exact `pyproject.toml`, `uv.lock`, `sources.json`, and `verify_environment.py` SHA-256 values;
+* exact Python implementation and version;
+* normalized target platform;
+* exact direct-dependency names and locked versions;
+* every referenced integrated or vendored source hash;
+* relevant local `torch-dae` build identity.
 
 Changing any of these inputs MUST produce a different fingerprint.
+Model-card prose, checkpoint bytes, absolute paths, timestamps, usernames, temporary paths, and
+mutable log paths MUST NOT contribute to the fingerprint. Logical environment IDs remain distinct
+even when their dependency evidence is otherwise equivalent.
 
 ## 9.2 Environment resolution and recreation
 
@@ -554,13 +574,16 @@ Resolution discovers a functioning combination of:
 
 ### Recreation
 
-Performed after resolution using:
+Performed after resolution using the card-independent interface:
 
 ```bash
-torch-dae env ensure <card-id>
+torch-dae env materialize <environment-id>
+torch-dae env verify <environment-id>
 ```
 
 Recreation MUST use the committed environment specification and lock file. It MUST NOT repeat compatibility research.
+The older `env create` and `env ensure` card-oriented commands remain convenience adapters: they
+resolve the card's recommended environment ID and delegate to the same direct primitives.
 
 ## 9.3 Onboarding phase handoffs
 
@@ -586,11 +609,15 @@ or backward transitions MUST be rejected.
 
 Historical handoffs, canonical phase reports, and their recorded artifact declarations MUST remain
 immutable evidence. Full-workflow validation MUST preserve their hashes while checking the current
-filesystem against the latest accepted declaration in each explicit supersession chain. A changed
-shared artifact without a valid supersession MUST fail. Discovery of an earlier accepted phase after
-a later transition MUST report the affected external artifact as superseded, not corrupted. The
-current accepted handoff MUST match the current `project_spec.md` and canonical skill fingerprints;
-earlier handoffs retain the fingerprints observed when they were accepted.
+filesystem against the latest accepted declaration in each model-integration artifact chain. A
+changed workflow-owned artifact without a valid supersession MUST fail. Shared control-plane files
+MAY evolve outside a model workflow; their accepted declarations remain historical evidence and
+their current state is validated by repository-wide schema, test, and static validation instead of
+being misreported as a model-artifact mutation. Discovery of an earlier accepted phase after a later
+transition MUST report the affected external artifact as superseded, not corrupted. The current
+accepted handoff MUST match either the current specification/skill fingerprints or the exact
+fingerprints recoverable from its producing Git revision; earlier handoffs retain the fingerprints
+observed when they were accepted.
 
 Artifact supersession MUST NOT target accepted handoffs, canonical phase reports, workflow history,
 `project_spec.md`, generated schemas, verification reports, checkpoints, credentials, or ignored
@@ -654,8 +681,11 @@ from torch_dae.environment import EnvironmentManager
 
 manager = EnvironmentManager.from_repository_root()
 
-environment = manager.ensure(
-    model_card_id="panns-cnn14-audioset",
+definition = manager.resolve_environment("panns-cnn14-audioset")
+materialization = manager.materialize_environment("panns-cnn14-audioset")
+verification = manager.verify_environment(
+    "panns-cnn14-audioset",
+    expected_fingerprint=definition.environment_fingerprint,
 )
 ```
 
@@ -663,6 +693,28 @@ The manager MUST expose:
 
 ```python
 class EnvironmentManager:
+    def resolve_environment(
+        self, environment_id: str
+    ) -> ResolvedEnvironmentDefinition:
+        ...
+
+    def materialize_environment(
+        self,
+        environment_id: str,
+        *,
+        expected_spec_sha256: str | None = None,
+    ) -> EnvironmentMaterializationResult:
+        ...
+
+    def verify_environment(
+        self,
+        environment_id: str,
+        *,
+        expected_fingerprint: str | None = None,
+    ) -> EnvironmentVerificationResult:
+        ...
+
+    # Backward-compatible card-oriented convenience methods.
     def create(self, model_card_id: str) -> ResolvedEnvironment:
         ...
 
@@ -710,7 +762,9 @@ The root CLI MUST expose:
 ```bash
 torch-dae env create <card-id>
 torch-dae env ensure <card-id>
-torch-dae env verify <card-id>
+torch-dae env resolve <environment-id>
+torch-dae env materialize <environment-id>
+torch-dae env verify <environment-id>
 torch-dae env remove <card-id>
 torch-dae env info <card-id>
 torch-dae env run <card-id> -- <command>
@@ -722,6 +776,8 @@ Required semantics:
 | -------- | ---------------------------------------------------------------------------------------- |
 | `create` | Creates a new environment and fails if a valid or invalid materialization already exists |
 | `ensure` | Reuses a valid environment or creates/rebuilds it                                        |
+| `resolve` | Validates and fingerprints accepted environment artifacts without materializing         |
+| `materialize` | Creates or reuses accepted locked environment infrastructure                       |
 | `verify` | Validates an existing environment without changing it                                    |
 | `remove` | Deletes only local cached environment state                                              |
 | `info`   | Displays committed specification and local materialization status                        |
@@ -1247,6 +1303,10 @@ A complete checkpoint-specific model card MUST contain the following top-level s
   "embeddings": {},
   "capabilities": {},
   "device_support": {},
+  "runtime_verification_target": "onboarding_reports/.../verify/runtime-targets/target.json",
+  "runtime_verification_target_sha256": "...",
+  "verification_report": "verification_reports/.../report.json",
+  "verification_report_sha256": "...",
   "architectural_profiling": {},
   "inference_profiling": {},
   "energy_profiling": {},
@@ -1376,13 +1436,25 @@ Usage MUST reference the committed environment specification:
     "environment_id": "panns-cnn14-audioset",
     "specification": "environments/panns-cnn14-audioset/environment.json",
     "lockfile": "environments/panns-cnn14-audioset/uv.lock",
-    "verified": true
+    "verified": true,
+    "fingerprint": "...",
+    "verification_result": "onboarding_reports/.../verify/environment-results/environment.json",
+    "verification_result_sha256": "..."
   },
   "installation_commands": [],
   "checkpoint_loading": [],
   "smoke_test_command": "torch-dae model verify panns-cnn14-audioset"
 }
 ```
+
+When `verified` is false, the fingerprint and verification-result fields MUST be absent. When it is
+true, all three fields are required and MUST match a promoted canonical
+`EnvironmentVerificationResult` under `onboarding_reports/<workflow-id>/verify/`. That result MUST
+have `verification_status = passed`, `lifecycle_state = environment_verified`, and no failure
+classification. It MUST also contain nonempty import and environment-smoke observations, every
+observation MUST have passed, and observation names MUST be nonempty and unique across both
+collections. A hash-correct failed or incomplete result is diagnostic evidence and MUST NOT satisfy
+a verified model-card claim.
 
 ## 18.9 Profiling sections
 
@@ -1467,11 +1539,15 @@ Creates the unified PyTorch wrapper.
 
 ### `verify`
 
-Loads the checkpoint and verifies runtime behavior.
+Consumes an accepted integrate handoff, creates strict runtime-verification targets, resolves and
+verifies their environments, then acquires and verifies each checkpoint. It does not require a
+model card.
 
 ### `card`
 
-Creates or updates the checkpoint-specific model card.
+Consumes accepted analysis, environment, integration, environment-verification, and
+checkpoint-runtime evidence to create or update the checkpoint-specific final model card. A card is
+an evidence consumer and publication surface, never a bootstrap prerequisite.
 
 ### `profile`
 
@@ -1621,6 +1697,95 @@ generic code MUST NOT be changed merely to hide an external execution failure.
 
 A card reaches `runtime_verified` only after the wrapper successfully verifies the applicable capabilities.
 
+## 21.0 Authority and lifecycle separation
+
+The generic authority chain is:
+
+```text
+EnvironmentSpecification
+  -> EnvironmentMaterializationResult
+  -> EnvironmentVerificationResult(status=passed) and matching environment fingerprint
+  -> RuntimeVerificationTarget
+  -> checkpoint-specific VerificationReport(status=passed)
+  -> final ModelCard
+```
+
+Failed evidence remains diagnostic evidence and never promotes lifecycle state. The existence of a
+result or report, a valid hash, or a self-declared passed status is not proof of success.
+
+A successful result proves both:
+
+* successful global status;
+* complete successful coverage of the evidence required by its authority contract.
+
+An environment is `draft` when accepted definition and lock artifacts exist, `materialized` after
+locked dependencies and sources are prepared, and `environment_verified` only after infrastructure
+verification passes. These states belong to the environment. `runtime_verified` belongs to one
+model/variant/checkpoint/environment tuple and requires checkpoint acquisition, hashing, loading,
+forward checks, and a checkpoint-specific report. Environment-only evidence MUST NOT promote a
+checkpoint or card.
+
+`RuntimeVerificationTarget` is a strict executable request. It associates workflow, accepted
+integration handoff, integrated variant/adapter, checkpoint specification and acquisition policy,
+future card identity, public entry point, environment definition and source manifest, waveform and
+sample-rate contract, expected outputs/probability/embedding semantics, permitted devices,
+execution limits, unresolved items, and ordered `required_check_ids` and `optional_check_ids`. New
+verification uses target schema `2.0.0`. Required check IDs MUST be nonempty, canonical, and unique;
+optional check IDs MUST be canonical and unique; the two sets MUST be disjoint. Their input order is
+part of the deterministic request. The target MUST make no success claim and MUST NOT require an
+existing final card.
+
+The required-check vocabulary MUST be capable of representing checkpoint acquisition and SHA-256,
+checkpoint deserialization, state-dictionary compatibility, canonical waveform input,
+checkpoint-loaded forward execution, every expected output, declared probability behavior, the
+default embedding, deterministic repeated execution, and required CPU execution. Optional checks
+represent bounded diagnostics rather than prerequisites.
+
+Verify mode MUST perform these operations in order:
+
+1. consume the accepted integrate handoff;
+2. create or resolve strict runtime-verification targets;
+3. resolve each target environment by environment ID;
+4. materialize from the accepted environment definition;
+5. run environment verification and record the fingerprint;
+6. acquire the checkpoint according to its explicit policy;
+7. verify checkpoint provenance and SHA-256;
+8. deserialize and check model/state-dictionary compatibility;
+9. perform bounded forward, output, probability, embedding, and device checks;
+10. create the checkpoint-specific verification report;
+11. promote the accepted verify handoff.
+
+Environment verification results are infrastructure evidence. Managed execution copies live under
+`.torch-dae/reports/environments/<environment-id>/<fingerprint>/`; accepted verify orchestration
+MUST promote the normalized result under its phase-local `onboarding_reports/<workflow-id>/verify/`
+tree. The promoted result MUST retain `verification_status = passed`,
+`lifecycle_state = environment_verified`, and the exact target environment fingerprint. A failed
+environment result uses `verification_status = failed`, `lifecycle_state = materialized`, and a
+non-null failure classification. A passed result MUST contain nonempty import and smoke collections,
+only passed observations, unique nonempty observation names across both collections, and no failure
+classification. Failed results MAY retain partial, failed, or absent observations when failure
+preceded observation completion. Generic environment results MUST NOT be stored under
+`verification_reports/`. Managed command logs and materialization records remain runtime evidence,
+but a final card MUST reference the promoted canonical environment result rather than an unmanaged
+file.
+
+Target-aware verification reports use schema `2.0.0`, repeat their target's exact ordered required
+and optional check IDs, and MUST declare `verification_status = passed | failed`. Checks MUST be
+nonempty, canonical, unique, and target-declared. Every required check MUST appear exactly once and
+MUST pass for an overall passed report; a required check MUST NOT be unsupported. A passed report
+contains no failed check. A failed report contains at least one failed declared required or optional
+check and cannot support `runtime_verified`. An optional check may pass or be explicitly unsupported
+without false failure. Every unsupported optional check MUST include nonempty details, appear in
+`unsupported_capabilities`, and have a recorded limitation. Repository validation MUST compare the
+report with its referenced target and enforce the exact check contracts and all existing identity,
+hash, fingerprint, checkpoint, environment, source, handoff, and entry-point associations.
+
+Legacy schema `1.0.0` reports remain readable without rewriting: any failed check makes them
+unsuccessful, while a report with no failed checks retains the existing conservative compatibility
+interpretation. A legacy report or schema `1.0.0` target MUST NOT be silently reinterpreted as
+completeness-aware evidence for a new `runtime_verified` card. Existing target fixtures migrate by
+setting schema `2.0.0` and adding explicit ordered required and optional check ID fields.
+
 ## 21.1 Required checks
 
 ```python
@@ -1673,6 +1838,9 @@ The verification MUST cover:
 
 Each model integration MUST have a committed verification report containing:
 
+* runtime-verification target and workflow identity;
+* integrated variant, checkpoint, public entry point, and accepted integration-handoff hash;
+* environment-specification and source-manifest hashes;
 * environment ID and fingerprint;
 * platform;
 * device;
@@ -1723,7 +1891,9 @@ torch-dae card validate <card-id>
 
 torch-dae env create <card-id>
 torch-dae env ensure <card-id>
-torch-dae env verify <card-id>
+torch-dae env resolve <environment-id>
+torch-dae env materialize <environment-id>
+torch-dae env verify <environment-id>
 torch-dae env remove <card-id>
 torch-dae env info <card-id>
 torch-dae env run <card-id> -- <command>
@@ -1758,6 +1928,9 @@ Validation MUST cover:
 
 * model cards;
 * environments;
+* environment materialization results;
+* environment verification results;
+* runtime-verification targets;
 * checkpoints;
 * embeddings;
 * verification reports;
@@ -2026,6 +2199,12 @@ The following invariants apply throughout development:
 18. `verification_reports/` remains checkpoint-specific runtime evidence only;
 19. temporary onboarding work uses recorded managed workspaces and scoped cleanup;
 20. draft environment resolution is distinct from lifecycle promotion.
+21. accepted environment definitions, not model cards, authorize materialization;
+22. environment verification and checkpoint-runtime verification remain separate evidence;
+23. runtime-verification targets preserve explicit model/checkpoint/environment identity;
+24. final cards may claim verification only by referencing matching hash-addressed evidence.
+25. only passed environment and runtime evidence can promote model-card lifecycle state;
+26. failed environment or runtime evidence remains diagnostic and never authorizes promotion.
 
 ---
 

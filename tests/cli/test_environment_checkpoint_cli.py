@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -23,6 +24,11 @@ from torch_dae.environment.manager import (
     EnvironmentInfo,
     EnvironmentVerification,
     ResolvedEnvironment,
+)
+from torch_dae.environment.results import (
+    ArtifactEvidence,
+    EnvironmentVerificationResult,
+    VerificationObservation,
 )
 from torch_dae.environment.subprocess import ManagedProcessResult
 
@@ -48,8 +54,71 @@ class FakeEnvironmentManager:
     def ensure(self, card_id: str) -> ResolvedEnvironment:
         return self.resolved
 
+    def resolve_environment(self, environment_id: str) -> object:
+        class Definition:
+            environment_fingerprint = "a" * 64
+            specification_path = "environments/card/environment.json"
+
+            def model_dump(self, *, mode: str) -> dict[str, object]:
+                assert mode == "json"
+                return {
+                    "environment_id": environment_id,
+                    "environment_fingerprint": self.environment_fingerprint,
+                    "specification_path": self.specification_path,
+                }
+
+        return Definition()
+
+    def materialize_environment(
+        self,
+        environment_id: str,
+        *,
+        expected_spec_sha256: str | None = None,
+    ) -> object:
+        class Materialization:
+            status = "reused"
+            materialization_record = ArtifactEvidence(
+                path="environments/card/materialization.json",
+                sha256="c" * 64,
+            )
+
+            def model_dump(self, *, mode: str) -> dict[str, object]:
+                assert mode == "json"
+                return {
+                    "environment_id": environment_id,
+                    "status": self.status,
+                    "failure_classification": None,
+                    "materialization_record": self.materialization_record.model_dump(mode="json"),
+                }
+
+        return Materialization()
+
     def verify(self, card_id: str) -> EnvironmentVerification:
         return EnvironmentVerification(card_id, True, "valid", "valid")
+
+    def verify_environment(self, environment_id: str) -> EnvironmentVerificationResult:
+        now = datetime.now(UTC)
+        return EnvironmentVerificationResult(
+            schema_version="1.0.0",
+            environment_id=environment_id,
+            environment_spec_sha256="b" * 64,
+            materialization_result_reference=ArtifactEvidence(
+                path="environments/card/materialization.json", sha256="c" * 64
+            ),
+            verification_script_sha256="d" * 64,
+            exact_interpreter="CPython 3.12.0",
+            platform="synthetic",
+            direct_dependency_versions={},
+            import_results=(VerificationObservation(name="imports", status="passed"),),
+            environment_smoke_results=(VerificationObservation(name="smoke", status="passed"),),
+            verification_status="passed",
+            lifecycle_state="environment_verified",
+            environment_fingerprint="a" * 64,
+            result_path="reports/environments/card/fingerprint/result.json",
+            evidence=(),
+            started_at=now,
+            completed_at=now,
+        )
 
     def remove(self, card_id: str) -> None:
         return None
@@ -120,7 +189,15 @@ def test_environment_cli_success_paths(monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
     assert runner.invoke(app, ["env", "create", "card"]).exit_code == 0
     assert '"fingerprint"' in runner.invoke(app, ["env", "ensure", "card", "--json"]).output
-    assert '"passed": true' in runner.invoke(app, ["env", "verify", "card", "--json"]).output
+    resolve = runner.invoke(app, ["env", "resolve", "card", "--json"])
+    assert '"result_status": "resolved"' in resolve.output
+    materialize = runner.invoke(app, ["env", "materialize", "card", "--json"])
+    assert '"environment_fingerprint"' in materialize.output
+    assert '"evidence_path"' in materialize.output
+    assert (
+        '"verification_status": "passed"'
+        in runner.invoke(app, ["env", "verify", "card", "--json"]).output
+    )
     assert "card: valid" in runner.invoke(app, ["env", "info", "card"]).output
     assert '"status": "valid"' in runner.invoke(app, ["env", "info", "card", "--json"]).output
     assert '"removed": true' in runner.invoke(app, ["env", "remove", "card", "--json"]).output

@@ -432,9 +432,28 @@ class CheckpointManager:
         except ValueError as exc:
             raise CheckpointNotFoundError(f"invalid checkpoint card ID: {card_id}") from exc
         try:
-            spec = ModelCardRegistry(self.repository_root).get_card(card_id).checkpoint
+            card = ModelCardRegistry(self.repository_root).get_card(card_id)
+            spec = card.checkpoint
         except KeyError as exc:
             raise CheckpointNotFoundError(f"model card not found: {card_id}") from exc
+        return self.ensure_checkpoint(
+            spec,
+            environment_id=card.usage.recommended_environment.environment_id,
+        )
+
+    def ensure_checkpoint(
+        self,
+        specification: CheckpointSpec,
+        *,
+        environment_id: str | None = None,
+    ) -> ResolvedCheckpoint:
+        """Acquire one explicit checkpoint specification without requiring a model card.
+
+        ``environment_id`` is required only for package-bundled checkpoint sources. This method
+        performs acquisition and hashing but never loads or deserializes model weights.
+        """
+
+        spec = CheckpointSpec.model_validate(specification)
         original_sink = self._report_sink
         original_executor = self.executor
         self._report_sink = RuntimeReportSink(
@@ -445,12 +464,16 @@ class CheckpointManager:
         )
         self.executor = original_executor.with_report_sink(self._report_sink)
         try:
-            return self._ensure_spec(card_id, spec)
+            return self._ensure_spec(environment_id, spec)
         finally:
             self._report_sink = original_sink
             self.executor = original_executor
 
-    def _ensure_spec(self, card_id: str, spec: CheckpointSpec) -> ResolvedCheckpoint:
+    def _ensure_spec(
+        self,
+        environment_id: str | None,
+        spec: CheckpointSpec,
+    ) -> ResolvedCheckpoint:
         """Resolve a loaded checkpoint spec with acquisition reporting enabled."""
 
         cached = self._cached(spec)
@@ -490,7 +513,11 @@ class CheckpointManager:
                     "huggingface",
                 )
             case CheckpointSourceType.PACKAGE_BUNDLE:
-                return self._from_package_bundle(card_id, spec)
+                if environment_id is None:
+                    raise CheckpointAcquisitionError(
+                        "package-bundle checkpoint acquisition requires environment_id"
+                    )
+                return self._from_package_bundle(environment_id, spec)
 
     def info(self, card_id: str) -> dict[str, object]:
         """Inspect a checkpoint specification and local cache without acquisition.
@@ -802,14 +829,26 @@ class CheckpointManager:
                             f"checkpoint response close failed: {sanitize_text(str(exc))}"
                         ) from exc
 
-    def _from_package_bundle(self, card_id: str, spec: CheckpointSpec) -> ResolvedCheckpoint:
+    def _from_package_bundle(
+        self,
+        environment_id: str,
+        spec: CheckpointSpec,
+    ) -> ResolvedCheckpoint:
         from torch_dae.environment.manager import EnvironmentManager
 
-        resolved = EnvironmentManager(
+        manager = EnvironmentManager(
             self.repository_root,
             policy=self.policy,
             executor=self.executor,
-        ).ensure(card_id)
+        )
+        manager.materialize_environment(environment_id)
+        manager.verify_environment(
+            environment_id,
+            expected_fingerprint=manager.resolve_environment(
+                environment_id
+            ).environment_fingerprint,
+        )
+        resolved = manager.resolved_environment(environment_id)
         if spec.package is None or spec.package_version is None or spec.filename is None:
             raise CheckpointAcquisitionError("package bundle checkpoint is incomplete")
         code = """

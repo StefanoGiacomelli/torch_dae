@@ -10,12 +10,14 @@ import pytest
 
 from torch_dae.core.errors import (
     EnvironmentIdentityMismatchError,
+    EnvironmentMaterializationError,
     EnvironmentVerificationError,
     ExternalCommandError,
 )
 from torch_dae.environment.fingerprint import local_package_identity
 from torch_dae.environment.manager import EnvironmentManager
 from torch_dae.environment.policy import ExecutionPolicy
+from torch_dae.runtime_verification import RuntimeVerificationTarget
 
 
 def write_synthetic_repository(root: Path, repo_root: Path, valid_fixture_dir: Path) -> str:
@@ -41,7 +43,7 @@ def write_synthetic_repository(root: Path, repo_root: Path, valid_fixture_dir: P
         "environment_id": environment_id,
         "specification": f"environments/{card_id}/environment.json",
         "lockfile": f"environments/{card_id}/uv.lock",
-        "verified": True,
+        "verified": False,
     }
     card["checkpoint"] = {
         "schema_version": "1.0.0",
@@ -155,6 +157,53 @@ def test_environment_load_rejects_cross_document_path_mismatch(
         EnvironmentManager(tmp_path).info(card_id)
 
 
+def test_card_independent_resolution_and_fingerprint_inputs(
+    tmp_path: Path,
+    repo_root: Path,
+    valid_fixture_dir: Path,
+) -> None:
+    card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
+    environment_id = "synthetic-shared-environment"
+    manager = EnvironmentManager(tmp_path)
+
+    baseline = manager.resolve_environment(environment_id)
+    assert baseline.environment_id == environment_id
+    assert baseline.specification.model_card_id == card_id  # legacy metadata is non-authoritative
+
+    card_path = tmp_path / "model_cards/synthetic/card.json"
+    card = json.loads(card_path.read_text())
+    card["description"]["summary"] = "A prose-only change outside environment authority."
+    card_path.write_text(json.dumps(card, indent=2))
+    assert manager.resolve_environment(environment_id).environment_fingerprint == (
+        baseline.environment_fingerprint
+    )
+    shutil.rmtree(tmp_path / "model_cards")
+
+    card_dir = tmp_path / f"environments/{card_id}"
+    lock = card_dir / "uv.lock"
+    lock.write_text(lock.read_text() + "\n")
+    lock_changed = manager.resolve_environment(environment_id)
+    assert lock_changed.environment_fingerprint != baseline.environment_fingerprint
+    lock.write_text(lock.read_text().removesuffix("\n"))
+
+    sources = card_dir / "sources.json"
+    sources.write_text(sources.read_text() + "\n")
+    source_changed = manager.resolve_environment(environment_id)
+    assert source_changed.environment_fingerprint != baseline.environment_fingerprint
+    sources.write_text(sources.read_text().removesuffix("\n"))
+
+    script = card_dir / "verify_environment.py"
+    original_script = script.read_text()
+    script.write_text(original_script + "# fingerprint change\n")
+    script_changed = manager.resolve_environment(environment_id)
+    assert script_changed.environment_fingerprint != baseline.environment_fingerprint
+    script.write_text(original_script)
+
+    assert manager.resolve_environment(environment_id).environment_fingerprint == (
+        baseline.environment_fingerprint
+    )
+
+
 @pytest.mark.integration
 def test_environment_lifecycle(
     tmp_path: Path,
@@ -173,10 +222,28 @@ def test_environment_lifecycle(
         tmp_path,
         policy=ExecutionPolicy(command_timeout_seconds=120, download_timeout_seconds=120),
     )
+    direct_materialize = manager.materialize_environment
+    delegated_calls: list[str] = []
+
+    def record_direct_materialization(
+        environment_id: str,
+        *,
+        expected_spec_sha256: str | None = None,
+    ) -> object:
+        delegated_calls.append(environment_id)
+        return direct_materialize(
+            environment_id,
+            expected_spec_sha256=expected_spec_sha256,
+        )
+
+    monkeypatch.setattr(manager, "materialize_environment", record_direct_materialization)
     resolved = manager.ensure(card_id)
+    assert delegated_calls == ["synthetic-shared-environment"]
     assert resolved.environment_id == "synthetic-shared-environment"
     assert resolved.model_card_id == card_id
-    assert resolved.root == tmp_path / ".torch-dae/environments" / card_id / resolved.fingerprint
+    assert resolved.root == (
+        tmp_path / ".torch-dae/environments" / resolved.environment_id / resolved.fingerprint
+    )
     assert resolved.python_executable.exists()
     assert not (tmp_path / f"environments/{card_id}/.venv").exists()
     assert resolved.installed_packages["torch-deepaudioembedding"] == "0.1.0"
@@ -194,8 +261,8 @@ def test_environment_lifecycle(
         "local-wheel-build",
         "local-wheel-install",
         "dependency-check",
-        "verification-script",
     }.issubset(operations)
+    assert "verification-script" not in operations
 
     verification = manager.verify(card_id)
     assert verification.passed
@@ -220,17 +287,72 @@ def test_environment_lifecycle(
     assert run.stdout.strip() == "inside"
     reused = manager.ensure(card_id)
     assert reused.root == resolved.root
+    direct = manager.materialize_environment(resolved.environment_id)
+    assert direct.status == "reused"
+    assert manager.resolve_environment(resolved.environment_id).environment_fingerprint == (
+        resolved.fingerprint
+    )
     info = manager.info(card_id)
     assert info.status == "valid"
 
-    (resolved.root / ".torch-dae-complete").unlink()
+    (resolved.root / ".torch-dae-materialized").unlink()
     with pytest.raises(EnvironmentVerificationError, match="incomplete"):
         manager.verify(card_id)
     rebuilt = manager.ensure(card_id)
     assert rebuilt.root == resolved.root
-    assert (rebuilt.root / ".torch-dae-complete").exists()
+    assert (rebuilt.root / ".torch-dae-materialized").exists()
     manager.remove(card_id)
-    assert not (tmp_path / ".torch-dae/environments" / card_id).exists()
+    assert not (tmp_path / ".torch-dae/environments" / resolved.environment_id).exists()
+
+
+@pytest.mark.integration
+def test_card_independent_materialize_and_verify_without_model_cards(
+    tmp_path: Path,
+    repo_root: Path,
+    valid_fixture_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("UV_CACHE_DIR", str(tmp_path.parent / f"{tmp_path.name}-uv-cache"))
+    write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
+    shutil.rmtree(tmp_path / "model_cards")
+    manager = EnvironmentManager(tmp_path, policy=ExecutionPolicy(command_timeout_seconds=120))
+
+    materialized = manager.materialize_environment("synthetic-shared-environment")
+    assert materialized.status == "created"
+    assert materialized.lifecycle_state == "materialized"
+    assert not (tmp_path / "model_cards").exists()
+    verified = manager.verify_environment(
+        "synthetic-shared-environment",
+        expected_fingerprint=manager.resolve_environment(
+            "synthetic-shared-environment"
+        ).environment_fingerprint,
+    )
+    assert verified.verification_status == "passed"
+    assert verified.lifecycle_state == "environment_verified"
+    assert not (tmp_path / ".torch-dae/checkpoints").exists()
+
+    target_data = json.loads(
+        (valid_fixture_dir / "runtime-verification-target.synthetic.json").read_text()
+    )
+    definition = manager.resolve_environment("synthetic-shared-environment")
+    target_data["environment_id"] = definition.environment_id
+    target_data["environment_spec_sha256"] = definition.environment_spec_sha256
+    target_data["source_manifest"] = {
+        "path": definition.sources_path,
+        "sha256": definition.source_manifest_sha256,
+    }
+    target = RuntimeVerificationTarget.model_validate(target_data)
+    assert target.environment_id == verified.environment_id
+    assert target.checkpoint.checkpoint_id == "synthetic-checkpoint"
+    assert not (tmp_path / ".torch-dae/checkpoints").exists()
+
+    first_path = tmp_path / ".torch-dae" / materialized.managed_identifier
+    verification_script = tmp_path / "environments/synthetic-environment-card/verify_environment.py"
+    verification_script.write_text(verification_script.read_text() + "# new fingerprint\n")
+    changed = manager.materialize_environment("synthetic-shared-environment")
+    assert changed.status == "created"
+    assert changed.managed_identifier != materialized.managed_identifier
+    assert first_path.is_dir()  # a different fingerprint never overwrites verified prior state
 
 
 @pytest.mark.integration
@@ -258,6 +380,7 @@ def test_offline_environment_reuse(
         "replace-wheel",
         "remove-wheel-json",
         "malformed-wheel-json",
+        "direct-dependency-version",
     ],
 )
 def test_environment_verify_detects_installed_integrity_drift(
@@ -292,6 +415,17 @@ def test_environment_verify_detects_installed_integrity_drift(
         )
         shutil.rmtree(site_packages)
         expected = "torch-deepaudioembedding is not installed"
+    elif drift == "direct-dependency-version":
+        metadata_path = resolved.root / "torch-dae-materialization.json"
+        materialization = json.loads(metadata_path.read_text())
+        dependency = next(
+            item
+            for item in materialization["installed_packages"]
+            if item["normalized_name"] == "pydantic"
+        )
+        dependency["version"] = "0.0.0"
+        metadata_path.write_text(json.dumps(materialization, indent=2))
+        expected = "recorded direct dependency version mismatch: pydantic"
     else:
         wheel_cache_dir = next(
             (tmp_path / ".torch-dae/source-builds/torch-deepaudioembedding").glob("*")
@@ -330,9 +464,12 @@ raise SystemExit(7)
     manager = EnvironmentManager(tmp_path, policy=ExecutionPolicy(command_timeout_seconds=120))
     with pytest.raises(EnvironmentVerificationError):
         manager.ensure(card_id)
-    failed_metadata = failed_materialization_metadata(tmp_path, card_id)
-    assert failed_metadata["status"] == "failed"
-    logs = [tmp_path / ".torch-dae" / ref for ref in failed_metadata["command_log_references"]]
+    environment_id = environment_id_for_card(tmp_path, card_id)
+    logs = sorted(
+        (tmp_path / ".torch-dae/reports/environments" / environment_id).glob(
+            "*/verification-commands/*.json"
+        )
+    )
     assert logs
     assert any(json.loads(path.read_text())["operation"] == "verification-script" for path in logs)
     payload = "\n".join(path.read_text() for path in logs)
@@ -351,14 +488,11 @@ def test_failed_uv_sync_metadata_references_reports(
     card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
     (tmp_path / f"environments/{card_id}/uv.lock").write_text("not a uv lock\n")
 
-    with pytest.raises(ExternalCommandError):
+    with pytest.raises(EnvironmentMaterializationError, match="invalid project or lock file"):
         EnvironmentManager(tmp_path, policy=ExecutionPolicy(command_timeout_seconds=120)).ensure(
             card_id
         )
-
-    metadata = failed_materialization_metadata(tmp_path, card_id)
-    assert metadata["status"] == "failed"
-    assert "uv-sync" in operations_for_refs(tmp_path, metadata["command_log_references"])
+    assert not (tmp_path / ".torch-dae/environments").exists()
 
 
 @pytest.mark.integration
@@ -456,12 +590,19 @@ def operations_for_refs(root: Path, references: list[str]) -> set[str]:
 
 
 def failed_materialization_metadata(root: Path, card_id: str) -> dict[str, object]:
+    environment_id = environment_id_for_card(root, card_id)
     metadata_path = next(
-        (root / ".torch-dae/environments" / card_id / ".failed").glob(
+        (root / ".torch-dae/environments" / environment_id / ".failed").glob(
             "*/torch-dae-materialization.json"
         )
     )
     return json.loads(metadata_path.read_text())
+
+
+def environment_id_for_card(root: Path, card_id: str) -> str:
+    card = json.loads((root / "model_cards/synthetic/card.json").read_text())
+    assert card["card_id"] == card_id
+    return str(card["usage"]["recommended_environment"]["environment_id"])
 
 
 def write_git_source_manifest(root: Path, card_id: str, url: str, revision: str) -> None:

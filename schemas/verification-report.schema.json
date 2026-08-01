@@ -171,8 +171,165 @@
   "$id": "https://torch-dae.local/schemas/verification-report.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "else": {
+        "properties": {
+          "optional_check_ids": {
+            "maxItems": 0
+          },
+          "required_check_ids": {
+            "maxItems": 0
+          },
+          "verification_status": {
+            "type": "null"
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "schema_version": {
+            "const": "2.0.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "checkpoint_id": {
+            "type": "string"
+          },
+          "checks": {
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "environment_spec_sha256": {
+            "type": "string"
+          },
+          "integrated_variant_id": {
+            "type": "string"
+          },
+          "integration_handoff_sha256": {
+            "type": "string"
+          },
+          "optional_check_ids": {
+            "type": "array",
+            "uniqueItems": true
+          },
+          "public_model_entry_point": {
+            "type": "string"
+          },
+          "required_check_ids": {
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "runtime_target_id": {
+            "type": "string"
+          },
+          "source_manifest_sha256": {
+            "type": "string"
+          },
+          "verification_status": {
+            "type": "string"
+          },
+          "workflow_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "runtime_target_id",
+          "workflow_id",
+          "integrated_variant_id",
+          "checkpoint_id",
+          "public_model_entry_point",
+          "integration_handoff_sha256",
+          "environment_spec_sha256",
+          "source_manifest_sha256",
+          "required_check_ids",
+          "optional_check_ids",
+          "verification_status"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "verification_status": {
+            "const": "passed"
+          }
+        },
+        "required": [
+          "verification_status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "checks": {
+            "not": {
+              "contains": {
+                "properties": {
+                  "status": {
+                    "const": "failed"
+                  }
+                },
+                "required": [
+                  "status"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "verification_status": {
+            "const": "failed"
+          }
+        },
+        "required": [
+          "verification_status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "checks": {
+            "contains": {
+              "properties": {
+                "status": {
+                  "const": "failed"
+                }
+              },
+              "required": [
+                "status"
+              ],
+              "type": "object"
+            },
+            "minContains": 1
+          }
+        }
+      }
+    }
+  ],
   "description": "Runtime verification report contract.",
   "properties": {
+    "checkpoint_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Checkpoint Id"
+    },
     "checkpoint_sha256": {
       "minLength": 1,
       "pattern": "^[0-9a-f]{64}$",
@@ -217,6 +374,20 @@
       "title": "Environment Id",
       "type": "string"
     },
+    "environment_spec_sha256": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Environment Spec Sha256"
+    },
     "input_contracts": {
       "items": {
         "minLength": 1,
@@ -224,6 +395,34 @@
       },
       "title": "Input Contracts",
       "type": "array"
+    },
+    "integrated_variant_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Integrated Variant Id"
+    },
+    "integration_handoff_sha256": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Integration Handoff Sha256"
     },
     "known_limitations": {
       "items": {
@@ -239,6 +438,16 @@
       "title": "Model Card Id",
       "type": "string"
     },
+    "optional_check_ids": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+        "type": "string"
+      },
+      "title": "Optional Check Ids",
+      "type": "array"
+    },
     "passed_capabilities": {
       "items": {
         "minLength": 1,
@@ -252,17 +461,71 @@
       "title": "Platform",
       "type": "string"
     },
+    "public_model_entry_point": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Public Model Entry Point"
+    },
     "report_id": {
       "minLength": 1,
       "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
       "title": "Report Id",
       "type": "string"
     },
+    "required_check_ids": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+        "type": "string"
+      },
+      "title": "Required Check Ids",
+      "type": "array"
+    },
+    "runtime_target_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Runtime Target Id"
+    },
     "schema_version": {
-      "const": "1.0.0",
+      "enum": [
+        "1.0.0",
+        "2.0.0"
+      ],
       "minLength": 1,
       "title": "Schema Version",
       "type": "string"
+    },
+    "source_manifest_sha256": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Manifest Sha256"
     },
     "tensor_observations": {
       "items": {
@@ -278,6 +541,37 @@
       },
       "title": "Unsupported Capabilities",
       "type": "array"
+    },
+    "verification_status": {
+      "anyOf": [
+        {
+          "enum": [
+            "passed",
+            "failed"
+          ],
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Verification Status"
+    },
+    "workflow_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Workflow Id"
     }
   },
   "required": [

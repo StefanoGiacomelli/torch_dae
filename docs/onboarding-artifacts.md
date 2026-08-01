@@ -109,7 +109,8 @@ constraints, source-strategy context, decision gates, and optional target platfo
 is a result-level field; individual candidates carry only evidence-backed compatibility details.
 Official-package candidates include exact `source_package_name` and `source_package_version`, and
 promotion requires exact matching package identity from verified upstream `package_metadata` or
-locally observed `environments/<card-id>/pyproject.toml`, `uv.lock`, or `environment.json` evidence.
+locally observed `environments/<environment-id>/pyproject.toml`, `uv.lock`, or `environment.json`
+evidence.
 `sources.json`, `verify_environment.py`, unrelated files, runtime observations, and inference cannot
 establish package identity.
 Any remaining `source_strategy_decision_gates` entry blocks `environment_resolved`.
@@ -129,5 +130,5 @@ environments, and coverage JSON remain under ignored `.torch-dae/`. Review bundl
 outside the repository and are not duplicated under `onboarding_reports/`.
 Environment-resolution reports may reference committed verification reports as
 `verification_reports/<card-id>/<report>.json` or environment diagnostics relative to `.torch-dae` as
-`reports/environments/<card-id>/<fingerprint>/<report>.json`; checkpoint and source report paths are
-not valid environment-promotion references.
+`reports/environments/<environment-id>/<fingerprint>/<report>.json`; checkpoint and source report
+paths are not valid environment-promotion references.

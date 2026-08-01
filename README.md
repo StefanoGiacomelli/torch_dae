@@ -63,7 +63,7 @@ The root package is a model-agnostic control plane:
 - [Typed contracts](src/torch_dae/contracts.py) and [model-card models](src/torch_dae/cards/models.py)
   enforce public identity, lifecycle, waveform, output, and evidence rules.
 - [Environment management](docs/environment-management.md) recreates isolated runtimes from
-  committed specifications under `environments/<card-id>/`.
+  committed specifications under `environments/<environment-id>/`.
 - [Checkpoint management](docs/checkpoint-management.md) validates and caches assets only under
   ignored runtime state.
 - [Static onboarding inspectors](src/torch_dae/onboarding/inspection.py) collect bounded evidence
@@ -113,8 +113,11 @@ uv run torch-dae env --help
 uv run torch-dae checkpoint --help
 ```
 
-Model-specific environment and checkpoint commands require a committed model card and its
-environment specification. No such production artifact is included yet.
+Direct `env resolve`, `env materialize`, and `env verify` commands require an accepted environment
+definition; they do not require a model card. Card-oriented `env create`, `env ensure`, `env run`,
+`env info`, and `env remove` remain compatibility conveniences where applicable. Checkpoint
+commands remain card/checkpoint-specific. No pretrained checkpoint or checkpoint-specific card is
+included yet.
 
 ## Illustrative model-wrapper usage
 
@@ -169,7 +172,9 @@ uv run torch-dae card validate <card-id-or-path>
 
 uv run torch-dae env create <card-id>
 uv run torch-dae env ensure <card-id>
-uv run torch-dae env verify <card-id>
+uv run torch-dae env resolve <environment-id>
+uv run torch-dae env materialize <environment-id>
+uv run torch-dae env verify <environment-id>
 uv run torch-dae env remove <card-id>
 uv run torch-dae env info <card-id>
 uv run torch-dae env run <card-id> -- <command>

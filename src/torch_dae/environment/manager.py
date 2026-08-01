@@ -10,9 +10,11 @@ import tomllib
 import zipfile
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
 
+from packaging.requirements import InvalidRequirement, Requirement
 from packaging.specifiers import SpecifierSet
 from packaging.utils import canonicalize_name
 from packaging.version import Version
@@ -35,6 +37,14 @@ from torch_dae.environment.fingerprint import (
 )
 from torch_dae.environment.materialization import materialization_path
 from torch_dae.environment.policy import ExecutionPolicy
+from torch_dae.environment.results import (
+    ArtifactEvidence,
+    EnvironmentLifecycleState,
+    EnvironmentMaterializationResult,
+    EnvironmentVerificationResult,
+    ResolvedEnvironmentDefinition,
+    VerificationObservation,
+)
 from torch_dae.environment.runtime import (
     EnvironmentMaterializationRecord,
     LocalWheelCacheRecord,
@@ -48,6 +58,7 @@ from torch_dae.environment.sources import (
     SourceContext,
     SourceManager,
     installed_distributions,
+    lock_packages,
     replace_tree,
     sha256_file,
     valid_single_wheel,
@@ -61,7 +72,9 @@ from torch_dae.environment.specification import (
 from torch_dae.environment.subprocess import CommandExecutor, ManagedProcessResult
 
 COMPLETE_MARKER = ".torch-dae-complete"
+MATERIALIZED_MARKER = ".torch-dae-materialized"
 MATERIALIZATION_JSON = "torch-dae-materialization.json"
+VERIFICATION_RESULT_JSON = "environment-verification-result.json"
 DISTRIBUTION_NAME = "torch-deepaudioembedding"
 CONSOLE_COMMAND = "torch-dae"
 
@@ -168,7 +181,7 @@ class EnvironmentVerification:
 
 @dataclass(frozen=True)
 class EnvironmentInputs:
-    """Loaded committed inputs for one model card environment."""
+    """Loaded committed inputs for one logical environment."""
 
     card_id: str
     specification: EnvironmentSpecification
@@ -181,6 +194,7 @@ class EnvironmentInputs:
     fingerprint: str
     package_identity: str
     platform: str
+    definition: ResolvedEnvironmentDefinition
 
 
 def discover_repository_root(start: Path | None = None) -> Path:
@@ -260,17 +274,18 @@ class EnvironmentManager:
         return cls(discover_repository_root(start), policy=policy)
 
     def specification_path(self, model_card_id: str) -> Path:
-        """Return the canonical committed specification path.
+        """Return the canonical committed specification path by logical environment ID.
 
         Parameters
         ----------
         model_card_id
-            Canonical checkpoint-specific card identifier.
+            Logical environment identifier. The parameter name is retained for compatibility with
+            older card-keyed callers.
 
         Returns
         -------
         pathlib.Path
-            ``environments/<model_card_id>/environment.json`` below the repository.
+            ``environments/<environment-id>/environment.json`` below the repository.
 
         Raises
         ------
@@ -284,12 +299,13 @@ class EnvironmentManager:
         )
 
     def load_specification(self, model_card_id: str) -> EnvironmentSpecification:
-        """Load the committed environment specification.
+        """Load the committed environment specification by logical environment ID.
 
         Parameters
         ----------
         model_card_id
-            Canonical checkpoint-specific card identifier.
+            Logical environment identifier. The parameter name is retained for compatibility with
+            older card-keyed callers.
 
         Returns
         -------
@@ -308,7 +324,7 @@ class EnvironmentManager:
 
         path = self.specification_path(model_card_id)
         specification = EnvironmentSpecification.model_validate_json(path.read_text())
-        if specification.model_card_id != model_card_id:
+        if specification.model_card_id not in {None, model_card_id}:
             raise EnvironmentIdentityMismatchError(
                 "environment specification model_card_id does not match request"
             )
@@ -349,6 +365,189 @@ class EnvironmentManager:
             )
         return manifest
 
+    def resolve_environment(self, environment_id: str) -> ResolvedEnvironmentDefinition:
+        """Resolve and strictly validate an environment without consulting model cards.
+
+        New definitions use ``environments/<environment-id>/``. A uniquely matching legacy
+        card-keyed directory remains readable so existing cards can migrate without duplicating
+        materialization logic.
+
+        Parameters
+        ----------
+        environment_id
+            Canonical logical environment identifier.
+
+        Returns
+        -------
+        ResolvedEnvironmentDefinition
+            Strict accepted inputs, component hashes, platform, dependencies, and fingerprint.
+
+        Raises
+        ------
+        EnvironmentMaterializationError
+            If the accepted definition is missing, invalid, inconsistent, or incomplete.
+        """
+
+        try:
+            ensure_canonical_id(environment_id)
+        except ValueError as exc:
+            raise EnvironmentMaterializationError(
+                f"invalid environment ID: {environment_id}"
+            ) from exc
+        specification_path = self._locate_environment_specification(environment_id)
+        try:
+            specification = EnvironmentSpecification.model_validate_json(
+                specification_path.read_text(encoding="utf-8")
+            )
+        except Exception as exc:
+            raise EnvironmentMaterializationError(
+                f"invalid environment specification: {specification_path}: {exc}"
+            ) from exc
+        if specification.environment_id != environment_id:
+            raise EnvironmentIdentityMismatchError(
+                "environment specification environment_id does not match request"
+            )
+        environment_dir = specification_path.parent
+        self._validate_environment_artifact_paths_for_directory(environment_dir, specification)
+        project_path = contained_path(self.repository_root, specification.project_file)
+        lock_path = contained_path(self.repository_root, specification.lockfile)
+        sources_path = contained_path(self.repository_root, specification.sources_file)
+        verification_script = contained_path(
+            self.repository_root, specification.verification.script
+        )
+        for path, label in (
+            (project_path, "project file"),
+            (lock_path, "lock file"),
+            (sources_path, "source manifest"),
+            (verification_script, "verification script"),
+        ):
+            if not path.is_file() or path.is_symlink():
+                raise EnvironmentMaterializationError(f"missing {label}: {path}")
+        try:
+            sources_manifest = EnvironmentSourcesManifest.model_validate_json(
+                sources_path.read_text(encoding="utf-8")
+            )
+        except Exception as exc:
+            raise EnvironmentMaterializationError(
+                f"invalid environment source manifest: {sources_path}: {exc}"
+            ) from exc
+        if sources_manifest.environment_id != environment_id:
+            raise EnvironmentIdentityMismatchError(
+                "environment source manifest environment_id does not match specification"
+            )
+        direct_dependencies = validate_project_lock_consistency(
+            project_path,
+            lock_path,
+            specification,
+        )
+        source_hashes: dict[str, str] = {}
+        for source in sources_manifest.sources:
+            if source.installation == SourceInstallationType.PACKAGE:
+                installed = direct_dependencies.get(canonicalize_name(source.package))
+                if installed != source.version:
+                    raise EnvironmentMaterializationError(
+                        f"source manifest package is inconsistent with project lock: "
+                        f"{source.package}=={source.version}"
+                    )
+            elif source.installation == SourceInstallationType.VENDORED:
+                for relative in source.copied_files:
+                    path = contained_path(self.repository_root, relative)
+                    if not path.is_file() or path.is_symlink():
+                        raise EnvironmentMaterializationError(
+                            f"referenced vendored source is missing: {relative}"
+                        )
+                    source_hashes[relative] = sha256_file(path)
+        platform = canonical_platform_tag()
+        validate_platform_constraint(specification, platform)
+        package_identity = local_package_identity(self.repository_root)
+        fingerprint_inputs = FingerprintInputs(
+            specification=specification,
+            lockfile_bytes=lock_path.read_bytes(),
+            sources_manifest=sources_manifest,
+            target_platform=platform,
+            local_package_identity=package_identity,
+            specification_bytes=specification_path.read_bytes(),
+            project_file_bytes=project_path.read_bytes(),
+            verification_script_bytes=verification_script.read_bytes(),
+            sources_manifest_bytes=sources_path.read_bytes(),
+            python_implementation="CPython",
+            direct_dependency_versions=direct_dependencies,
+            referenced_source_hashes=source_hashes,
+        )
+        return ResolvedEnvironmentDefinition(
+            schema_version="1.0.0",
+            environment_id=environment_id,
+            specification=specification,
+            sources_manifest=sources_manifest,
+            specification_path=specification_path.relative_to(self.repository_root).as_posix(),
+            project_path=project_path.relative_to(self.repository_root).as_posix(),
+            lock_path=lock_path.relative_to(self.repository_root).as_posix(),
+            sources_path=sources_path.relative_to(self.repository_root).as_posix(),
+            verification_script_path=verification_script.relative_to(
+                self.repository_root
+            ).as_posix(),
+            environment_spec_sha256=sha256_file(specification_path),
+            project_file_sha256=sha256_file(project_path),
+            lockfile_sha256=sha256_file(lock_path),
+            source_manifest_sha256=sha256_file(sources_path),
+            verification_script_sha256=sha256_file(verification_script),
+            python_implementation="CPython",
+            python_version=specification.python.resolved_version,
+            platform=platform,
+            direct_dependencies=direct_dependencies,
+            referenced_source_hashes=source_hashes,
+            local_package_identity=package_identity,
+            environment_fingerprint=calculate_environment_fingerprint(fingerprint_inputs),
+        )
+
+    def _locate_environment_specification(self, environment_id: str) -> Path:
+        canonical = self.specification_path(environment_id)
+        if canonical.is_file():
+            return canonical
+        matches: list[Path] = []
+        root = self.repository_root / "environments"
+        for candidate in sorted(root.glob("*/environment.json")) if root.is_dir() else ():
+            try:
+                data = json.loads(candidate.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if data.get("environment_id") == environment_id:
+                matches.append(candidate)
+        if not matches:
+            raise EnvironmentMaterializationError(
+                f"environment specification not found: {environment_id}"
+            )
+        if len(matches) != 1:
+            relatives = [path.relative_to(self.repository_root).as_posix() for path in matches]
+            raise EnvironmentIdentityMismatchError(
+                f"environment ID resolves to multiple specifications: {relatives}"
+            )
+        return matches[0]
+
+    def _validate_environment_artifact_paths_for_directory(
+        self,
+        environment_dir: Path,
+        specification: EnvironmentSpecification,
+    ) -> None:
+        relative_dir = environment_dir.relative_to(self.repository_root).as_posix()
+        expected = {
+            "lockfile": f"{relative_dir}/uv.lock",
+            "project_file": f"{relative_dir}/pyproject.toml",
+            "sources_file": f"{relative_dir}/sources.json",
+            "verification script": f"{relative_dir}/verify_environment.py",
+        }
+        actual = {
+            "lockfile": specification.lockfile,
+            "project_file": specification.project_file,
+            "sources_file": specification.sources_file,
+            "verification script": specification.verification.script,
+        }
+        for label, value in actual.items():
+            ensure_repository_relative(value)
+            contained_path(self.repository_root, value)
+            if value != expected[label]:
+                raise EnvironmentIdentityMismatchError(f"{label} path must be {expected[label]}")
+
     def fingerprint_for(self, specification: EnvironmentSpecification) -> str:
         """Calculate the deterministic environment fingerprint.
 
@@ -375,18 +574,277 @@ class EnvironmentManager:
         The local package identity hashes build inputs and uses the clean Git commit when available.
         """
 
-        lock_path = contained_path(self.repository_root, specification.lockfile)
-        if not lock_path.exists():
-            raise FileNotFoundError(f"missing environment lock file: {lock_path}")
-        sources_manifest = self.load_sources_manifest(specification)
-        inputs = FingerprintInputs(
-            specification=specification,
-            lockfile_bytes=lock_path.read_bytes(),
-            sources_manifest=sources_manifest,
-            target_platform=canonical_platform_tag(),
-            local_package_identity=local_package_identity(self.repository_root),
+        resolved = self.resolve_environment(specification.environment_id)
+        if resolved.specification != specification:
+            raise EnvironmentIdentityMismatchError(
+                "supplied specification differs from canonical environment definition"
+            )
+        return resolved.environment_fingerprint
+
+    def materialize_environment(
+        self,
+        environment_id: str,
+        *,
+        expected_spec_sha256: str | None = None,
+    ) -> EnvironmentMaterializationResult:
+        """Create or reuse an environment from accepted repository artifacts only.
+
+        Parameters
+        ----------
+        environment_id
+            Canonical logical environment identifier.
+        expected_spec_sha256
+            Optional expected hash that prevents materializing a different specification revision.
+
+        Returns
+        -------
+        EnvironmentMaterializationResult
+            Structured creation or reuse evidence that makes no verification claim.
+
+        Raises
+        ------
+        EnvironmentMaterializationError
+            If resolution, interpreter selection, dependency installation, or sources fail.
+        """
+
+        definition = self.resolve_environment(environment_id)
+        if (
+            expected_spec_sha256 is not None
+            and expected_spec_sha256 != definition.environment_spec_sha256
+        ):
+            raise EnvironmentIdentityMismatchError(
+                "environment specification SHA-256 does not match expected value"
+            )
+        inputs = self._inputs_from_definition(definition)
+        target = materialization_path(
+            self.runtime_root,
+            definition.environment_id,
+            definition.environment_fingerprint,
         )
-        return calculate_environment_fingerprint(inputs)
+        existing = self._verify_materialization(inputs, target)
+        if existing.passed:
+            return self._materialization_result(inputs, target, status="reused")
+        if target.exists():
+            raise EnvironmentAlreadyExistsError(
+                f"conflicting environment materialization exists: {target}: {existing.details}"
+            )
+        return self._materialize(inputs, target)
+
+    def verify_environment(
+        self,
+        environment_id: str,
+        *,
+        expected_fingerprint: str | None = None,
+    ) -> EnvironmentVerificationResult:
+        """Verify environment infrastructure without consulting a model card or checkpoint.
+
+        Parameters
+        ----------
+        environment_id
+            Canonical logical environment identifier.
+        expected_fingerprint
+            Optional expected hash that prevents verifying different materialization inputs.
+
+        Returns
+        -------
+        EnvironmentVerificationResult
+            Infrastructure-only compatibility evidence and deterministic fingerprint.
+
+        Raises
+        ------
+        EnvironmentVerificationError
+            If materialized state, dependencies, sources, imports, or smoke checks do not pass.
+        """
+
+        started_at = datetime.now(UTC)
+        definition = self.resolve_environment(environment_id)
+        if (
+            expected_fingerprint is not None
+            and expected_fingerprint != definition.environment_fingerprint
+        ):
+            raise EnvironmentIdentityMismatchError(
+                "environment fingerprint does not match expected value"
+            )
+        inputs = self._inputs_from_definition(definition)
+        target = materialization_path(
+            self.runtime_root,
+            definition.environment_id,
+            definition.environment_fingerprint,
+        )
+        report_sink = RuntimeReportSink(
+            self.runtime_root,
+            "reports",
+            "environments",
+            definition.environment_id,
+            definition.environment_fingerprint,
+            "verification-commands",
+        )
+        original_executor = self.executor
+        self.executor = original_executor.with_report_sink(report_sink)
+        try:
+            verification = self._verify_target(inputs, target)
+        finally:
+            self.executor = original_executor
+        if not verification.passed:
+            raise EnvironmentVerificationError(verification.details)
+        metadata_path = target / MATERIALIZATION_JSON
+        record = EnvironmentMaterializationRecord.model_validate_json(
+            metadata_path.read_text(encoding="utf-8")
+        )
+        python_executable = Path(record.python_executable or "")
+        installed = installed_distributions(python_executable, self.executor)
+        direct_versions = {
+            name: installed[name].version
+            for name in sorted(definition.direct_dependencies)
+            if name in installed
+        }
+        report_dir = (
+            self.runtime_root
+            / "reports"
+            / "environments"
+            / definition.environment_id
+            / definition.environment_fingerprint
+        )
+        report_path = report_dir / VERIFICATION_RESULT_JSON
+        relative_metadata = metadata_path.relative_to(self.runtime_root).as_posix()
+        evidence = [
+            ArtifactEvidence(
+                path=definition.specification_path,
+                sha256=definition.environment_spec_sha256,
+            ),
+            ArtifactEvidence(path=definition.project_path, sha256=definition.project_file_sha256),
+            ArtifactEvidence(path=definition.lock_path, sha256=definition.lockfile_sha256),
+            ArtifactEvidence(
+                path=definition.sources_path, sha256=definition.source_manifest_sha256
+            ),
+            ArtifactEvidence(
+                path=definition.verification_script_path,
+                sha256=definition.verification_script_sha256,
+            ),
+        ]
+        evidence.extend(
+            ArtifactEvidence(path=reference, sha256=sha256_file(self.runtime_root / reference))
+            for reference in report_sink.references
+        )
+        result = EnvironmentVerificationResult(
+            schema_version="1.0.0",
+            environment_id=definition.environment_id,
+            environment_spec_sha256=definition.environment_spec_sha256,
+            materialization_result_reference=ArtifactEvidence(
+                path=relative_metadata,
+                sha256=sha256_file(metadata_path),
+            ),
+            verification_script_sha256=definition.verification_script_sha256,
+            exact_interpreter=f"CPython {record.python_actual_version}",
+            platform=definition.platform,
+            direct_dependency_versions=direct_versions,
+            import_results=(
+                VerificationObservation(
+                    name="verification-script-imports",
+                    status="passed",
+                    details="The committed environment verification script completed.",
+                ),
+            ),
+            environment_smoke_results=(
+                VerificationObservation(
+                    name="dependency-and-source-integrity",
+                    status="passed",
+                    details="Direct dependencies, installed sources, and the local wheel matched.",
+                ),
+            ),
+            verification_status="passed",
+            lifecycle_state=EnvironmentLifecycleState.VERIFIED,
+            environment_fingerprint=definition.environment_fingerprint,
+            result_path=report_path.relative_to(self.runtime_root).as_posix(),
+            evidence=tuple(evidence),
+            started_at=started_at,
+            completed_at=datetime.now(UTC),
+        )
+        write_json_atomic(report_path, result)
+        marker = target / COMPLETE_MARKER
+        tmp_marker = target / f".{COMPLETE_MARKER}.tmp"
+        tmp_marker.write_text("verified\n", encoding="utf-8")
+        os.replace(tmp_marker, marker)
+        return result
+
+    def resolved_environment(
+        self,
+        environment_id: str,
+        *,
+        require_verified: bool = True,
+        model_card_id: str | None = None,
+    ) -> ResolvedEnvironment:
+        """Return managed runtime state for a direct environment identity.
+
+        This accessor never materializes, repairs, or verifies an environment. When
+        ``require_verified`` is true it requires the durable verification result and completion
+        marker written by :meth:`verify_environment`.
+
+        Parameters
+        ----------
+        environment_id
+            Canonical logical environment identifier.
+        require_verified
+            Require matching verification evidence instead of materialization alone.
+        model_card_id
+            Optional legacy card identity to retain in the returned convenience view.
+
+        Returns
+        -------
+        ResolvedEnvironment
+            Existing managed runtime state.
+
+        Raises
+        ------
+        EnvironmentVerificationError
+            If required materialization or verification evidence is missing or stale.
+        """
+
+        definition = self.resolve_environment(environment_id)
+        inputs = self._inputs_from_definition(definition)
+        target = materialization_path(
+            self.runtime_root,
+            definition.environment_id,
+            definition.environment_fingerprint,
+        )
+        materialization = self._verify_materialization(inputs, target)
+        if not materialization.passed:
+            raise EnvironmentVerificationError(materialization.details)
+        if require_verified:
+            result_path = (
+                self.runtime_root
+                / "reports"
+                / "environments"
+                / definition.environment_id
+                / definition.environment_fingerprint
+                / VERIFICATION_RESULT_JSON
+            )
+            if not (target / COMPLETE_MARKER).is_file() or not result_path.is_file():
+                raise EnvironmentVerificationError("environment verification evidence is missing")
+            try:
+                result = EnvironmentVerificationResult.model_validate_json(
+                    result_path.read_text(encoding="utf-8")
+                )
+            except Exception as exc:
+                raise EnvironmentVerificationError(
+                    f"environment verification evidence is invalid: {exc}"
+                ) from exc
+            if (
+                result.verification_status != "passed"
+                or result.environment_id != definition.environment_id
+                or result.environment_spec_sha256 != definition.environment_spec_sha256
+                or result.environment_fingerprint != definition.environment_fingerprint
+                or result.materialization_result_reference.sha256
+                != sha256_file(target / MATERIALIZATION_JSON)
+            ):
+                raise EnvironmentVerificationError(
+                    "environment verification evidence does not match materialization"
+                )
+        return self._resolved_from_record(
+            inputs,
+            target,
+            model_card_id=model_card_id or definition.environment_id,
+        )
 
     def create(self, model_card_id: str) -> ResolvedEnvironment:
         """Materialize the current fingerprint only when no target exists.
@@ -416,10 +874,21 @@ class EnvironmentManager:
         """
 
         inputs = self._load_inputs_for_card(model_card_id)
-        target = materialization_path(self.runtime_root, model_card_id, inputs.fingerprint)
+        target = materialization_path(self.runtime_root, inputs.card_id, inputs.fingerprint)
         if target.exists():
             raise EnvironmentAlreadyExistsError(f"environment already exists: {target}")
-        return self._materialize(inputs, target)
+        self.materialize_environment(
+            inputs.specification.environment_id,
+            expected_spec_sha256=inputs.definition.environment_spec_sha256,
+        )
+        self.verify_environment(
+            inputs.specification.environment_id,
+            expected_fingerprint=inputs.fingerprint,
+        )
+        return self.resolved_environment(
+            inputs.specification.environment_id,
+            model_card_id=model_card_id,
+        )
 
     def ensure(self, model_card_id: str) -> ResolvedEnvironment:
         """Reuse a valid current environment or rebuild it.
@@ -446,13 +915,34 @@ class EnvironmentManager:
         """
 
         inputs = self._load_inputs_for_card(model_card_id)
-        target = materialization_path(self.runtime_root, model_card_id, inputs.fingerprint)
-        verification = self._verify_target(inputs, target)
-        if verification.passed:
-            return self._resolved_from_record(inputs, target)
-        if target.exists():
-            replace_tree(target)
-        return self._materialize(inputs, target)
+        target = materialization_path(self.runtime_root, inputs.card_id, inputs.fingerprint)
+        try:
+            return self.resolved_environment(
+                inputs.specification.environment_id,
+                model_card_id=model_card_id,
+            )
+        except EnvironmentVerificationError:
+            pass
+        try:
+            self.materialize_environment(
+                inputs.specification.environment_id,
+                expected_spec_sha256=inputs.definition.environment_spec_sha256,
+            )
+        except EnvironmentAlreadyExistsError:
+            if target.exists():
+                replace_tree(target)
+            self.materialize_environment(
+                inputs.specification.environment_id,
+                expected_spec_sha256=inputs.definition.environment_spec_sha256,
+            )
+        self.verify_environment(
+            inputs.specification.environment_id,
+            expected_fingerprint=inputs.fingerprint,
+        )
+        return self.resolved_environment(
+            inputs.specification.environment_id,
+            model_card_id=model_card_id,
+        )
 
     def verify(self, model_card_id: str) -> EnvironmentVerification:
         """Verify the current fingerprint without rebuilding it.
@@ -480,19 +970,19 @@ class EnvironmentManager:
         """
 
         inputs = self._load_inputs_for_card(model_card_id)
-        target = materialization_path(self.runtime_root, model_card_id, inputs.fingerprint)
-        verification = self._verify_target(inputs, target)
-        if not verification.passed:
-            raise EnvironmentVerificationError(verification.details)
-        return verification
+        self.verify_environment(
+            inputs.specification.environment_id,
+            expected_fingerprint=inputs.fingerprint,
+        )
+        return EnvironmentVerification(model_card_id, True, "environment is valid", "valid")
 
     def remove(self, model_card_id: str) -> None:
-        """Remove every runtime environment materialization for one card.
+        """Remove runtime materializations by environment ID or card convenience lookup.
 
         Parameters
         ----------
         model_card_id
-            Canonical checkpoint-specific card identifier.
+            Logical environment ID or backward-compatible card ID.
 
         Raises
         ------
@@ -501,7 +991,7 @@ class EnvironmentManager:
 
         Notes
         -----
-        Removal is idempotent and limited to ``.torch-dae/environments/<model_card_id>``. Committed
+        Removal is idempotent and limited to ``.torch-dae/environments/<environment-id>``. Committed
         specifications, lockfiles, cards, checkpoints, and reports are not removed.
         """
 
@@ -511,17 +1001,26 @@ class EnvironmentManager:
             raise EnvironmentMaterializationError(
                 f"invalid environment ID: {model_card_id}"
             ) from exc
-        root = contained_path(self.runtime_root / "environments", model_card_id)
+        environment_id = model_card_id
+        try:
+            environment_id = (
+                ModelCardRegistry(self.repository_root)
+                .get_card(model_card_id)
+                .usage.recommended_environment.environment_id
+            )
+        except KeyError:
+            pass
+        root = contained_path(self.runtime_root / "environments", environment_id)
         if root.exists():
             shutil.rmtree(root)
 
     def info(self, model_card_id: str) -> EnvironmentInfo:
-        """Inspect committed inputs and local materialization state.
+        """Inspect committed inputs and runtime state by environment ID or card lookup.
 
         Parameters
         ----------
         model_card_id
-            Canonical checkpoint-specific card identifier.
+            Logical environment ID or backward-compatible card ID.
 
         Returns
         -------
@@ -539,12 +1038,27 @@ class EnvironmentManager:
         """
 
         try:
-            specification_path = self.specification_path(model_card_id)
+            ensure_canonical_id(model_card_id)
+            try:
+                recommended = (
+                    ModelCardRegistry(self.repository_root)
+                    .get_card(model_card_id)
+                    .usage.recommended_environment
+                )
+                specification_path = contained_path(self.repository_root, recommended.specification)
+            except KeyError:
+                specification_path = self.specification_path(model_card_id)
         except ValueError as exc:
             raise EnvironmentMaterializationError(
                 f"invalid environment ID: {model_card_id}"
             ) from exc
         if not specification_path.exists():
+            try:
+                ModelCardRegistry(self.repository_root).get_card(model_card_id)
+            except KeyError:
+                pass
+            else:
+                self._load_inputs_for_card(model_card_id)
             return EnvironmentInfo(
                 model_card_id,
                 specification_path,
@@ -555,9 +1069,9 @@ class EnvironmentManager:
                 "missing-specification",
             )
         inputs = self._load_inputs_for_card(model_card_id)
-        expected = materialization_path(self.runtime_root, model_card_id, inputs.fingerprint)
+        expected = materialization_path(self.runtime_root, inputs.card_id, inputs.fingerprint)
         verification = self._verify_target(inputs, expected)
-        card_runtime_root = contained_path(self.runtime_root / "environments", model_card_id)
+        card_runtime_root = contained_path(self.runtime_root / "environments", inputs.card_id)
         stale = (
             tuple(
                 sorted(
@@ -672,59 +1186,48 @@ class EnvironmentManager:
         recommended = card.usage.recommended_environment
         if card.card_id != model_card_id:
             raise EnvironmentIdentityMismatchError("requested card ID does not match model card")
-        if not recommended.verified:
-            raise EnvironmentMaterializationError(
-                "environment recreation requires a verified recommended environment"
-            )
+        definition = self.resolve_environment(recommended.environment_id)
         specification_path = contained_path(self.repository_root, recommended.specification)
-        if specification_path != self.specification_path(model_card_id):
+        expected_specification_path = contained_path(
+            self.repository_root, definition.specification_path
+        )
+        if specification_path != expected_specification_path:
             raise EnvironmentIdentityMismatchError(
-                "recommended environment specification path does not match card ID"
+                "recommended environment specification path does not match environment ID"
             )
-        specification = self.load_specification(model_card_id)
+        specification = definition.specification
         if specification.environment_id != recommended.environment_id:
             raise EnvironmentIdentityMismatchError("environment ID mismatch between card and spec")
         if recommended.lockfile != specification.lockfile:
             raise EnvironmentIdentityMismatchError(
                 "environment lockfile mismatch between card and spec"
             )
-        self._validate_environment_artifact_paths(model_card_id, specification)
-        lock_path = contained_path(self.repository_root, specification.lockfile)
-        project_path = contained_path(self.repository_root, specification.project_file)
-        sources_path = contained_path(self.repository_root, specification.sources_file)
+        return self._inputs_from_definition(definition)
+
+    def _inputs_from_definition(
+        self,
+        definition: ResolvedEnvironmentDefinition,
+    ) -> EnvironmentInputs:
+        specification_path = contained_path(self.repository_root, definition.specification_path)
+        project_path = contained_path(self.repository_root, definition.project_path)
+        lock_path = contained_path(self.repository_root, definition.lock_path)
+        sources_path = contained_path(self.repository_root, definition.sources_path)
         verification_script = contained_path(
-            self.repository_root, specification.verification.script
-        )
-        for path, label in (
-            (lock_path, "lock file"),
-            (project_path, "project file"),
-            (sources_path, "source manifest"),
-            (verification_script, "verification script"),
-        ):
-            if not path.exists():
-                raise EnvironmentMaterializationError(f"missing {label}: {path}")
-        sources_manifest = self.load_sources_manifest(specification)
-        package_identity = local_package_identity(self.repository_root)
-        platform = canonical_platform_tag()
-        inputs = FingerprintInputs(
-            specification=specification,
-            lockfile_bytes=lock_path.read_bytes(),
-            sources_manifest=sources_manifest,
-            target_platform=platform,
-            local_package_identity=package_identity,
+            self.repository_root, definition.verification_script_path
         )
         return EnvironmentInputs(
-            card_id=model_card_id,
-            specification=specification,
-            sources_manifest=sources_manifest,
+            card_id=definition.environment_id,
+            specification=definition.specification,
+            sources_manifest=definition.sources_manifest,
             specification_path=specification_path,
             project_path=project_path,
             lock_path=lock_path,
             sources_path=sources_path,
             verification_script=verification_script,
-            fingerprint=calculate_environment_fingerprint(inputs),
-            package_identity=package_identity,
-            platform=platform,
+            fingerprint=definition.environment_fingerprint,
+            package_identity=definition.local_package_identity,
+            platform=definition.platform,
+            definition=definition,
         )
 
     def _validate_environment_artifact_paths(
@@ -750,7 +1253,11 @@ class EnvironmentManager:
             if value != expected[label]:
                 raise EnvironmentIdentityMismatchError(f"{label} path must be {expected[label]}")
 
-    def _materialize(self, inputs: EnvironmentInputs, target: Path) -> ResolvedEnvironment:
+    def _materialize(
+        self,
+        inputs: EnvironmentInputs,
+        target: Path,
+    ) -> EnvironmentMaterializationResult:
         created_at = utc_now()
         target.mkdir(parents=True, exist_ok=False)
         record = self._base_record(inputs, "building", created_at)
@@ -823,14 +1330,6 @@ class EnvironmentManager:
             if dependency_check.returncode != 0:
                 raise EnvironmentMaterializationError("dependency check failed")
             packages = tuple(installed_distributions(python_executable, self.executor).values())
-            verification_result = self._execute_verification_script(
-                inputs,
-                target,
-                python_executable,
-            )
-            verification = verification_from_result(verification_result)
-            if verification.status != "valid":
-                raise EnvironmentVerificationError(verification.details)
             complete_data = record.model_dump()
             complete_data.update(
                 {
@@ -842,17 +1341,17 @@ class EnvironmentManager:
                     "local_package_wheel_sha256": local_wheel_sha,
                     "installed_packages": packages,
                     "installed_sources": source_records,
-                    "verification_result": verification,
+                    "verification_result": None,
                     "command_log_references": tuple(report_sink.references),
                 }
             )
             complete = EnvironmentMaterializationRecord.model_validate(complete_data)
             write_json_atomic(metadata_path, complete)
-            marker = target / COMPLETE_MARKER
-            tmp_marker = target / f".{COMPLETE_MARKER}.tmp"
-            tmp_marker.write_text("complete\n", encoding="utf-8")
+            marker = target / MATERIALIZED_MARKER
+            tmp_marker = target / f".{MATERIALIZED_MARKER}.tmp"
+            tmp_marker.write_text("materialized\n", encoding="utf-8")
             os.replace(tmp_marker, marker)
-            return self._resolved_from_record(inputs, target)
+            return self._materialization_result(inputs, target, status="created")
         except Exception:
             if target.exists():
                 failed_data = record.model_dump()
@@ -898,9 +1397,47 @@ class EnvironmentManager:
             python_requested_version=inputs.specification.python.resolved_version,
             created_at=created_at,
             environment_spec_sha256=sha256_file(inputs.specification_path),
+            project_file_sha256=sha256_file(inputs.project_path),
             lockfile_sha256=sha256_file(inputs.lock_path),
             source_manifest_sha256=sha256_file(inputs.sources_path),
+            verification_script_sha256=sha256_file(inputs.verification_script),
             local_package_identity=inputs.package_identity,
+        )
+
+    def _materialization_result(
+        self,
+        inputs: EnvironmentInputs,
+        target: Path,
+        *,
+        status: Literal["created", "reused"],
+    ) -> EnvironmentMaterializationResult:
+        metadata_path = target / MATERIALIZATION_JSON
+        record = EnvironmentMaterializationRecord.model_validate_json(
+            metadata_path.read_text(encoding="utf-8")
+        )
+        if record.completed_at is None:
+            raise EnvironmentMaterializationError("materialization metadata is incomplete")
+        return EnvironmentMaterializationResult(
+            schema_version="1.0.0",
+            environment_id=inputs.specification.environment_id,
+            environment_spec_sha256=inputs.definition.environment_spec_sha256,
+            project_file_sha256=inputs.definition.project_file_sha256,
+            lockfile_sha256=inputs.definition.lockfile_sha256,
+            source_manifest_sha256=inputs.definition.source_manifest_sha256,
+            verification_script_sha256=inputs.definition.verification_script_sha256,
+            interpreter=f"CPython {record.python_actual_version}",
+            platform=inputs.platform,
+            managed_identifier=target.relative_to(self.runtime_root).as_posix(),
+            status=status,
+            dependency_installation_status="complete",
+            source_preparation_status="complete",
+            lifecycle_state=EnvironmentLifecycleState.MATERIALIZED,
+            started_at=datetime.fromisoformat(record.created_at),
+            completed_at=datetime.fromisoformat(record.completed_at),
+            materialization_record=ArtifactEvidence(
+                path=metadata_path.relative_to(self.runtime_root).as_posix(),
+                sha256=sha256_file(metadata_path),
+            ),
         )
 
     def _resolve_python(self, specification: EnvironmentSpecification) -> Path:
@@ -1125,7 +1662,7 @@ print(".".join(str(part) for part in sys.version_info[:3]))
             return result.stdout.strip()
         return "0"
 
-    def _verify_target(
+    def _verify_materialization(
         self,
         inputs: EnvironmentInputs,
         target: Path,
@@ -1135,7 +1672,7 @@ print(".".join(str(part) for part in sys.version_info[:3]))
                 inputs.card_id, False, "environment is missing", "missing"
             )
         metadata_path = target / MATERIALIZATION_JSON
-        marker = target / COMPLETE_MARKER
+        marker = target / MATERIALIZED_MARKER
         if not metadata_path.exists() or not marker.exists():
             return EnvironmentVerification(
                 inputs.card_id,
@@ -1155,8 +1692,10 @@ print(".".join(str(part) for part in sys.version_info[:3]))
         expected_hashes = {
             "fingerprint": inputs.fingerprint,
             "environment_spec_sha256": sha256_file(inputs.specification_path),
+            "project_file_sha256": sha256_file(inputs.project_path),
             "lockfile_sha256": sha256_file(inputs.lock_path),
             "source_manifest_sha256": sha256_file(inputs.sources_path),
+            "verification_script_sha256": sha256_file(inputs.verification_script),
             "local_package_identity": inputs.package_identity,
         }
         for field, expected in expected_hashes.items():
@@ -1208,6 +1747,20 @@ print(".".join(str(part) for part in sys.version_info[:3]))
         )
         if integrity_error is not None:
             return EnvironmentVerification(inputs.card_id, False, integrity_error, "invalid")
+        return EnvironmentVerification(inputs.card_id, True, "environment is materialized", "valid")
+
+    def _verify_target(
+        self,
+        inputs: EnvironmentInputs,
+        target: Path,
+    ) -> EnvironmentVerification:
+        materialization = self._verify_materialization(inputs, target)
+        if not materialization.passed:
+            return materialization
+        record = EnvironmentMaterializationRecord.model_validate_json(
+            (target / MATERIALIZATION_JSON).read_text(encoding="utf-8")
+        )
+        python_executable = Path(record.python_executable or "")
         script = self._run_verification_script(inputs, target, python_executable)
         if script.status != "valid":
             return EnvironmentVerification(inputs.card_id, False, script.details, script.status)
@@ -1256,6 +1809,11 @@ print(".".join(str(part) for part in sys.version_info[:3]))
         recorded = {item.normalized_name: item.version for item in record.installed_packages}
         if installed.get(DISTRIBUTION_NAME) != recorded.get(DISTRIBUTION_NAME):
             return f"installed {DISTRIBUTION_NAME} package inventory drifted"
+        for name, expected_version in inputs.definition.direct_dependencies.items():
+            if installed.get(name) != expected_version:
+                return f"direct dependency version mismatch: {name}"
+            if recorded.get(name) != expected_version:
+                return f"recorded direct dependency version mismatch: {name}"
         source_records = {item.source_id: item for item in record.installed_sources}
         for source in inputs.sources_manifest.sources:
             source_record = source_records.get(source.source_id)
@@ -1360,7 +1918,13 @@ print(".".join(str(part) for part in sys.version_info[:3]))
             check=False,
         )
 
-    def _resolved_from_record(self, inputs: EnvironmentInputs, target: Path) -> ResolvedEnvironment:
+    def _resolved_from_record(
+        self,
+        inputs: EnvironmentInputs,
+        target: Path,
+        *,
+        model_card_id: str | None = None,
+    ) -> ResolvedEnvironment:
         metadata_path = target / MATERIALIZATION_JSON
         if not metadata_path.exists():
             raise EnvironmentNotFoundError(f"missing materialization metadata: {metadata_path}")
@@ -1373,7 +1937,7 @@ print(".".join(str(part) for part in sys.version_info[:3]))
         )
         return ResolvedEnvironment(
             environment_id=record.environment_id,
-            model_card_id=record.card_id,
+            model_card_id=model_card_id or record.card_id,
             root=target,
             python_executable=Path(record.python_executable),
             fingerprint=record.fingerprint,
@@ -1531,3 +2095,81 @@ def python_env_remove() -> tuple[str, str]:
     """Environment variables removed for model-environment Python commands."""
 
     return ("PYTHONPATH", "PYTHONHOME")
+
+
+def validate_project_lock_consistency(
+    project_path: Path,
+    lock_path: Path,
+    specification: EnvironmentSpecification,
+) -> dict[str, str]:
+    """Return exact locked direct dependencies after strict project/lock validation."""
+
+    try:
+        project = tomllib.loads(project_path.read_text(encoding="utf-8"))
+        locked = lock_packages(lock_path)
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        raise EnvironmentMaterializationError(f"invalid project or lock file: {exc}") from exc
+    project_table = project.get("project")
+    if not isinstance(project_table, dict):
+        raise EnvironmentMaterializationError("environment pyproject.toml lacks [project]")
+    requires_python = project_table.get("requires-python")
+    if not isinstance(requires_python, str):
+        raise EnvironmentMaterializationError("environment project lacks requires-python")
+    try:
+        if Version(specification.python.resolved_version) not in SpecifierSet(requires_python):
+            raise EnvironmentMaterializationError(
+                "environment project requires-python excludes the resolved interpreter"
+            )
+    except Exception as exc:
+        if isinstance(exc, EnvironmentMaterializationError):
+            raise
+        raise EnvironmentMaterializationError("invalid project requires-python") from exc
+    raw_dependencies = project_table.get("dependencies", ())
+    if not isinstance(raw_dependencies, list):
+        raise EnvironmentMaterializationError("environment project dependencies must be a list")
+    direct: dict[str, str] = {}
+    for raw in raw_dependencies:
+        if not isinstance(raw, str):
+            raise EnvironmentMaterializationError("environment dependency must be a string")
+        try:
+            requirement = Requirement(raw)
+        except InvalidRequirement as exc:
+            raise EnvironmentMaterializationError(
+                f"invalid direct dependency requirement: {raw}"
+            ) from exc
+        name = canonicalize_name(requirement.name)
+        locked_version = locked.get(name)
+        if locked_version is None:
+            raise EnvironmentMaterializationError(
+                f"lock file is missing direct dependency: {requirement.name}"
+            )
+        if requirement.specifier and Version(locked_version) not in requirement.specifier:
+            raise EnvironmentMaterializationError(
+                f"lock file version violates direct dependency: {raw}"
+            )
+        if name in direct and direct[name] != locked_version:
+            raise EnvironmentMaterializationError(
+                f"direct dependency resolves inconsistently: {requirement.name}"
+            )
+        direct[name] = locked_version
+    return dict(sorted(direct.items()))
+
+
+def validate_platform_constraint(
+    specification: EnvironmentSpecification,
+    platform_tag: str,
+) -> None:
+    """Reject materialization on a platform contradicted by declared environment evidence."""
+
+    declared = (
+        specification.platforms.resolved_on
+        + specification.platforms.expected_compatible
+        + specification.platforms.verified
+    )
+    if not declared or any(item.startswith("synthetic") for item in declared):
+        return
+    system, _, architecture = platform_tag.partition("-")
+    if not any(item.startswith(system) and item.endswith(architecture) for item in declared):
+        raise EnvironmentMaterializationError(
+            f"platform {platform_tag} is outside declared environment constraints"
+        )

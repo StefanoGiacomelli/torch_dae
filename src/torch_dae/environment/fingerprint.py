@@ -8,7 +8,7 @@ import platform
 import subprocess
 import tomllib
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from torch_dae.contracts import canonical_json_bytes
@@ -24,16 +24,33 @@ class FingerprintInputs:
     sources_manifest: EnvironmentSourcesManifest
     target_platform: str
     local_package_identity: str
+    specification_bytes: bytes = b""
+    project_file_bytes: bytes = b""
+    verification_script_bytes: bytes = b""
+    sources_manifest_bytes: bytes = b""
+    python_implementation: str = "CPython"
+    direct_dependency_versions: Mapping[str, str] = field(default_factory=dict)
+    referenced_source_hashes: Mapping[str, str] = field(default_factory=dict)
 
     def canonical_bytes(self) -> bytes:
         """Serialize inputs deterministically for hashing."""
 
         payload: Mapping[str, object] = {
+            "environment_id": self.specification.environment_id,
             "specification": self.specification.model_dump(mode="json", by_alias=True),
+            "environment_spec_sha256": hashlib.sha256(self.specification_bytes).hexdigest(),
+            "project_file_sha256": hashlib.sha256(self.project_file_bytes).hexdigest(),
             "lockfile_sha256": hashlib.sha256(self.lockfile_bytes).hexdigest(),
             "sources_manifest": self.sources_manifest.model_dump(mode="json", by_alias=True),
+            "sources_manifest_sha256": hashlib.sha256(self.sources_manifest_bytes).hexdigest(),
+            "verification_script_sha256": hashlib.sha256(
+                self.verification_script_bytes
+            ).hexdigest(),
+            "python_implementation": self.python_implementation,
             "resolved_python_version": self.specification.python.resolved_version,
             "target_platform": self.target_platform,
+            "direct_dependency_versions": dict(sorted(self.direct_dependency_versions.items())),
+            "referenced_source_hashes": dict(sorted(self.referenced_source_hashes.items())),
             "local_package_identity": self.local_package_identity,
         }
         return canonical_json_bytes(payload)

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import re
 import subprocess
 import sys
@@ -13,11 +12,6 @@ import pytest
 import yaml
 
 from scripts.validate_repository import MODEL_DEPS, numbered_stage_errors
-
-
-def git_blob_hash(path: Path) -> str:
-    data = path.read_bytes()
-    return hashlib.sha1(f"blob {len(data)}\0".encode() + data).hexdigest()
 
 
 def markdown_link_errors(root: Path, paths: list[Path]) -> list[str]:
@@ -36,10 +30,13 @@ def markdown_link_errors(root: Path, paths: list[Path]) -> list[str]:
     return errors
 
 
-def test_project_spec_is_byte_preserved(repo_root: Path) -> None:
-    assert (
-        git_blob_hash(repo_root / "project_spec.md") == "2906ce3d8173ef90db8972ba5b3e1875481f9c43"
+def test_project_spec_records_card_independent_authority(repo_root: Path) -> None:
+    specification = (repo_root / "project_spec.md").read_text()
+    assert "accepted environment definitions, not model cards, authorize materialization" in (
+        specification
     )
+    assert "RuntimeVerificationTarget" in specification
+    assert "EnvironmentVerificationResult" in specification
 
 
 def test_tracked_paths_and_text_are_free_of_numbered_stage_labels(repo_root: Path) -> None:

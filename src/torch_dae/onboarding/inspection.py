@@ -1100,10 +1100,11 @@ def generate_environment_candidates(
                 ),
                 predicted_failure_risks=tuple(sorted(set(risks), key=lambda item: item.value)),
                 trial_command_plan=(
-                    "Prepare environments/<card-id>/pyproject.toml using selected pinned versions.",
+                    "Prepare environments/<environment-id>/pyproject.toml using selected pinned "
+                    "versions.",
                     "Run uv lock inside the model-specific environment artifact directory.",
-                    "Use torch-dae env ensure <card-id> after the environment and checkpoint "
-                    "artifacts are committed.",
+                    "Use torch-dae env materialize <environment-id> after the accepted environment "
+                    "definition is committed.",
                 ),
             )
         )

@@ -5,6 +5,9 @@ and, when authorized, controlled trials in ignored runtime state. It records the
 version, direct dependencies, lockfile, source installation strategy, platform evidence,
 verification command, outcomes, and failure classifications.
 
+Accepted environment artifacts are keyed by `environment_id` and authorize direct resolution and
+materialization. A model card is neither required nor authoritative for these operations.
+
 The mode accepts `WORKFLOW_ID` and discovers the accepted analyze handoff locally. Direct imports
 must be direct dependencies, and exact pins are checked by the verification script. Shared source
 and environment evidence requires per-tuple compatibility evidence.

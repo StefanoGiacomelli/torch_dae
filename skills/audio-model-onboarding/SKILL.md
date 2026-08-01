@@ -59,10 +59,11 @@ only when exactly one compatible active workflow exists; otherwise open a decisi
 
 Perform phase work in `.torch-dae/workspaces/<workflow-id>/<phase>/<run-id>/` or a context-managed
 system temporary directory. Record a managed run manifest, validate outputs in the workspace, and
-promote only accepted canonical artifacts. For `analyze`, `resolve-environment`, `integrate`, and
-`card`, promote the accepted handoff under `onboarding_reports/<workflow-id>/` before declaring the
-phase complete. `verify` instead creates checkpoint-specific runtime observations only under
-`verification_reports/`; it must not repurpose that root for a phase handoff.
+promote only accepted canonical artifacts. For `analyze`, `resolve-environment`, `integrate`,
+`verify`, and `card`, promote the accepted handoff under `onboarding_reports/<workflow-id>/` before
+declaring the phase complete. Verify stores its strict targets and accepted environment evidence in
+its phase-local handoff tree and stores only checkpoint-specific runtime observations under
+`verification_reports/`.
 
 Generate the deterministic external review bundle after promotion, then run scoped cleanup. Default
 cleanup removes only recorded ephemeral workspaces and completed/failed trial environments for the
@@ -176,7 +177,7 @@ Ordered procedure:
 4. Trial only an explicitly selected evidence-motivated candidate in an isolated model-specific
    environment.
 5. Classify every failure with `references/failure-classification.md`.
-6. On success, prepare `environments/<card-id>/environment.json`, `pyproject.toml`, `uv.lock`,
+6. On success, prepare `environments/<environment-id>/environment.json`, `pyproject.toml`, `uv.lock`,
    `sources.json`, and `verify_environment.py` using the committed environment contracts and
    commands.
 
@@ -259,46 +260,66 @@ Existing committed lifecycle states remain authoritative.
 
 ## `verify` Mode
 
-Purpose: verify runtime behavior after environment resolution and wrapper implementation.
+Purpose: verify explicit model/checkpoint/environment targets after wrapper integration.
 
-Required inputs: `WORKFLOW_ID`, accepted prerequisite handoffs, model card draft, wrapper
-implementation, resolved environment, checkpoint specification, expected outputs, and embeddings.
+Required inputs: `WORKFLOW_ID`, accepted integrate handoff, wrapper implementation, accepted
+environment definition, checkpoint specification, expected outputs, and embeddings. A model card is
+not required.
 
 Optional inputs: accelerator targets, extra input cases, user target assertions.
 
-Prerequisites: environment verified, wrapper exists, the selected model and checkpoint are explicit,
-and card-declared outputs and embeddings are evidence-backed.
+Prerequisites: wrapper exists; selected integrated variant, checkpoint, environment, public entry
+point, outputs, and embeddings are explicit; unresolved decisions that affect execution are closed.
 
 Ordered procedure:
 
-1. Discover and validate accepted prerequisite handoffs and consume recorded decisions.
-2. Test random initialization when supported, checkpoint initialization, invalid checkpoint behavior,
+1. Discover and validate the accepted integrate handoff and consume recorded decisions.
+2. Create one strict `RuntimeVerificationTarget` per requested tuple; bind the accepted integrate
+   handoff hash, integrated variant/adapter, checkpoint, environment, source manifest, future card
+   identity, public entry point, expected contract, permitted devices, policy, and limits.
+   Completeness-aware targets use schema `2.0.0` and declare ordered, canonical, unique, disjoint
+   required and optional check IDs, with at least one required check.
+3. Resolve each target environment by environment ID, materialize it directly from the accepted
+   environment definition, run environment verification, and record the matching fingerprint and
+   promoted environment-verification result with `verification_status=passed` and
+   `lifecycle_state=environment_verified`. Successful evidence has nonempty import and smoke
+   observations, only passed observations, unique names across both collections, and no failure
+   classification. Do not acquire a checkpoint before this succeeds.
+4. Acquire only the target checkpoint through the checkpoint subsystem, verify provenance and
+   SHA-256, and then load it in the verified isolated environment.
+5. Test random initialization when supported, checkpoint initialization, invalid checkpoint behavior,
    model variant agreement, and loading diagnostics.
-3. Test canonical `[B,C,T]` waveform inputs, sample-rate behavior, channels, valid lengths, short and
+6. Test canonical `[B,C,T]` waveform inputs, sample-rate behavior, channels, valid lengths, short and
    long inputs, zero input, batches, and deterministic synthetic waveforms.
-4. Observe every declared output and embedding for key, rank, shape, dtype, device, temporal
+7. Observe every declared output and embedding for key, rank, shape, dtype, device, temporal
    semantics, NaN/Inf, and repeated-call behavior.
-5. Generate a structured checkpoint-specific verification report.
+8. Generate a target-aware checkpoint-specific verification report with explicit overall
+   `verification_status`, the target's exact required/optional check contract, nonempty unique
+   declared checks, and complete passed required-check coverage; promote the accepted verify handoff
+   only when the report passed.
 
 Evidence requirements: environment fingerprint, checkpoint hash, source revision, package identity,
 test inputs, observed outputs, embedding observations, warnings, failures, unsupported capabilities.
 
-Generated outputs: verification plan and verification report JSON.
+Generated outputs: runtime-verification target JSON, promoted environment-verification result,
+verification plan, checkpoint-specific verification report JSON, and accepted verify handoff.
 
-User-decision gates: unsupported capabilities, output/card mismatch, embedding/card mismatch,
+User-decision gates: unsupported capabilities, output/target mismatch, embedding/target mismatch,
 unsupported device behavior, or non-reproducible runtime observations.
 
-Failure conditions: required runtime tests fail, card/report disagree, checkpoint cannot load,
+Failure conditions: required runtime tests fail, target/report associations disagree, checkpoint cannot load,
 outputs/embeddings are missing, or environment is not verified.
 
 Prohibited behavior: acquiring any checkpoint other than the explicitly selected checkpoint,
 acquiring checkpoints outside the checkpoint subsystem, running the model outside its isolated
-environment, lifecycle promotion from schema validity alone, profiling, or fabricated runtime
-observations.
+environment, lifecycle promotion from schema validity or evidence existence alone, lifecycle
+promotion from failed evidence, profiling, or fabricated runtime observations.
 
-Completion criteria: every card-declared output and embedding is observed, the runtime report
-validates under `verification_reports/`, a review bundle is generated, and scoped cleanup is
-verified. No pre-runtime artifact is stored in `verification_reports/`.
+Completion criteria: every target-required check passes, every target-declared output and embedding
+is observed, environment and runtime evidence validate independently, the runtime report validates
+under `verification_reports/`, the accepted verify handoff is promoted, a review bundle is
+generated, and scoped cleanup is verified.
+No target or generic environment result is stored in `verification_reports/`.
 
 Next allowed lifecycle transition: `runtime_verified` only after `checkpoint_verified` and runtime
 verification prerequisites are satisfied.
@@ -307,9 +328,9 @@ verification prerequisites are satisfied.
 
 Purpose: generate or update a checkpoint-specific model card from verified evidence.
 
-Required inputs: `WORKFLOW_ID`, accepted prerequisite handoffs, user decisions, source/checkpoint
-strategy, environment artifacts, wrapper evidence where applicable, and verification report where
-applicable.
+Required inputs: `WORKFLOW_ID`, accepted analysis, resolve-environment, integrate, and verify
+handoffs; user decisions; source/checkpoint strategy; environment verification result; runtime
+target; wrapper evidence; and checkpoint-specific verification report.
 
 Optional inputs: unresolved issue decisions, intended default embedding, accepted limitations.
 
@@ -324,6 +345,12 @@ Ordered procedure:
 4. Enforce checkpoint-specific scope: one family, one variant, one checkpoint.
 5. Validate through Pydantic and generated JSON Schema.
 6. Check lifecycle gates and card/report agreement.
+7. Require a passed promoted environment result and passed runtime report, plus matching environment
+   ID, specification hash, fingerprint, environment-result hash, checkpoint identity/hash,
+   runtime-target hash, report hash, integration-handoff hash, public entry point,
+   input/output/embedding contract, and tested device/platform scope.
+   The runtime target/report required and optional check contracts must match exactly, every required
+   check must be present exactly once and passed, and no undeclared check may promote the card.
 
 Evidence requirements: upstream source, paper/docs, environment evidence, checkpoint evidence,
 runtime observation, or explicit user decision for every populated field.
@@ -338,8 +365,9 @@ strategy, lifecycle promotion, or accepted known issue.
 Failure conditions: evidence reference missing, lifecycle skip, unsupported fact promoted, schema
 failure, card not checkpoint-specific, or report/card disagreement.
 
-Prohibited behavior: optional filler values, family-level cards for incompatible checkpoints, hidden
-lifecycle promotion, or legal conclusions from license metadata.
+Prohibited behavior: optional filler values, provisional cards used to bootstrap verification,
+family-level cards for incompatible checkpoints, hidden lifecycle promotion, or legal conclusions
+from license metadata.
 
 Completion criteria: Pydantic and JSON Schema validation both pass, lifecycle gates are truthful,
 the accepted card handoff is promoted, its review bundle is generated, and scoped cleanup is

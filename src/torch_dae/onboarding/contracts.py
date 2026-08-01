@@ -1097,11 +1097,12 @@ class EnvironmentResolutionReport(StrictBaseModel):
 
 
 class OnboardingPhase(StrEnum):
-    """Committed pre-runtime onboarding phases."""
+    """Committed onboarding phases, including checkpoint-specific verification."""
 
     ANALYZE = "analyze"
     RESOLVE_ENVIRONMENT = "resolve-environment"
     INTEGRATE = "integrate"
+    VERIFY = "verify"
     CARD = "card"
 
 
@@ -1126,6 +1127,7 @@ class ArtifactOriginPhase(StrEnum):
     ANALYZE = "analyze"
     RESOLVE_ENVIRONMENT = "resolve-environment"
     INTEGRATE = "integrate"
+    VERIFY = "verify"
     CARD = "card"
     EXTERNAL = "external"
 
@@ -1331,6 +1333,7 @@ class PhaseHandoffManifest(StrictBaseModel):
                 "src/",
                 "tests/",
             ),
+            OnboardingPhase.VERIFY: ("verification_reports/",),
             OnboardingPhase.CARD: ("model_cards/",),
         }[self.phase]
         allowed_exact_output_paths = {
@@ -1349,6 +1352,7 @@ class PhaseHandoffManifest(StrictBaseModel):
                 "skills/audio-model-onboarding/templates/agent-request.md",
                 "skills/audio-model-onboarding/templates/agent-response.md",
             ),
+            OnboardingPhase.VERIFY: (),
             OnboardingPhase.CARD: (),
         }[self.phase]
         for artifact in self.output_artifacts:
@@ -1367,7 +1371,8 @@ class PhaseHandoffManifest(StrictBaseModel):
             OnboardingPhase.ANALYZE: 0,
             OnboardingPhase.RESOLVE_ENVIRONMENT: 1,
             OnboardingPhase.INTEGRATE: 2,
-            OnboardingPhase.CARD: 3,
+            OnboardingPhase.VERIFY: 3,
+            OnboardingPhase.CARD: 4,
         }
         output_by_path = {
             artifact.path: artifact

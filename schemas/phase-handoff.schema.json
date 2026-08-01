@@ -6,6 +6,7 @@
         "analyze",
         "resolve-environment",
         "integrate",
+        "verify",
         "card",
         "external"
       ],
@@ -263,11 +264,12 @@
       "type": "string"
     },
     "OnboardingPhase": {
-      "description": "Committed pre-runtime onboarding phases.",
+      "description": "Committed onboarding phases, including checkpoint-specific verification.",
       "enum": [
         "analyze",
         "resolve-environment",
         "integrate",
+        "verify",
         "card"
       ],
       "minLength": 1,

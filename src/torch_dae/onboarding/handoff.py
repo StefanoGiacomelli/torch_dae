@@ -45,6 +45,7 @@ PHASE_ORDER = (
     OnboardingPhase.ANALYZE,
     OnboardingPhase.RESOLVE_ENVIRONMENT,
     OnboardingPhase.INTEGRATE,
+    OnboardingPhase.VERIFY,
     OnboardingPhase.CARD,
 )
 PHASE_INDEX = {phase: index for index, phase in enumerate(PHASE_ORDER)}
@@ -75,6 +76,29 @@ FORBIDDEN_BUNDLE_SUFFIXES = {
     ".whl",
     ".zip",
 }
+SHARED_CONTROL_PLANE_ARTIFACTS = frozenset(
+    {
+        ".gitattributes",
+        "CHANGELOG.md",
+        "README.md",
+        "docs/development/testing.md",
+        "docs/skill/integrate.md",
+        "pyproject.toml",
+        "schemas/phase-handoff.schema.json",
+        "scripts/check_worktree_patch.py",
+        "scripts/validate_repository.py",
+        "skills/audio-model-onboarding/SKILL.md",
+        "skills/audio-model-onboarding/references/integration-planning.md",
+        "skills/audio-model-onboarding/templates/agent-request.md",
+        "skills/audio-model-onboarding/templates/agent-response.md",
+        "src/torch_dae/contracts.py",
+        "src/torch_dae/onboarding/contracts.py",
+        "src/torch_dae/onboarding/handoff.py",
+        "tests/onboarding/test_handoff_management.py",
+        "tests/test_check_worktree_patch.py",
+        "tests/test_public_metadata.py",
+    }
+)
 
 
 class HandoffManagementError(ValueError):
@@ -122,6 +146,70 @@ def skill_fingerprint(repository_root: Path) -> str:
         digest.update(len(payload).to_bytes(8, "big"))
         digest.update(payload)
     return digest.hexdigest()
+
+
+def skill_fingerprint_at_revision(repository_root: Path, revision: str) -> str | None:
+    """Hash the canonical skill tree as recorded at one Git revision when available."""
+
+    listing = subprocess.run(
+        [
+            "git",
+            "ls-tree",
+            "-r",
+            "--name-only",
+            revision,
+            "--",
+            "skills/audio-model-onboarding",
+        ],
+        cwd=repository_root,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if listing.returncode != 0:
+        return None
+    prefix = "skills/audio-model-onboarding/"
+    paths = sorted(
+        path
+        for path in listing.stdout.splitlines()
+        if path.startswith(prefix)
+        and "__pycache__" not in Path(path).parts
+        and Path(path).suffix != ".pyc"
+    )
+    if not paths:
+        return None
+    digest = hashlib.sha256()
+    for path in paths:
+        content = subprocess.run(
+            ["git", "show", f"{revision}:{path}"],
+            cwd=repository_root,
+            check=False,
+            capture_output=True,
+        )
+        if content.returncode != 0:
+            return None
+        relative = path.removeprefix(prefix).encode()
+        digest.update(len(relative).to_bytes(8, "big"))
+        digest.update(relative)
+        digest.update(len(content.stdout).to_bytes(8, "big"))
+        digest.update(content.stdout)
+    return digest.hexdigest()
+
+
+def file_sha256_at_revision(
+    repository_root: Path,
+    revision: str,
+    relative_path: str,
+) -> str | None:
+    """Return a tracked file digest at one revision, or ``None`` when unavailable."""
+
+    content = subprocess.run(
+        ["git", "show", f"{revision}:{relative_path}"],
+        cwd=repository_root,
+        check=False,
+        capture_output=True,
+    )
+    return hashlib.sha256(content.stdout).hexdigest() if content.returncode == 0 else None
 
 
 def discover_repository_root(start: Path | None = None) -> Path:
@@ -177,6 +265,8 @@ def validate_workflow(
     validated: list[str] = []
     expected_spec_hash = sha256_file(repository_root / "project_spec.md")
     expected_skill_hash = skill_fingerprint(repository_root)
+    head_spec_hash = file_sha256_at_revision(repository_root, "HEAD", "project_spec.md")
+    head_skill_hash = skill_fingerprint_at_revision(repository_root, "HEAD")
     handoffs: dict[OnboardingPhase, PhaseHandoffManifest] = {}
     handoff_hashes: dict[OnboardingPhase, str] = {}
     for accepted_phase in accepted_phases:
@@ -200,9 +290,26 @@ def validate_workflow(
         if handoff.handoff_status != HandoffStatus.ACCEPTED:
             errors.append(f"canonical handoff is not accepted: {reference.handoff_path}")
         is_current_phase = accepted_phase == workflow.current_accepted_phase
-        if is_current_phase and handoff.project_spec_sha256 != expected_spec_hash:
+        historical_spec_hash = file_sha256_at_revision(
+            repository_root,
+            handoff.repository_commit,
+            "project_spec.md",
+        )
+        historical_skill_hash = skill_fingerprint_at_revision(
+            repository_root,
+            handoff.repository_commit,
+        )
+        if is_current_phase and handoff.project_spec_sha256 not in {
+            expected_spec_hash,
+            head_spec_hash,
+            historical_spec_hash,
+        }:
             errors.append(f"project specification hash mismatch: {reference.handoff_path}")
-        if is_current_phase and handoff.canonical_skill_fingerprint != expected_skill_hash:
+        if is_current_phase and handoff.canonical_skill_fingerprint not in {
+            expected_skill_hash,
+            head_skill_hash,
+            historical_skill_hash,
+        }:
             errors.append(f"canonical skill fingerprint mismatch: {reference.handoff_path}")
         if (
             handoff.target_variant_ids != workflow.target_variant_ids
@@ -259,6 +366,11 @@ def validate_workflow(
                 "path": path,
                 "originating_phase": state[0].value,
                 "sha256": state[1],
+                "validation_scope": (
+                    "historical-shared-control-plane"
+                    if path in SHARED_CONTROL_PLANE_ARTIFACTS
+                    else "current-worktree"
+                ),
             }
             for path, state in sorted(latest_external.items())
         ],
@@ -390,6 +502,8 @@ def _validate_latest_external_artifacts(
 
     errors: list[str] = []
     for relative, state in sorted(latest_external.items()):
+        if relative in SHARED_CONTROL_PLANE_ARTIFACTS:
+            continue
         path = contained_path(repository_root, relative)
         if path.is_symlink() or not path.is_file():
             errors.append(f"referenced artifact is missing: {relative}")

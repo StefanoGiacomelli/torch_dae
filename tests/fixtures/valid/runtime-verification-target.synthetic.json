@@ -1,0 +1,72 @@
+{
+  "schema_version": "2.0.0",
+  "target_id": "synthetic-runtime-target",
+  "workflow_id": "synthetic-workflow",
+  "integrated_variant_id": "synthetic-variant",
+  "adapter_id": "synthetic-adapter",
+  "checkpoint": {
+    "schema_version": "1.0.0",
+    "checkpoint_id": "synthetic-checkpoint",
+    "source_type": "local_path",
+    "url": null,
+    "repository_id": null,
+    "package": null,
+    "package_version": null,
+    "revision": null,
+    "release_tag": null,
+    "filename": null,
+    "local_path": "tests/fixtures/synthetic-checkpoint.bin",
+    "expected_sha256": null,
+    "observed_sha256": null,
+    "format": "binary",
+    "loader": "synthetic loader",
+    "license": {"name": null, "url": null, "status": "not_applicable"}
+  },
+  "future_card_id": "synthetic-card",
+  "public_model_entry_point": "torch_dae.models.synthetic:SyntheticModel",
+  "registry_identity": "synthetic-card",
+  "environment_id": "synthetic-environment",
+  "accepted_integration_handoff": {
+    "path": "onboarding_reports/synthetic-workflow/integrate/handoff.json",
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "environment_spec_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "source_manifest": {
+    "path": "environments/synthetic-environment/sources.json",
+    "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "checkpoint_acquisition_policy": {
+    "allow_network": false,
+    "allow_authentication": false,
+    "maximum_bytes": 1024,
+    "require_expected_sha256": false
+  },
+  "required_sample_rate_hz": 16000,
+  "input_contract": {
+    "shape": "B,C,T",
+    "valid_lengths_shape": "B",
+    "dtype": "float32",
+    "channels": "mono"
+  },
+  "expected_outputs": [
+    {"name": "logits", "rank": 2, "dimensions": ["B", "classes"]}
+  ],
+  "probability_semantics": "sigmoid",
+  "default_embedding": {"embedding_id": "synthetic.global", "dimension": 32},
+  "permitted_devices": ["cpu"],
+  "required_check_ids": [
+    "canonical-input",
+    "checkpoint-loaded-forward"
+  ],
+  "optional_check_ids": [
+    "valid-lengths"
+  ],
+  "verification_limits": {
+    "timeout_seconds": 60,
+    "maximum_batch_size": 2,
+    "maximum_samples_per_item": 16000,
+    "repeated_calls": 2,
+    "profiling_permitted": false
+  },
+  "known_unresolved_items": []
+}

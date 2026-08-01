@@ -7,7 +7,9 @@ torch-dae card validate <card-id-or-path>
 
 torch-dae env create <card-id>
 torch-dae env ensure <card-id>
-torch-dae env verify <card-id>
+torch-dae env resolve <environment-id>
+torch-dae env materialize <environment-id>
+torch-dae env verify <environment-id>
 torch-dae env remove <card-id>
 torch-dae env info <card-id>
 torch-dae env run <card-id> -- <command>

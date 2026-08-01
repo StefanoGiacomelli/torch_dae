@@ -4,6 +4,27 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Card-independent environment lifecycle
+
+- Made accepted environment definitions the authority for direct resolution, materialization, and
+  infrastructure verification; retained card-based entry points as delegating conveniences.
+- Added strict materialization, environment-verification, and runtime-target contracts and schemas,
+  deterministic evidence-complete fingerprints, and matching final-card evidence requirements.
+- Separated environment evidence from checkpoint-specific runtime reports and added explicit
+  `resolve`, `materialize`, and environment-ID `verify` CLI operations.
+- Added verify and card onboarding phases to the accepted lifecycle contract without promoting or
+  changing any existing model workflow handoff.
+
+### Verification evidence completeness
+
+- Required successful environment results to contain nonempty, uniquely named import and smoke
+  observations with passed status only; failed results remain partial diagnostic evidence.
+- Added schema `2.0.0` runtime-target required and optional check contracts, target-aware report
+  coverage enforcement, and exact repository/model-card target binding while preserving conservative
+  legacy readability.
+- Corrected remaining environment-ID authority documentation and retained card-oriented environment
+  commands as compatibility conveniences.
+
 ### Staged-equivalent whitespace validation
 
 - Added exact `.gitattributes` whitespace exemptions for the byte-preserved PANNs vendored

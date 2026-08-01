@@ -49,10 +49,24 @@ def test_valid_model_card_fixture(valid_fixture_dir: Path) -> None:
 def test_runtime_verified_requires_report(valid_fixture_dir: Path) -> None:
     data = load(valid_fixture_dir / "model-card.analyzed.json")
     data["card_status"] = "runtime_verified"
-    data["usage"]["recommended_environment"]["verified"] = True
+    recommended = data["usage"]["recommended_environment"]
+    recommended["verified"] = True
+    recommended["fingerprint"] = "7" * 64
+    recommended["verification_result"] = (
+        "onboarding_reports/synthetic/verify/environment-verification-result.json"
+    )
+    recommended["verification_result_sha256"] = "8" * 64
     data["checkpoint"]["observed_sha256"] = "9" * 64
     data["checkpoint"]["expected_sha256"] = "9" * 64
-    with pytest.raises(ValidationError, match="verification_report"):
+    with pytest.raises(ValidationError, match="runtime target and verification report"):
+        ModelCard.model_validate(data)
+
+
+def test_verified_environment_requires_canonical_evidence(valid_fixture_dir: Path) -> None:
+    data = load(valid_fixture_dir / "model-card.analyzed.json")
+    data["card_status"] = "environment_resolved"
+    data["usage"]["recommended_environment"]["verified"] = True
+    with pytest.raises(ValidationError, match="fingerprint and verification evidence"):
         ModelCard.model_validate(data)
 
 

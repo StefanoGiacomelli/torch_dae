@@ -1206,6 +1206,48 @@
     },
     "RecommendedEnvironment": {
       "additionalProperties": false,
+      "allOf": [
+        {
+          "else": {
+            "properties": {
+              "fingerprint": {
+                "type": "null"
+              },
+              "verification_result": {
+                "type": "null"
+              },
+              "verification_result_sha256": {
+                "type": "null"
+              }
+            }
+          },
+          "if": {
+            "properties": {
+              "verified": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "fingerprint": {
+                "type": "string"
+              },
+              "verification_result": {
+                "type": "string"
+              },
+              "verification_result_sha256": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "fingerprint",
+              "verification_result",
+              "verification_result_sha256"
+            ]
+          }
+        }
+      ],
       "description": "Reference to committed environment artifacts.",
       "properties": {
         "environment_id": {
@@ -1213,6 +1255,20 @@
           "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
           "title": "Environment Id",
           "type": "string"
+        },
+        "fingerprint": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fingerprint"
         },
         "lockfile": {
           "minLength": 1,
@@ -1225,6 +1281,34 @@
           "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
           "title": "Specification",
           "type": "string"
+        },
+        "verification_result": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Verification Result"
+        },
+        "verification_result_sha256": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Verification Result Sha256"
         },
         "verified": {
           "title": "Verified",
@@ -1591,12 +1675,24 @@
             "properties": {
               "recommended_environment": {
                 "properties": {
+                  "fingerprint": {
+                    "type": "string"
+                  },
+                  "verification_result": {
+                    "type": "string"
+                  },
+                  "verification_result_sha256": {
+                    "type": "string"
+                  },
                   "verified": {
                     "const": true
                   }
                 },
                 "required": [
-                  "verified"
+                  "verified",
+                  "fingerprint",
+                  "verification_result",
+                  "verification_result_sha256"
                 ]
               }
             }
@@ -1644,12 +1740,24 @@
       },
       "then": {
         "properties": {
+          "runtime_verification_target": {
+            "type": "string"
+          },
+          "runtime_verification_target_sha256": {
+            "type": "string"
+          },
           "verification_report": {
+            "type": "string"
+          },
+          "verification_report_sha256": {
             "type": "string"
           }
         },
         "required": [
-          "verification_report"
+          "runtime_verification_target",
+          "runtime_verification_target_sha256",
+          "verification_report",
+          "verification_report_sha256"
         ]
       }
     },
@@ -1851,6 +1959,34 @@
       "title": "Reported Metrics",
       "type": "array"
     },
+    "runtime_verification_target": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Runtime Verification Target"
+    },
+    "runtime_verification_target_sha256": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Runtime Verification Target Sha256"
+    },
     "schema_version": {
       "const": "1.0.0",
       "minLength": 1,
@@ -1882,6 +2018,20 @@
       ],
       "default": null,
       "title": "Verification Report"
+    },
+    "verification_report_sha256": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Verification Report Sha256"
     }
   },
   "required": [

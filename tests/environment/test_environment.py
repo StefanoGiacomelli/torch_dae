@@ -133,6 +133,21 @@ def test_environment_manager_absent_state(repo_root: Path) -> None:
     assert not info.materialized
 
 
+def test_direct_environment_resolution_rejects_missing_and_invalid_specifications(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "project_spec.md").write_text("synthetic\n")
+    manager = EnvironmentManager(tmp_path)
+    with pytest.raises(EnvironmentMaterializationError, match="not found"):
+        manager.resolve_environment("missing-environment")
+
+    invalid = tmp_path / "environments/invalid-environment"
+    invalid.mkdir(parents=True)
+    (invalid / "environment.json").write_text("{invalid json")
+    with pytest.raises(EnvironmentMaterializationError, match="invalid environment specification"):
+        manager.resolve_environment("invalid-environment")
+
+
 def test_environment_manager_missing_card_operations(repo_root: Path) -> None:
     manager = EnvironmentManager(repo_root)
     with pytest.raises(EnvironmentMaterializationError):

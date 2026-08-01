@@ -1,0 +1,671 @@
+{
+  "$defs": {
+    "ArtifactEvidence": {
+      "additionalProperties": false,
+      "description": "Repository or managed-runtime artifact plus its observed SHA-256.",
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactEvidence",
+      "type": "object"
+    },
+    "CheckpointAcquisitionPolicy": {
+      "additionalProperties": false,
+      "description": "Bounded acquisition policy applied only after environment verification.",
+      "properties": {
+        "allow_authentication": {
+          "title": "Allow Authentication",
+          "type": "boolean"
+        },
+        "allow_network": {
+          "title": "Allow Network",
+          "type": "boolean"
+        },
+        "maximum_bytes": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum Bytes"
+        },
+        "require_expected_sha256": {
+          "default": false,
+          "title": "Require Expected Sha256",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "allow_network",
+        "allow_authentication"
+      ],
+      "title": "CheckpointAcquisitionPolicy",
+      "type": "object"
+    },
+    "CheckpointSourceType": {
+      "description": "Enumerate supported checkpoint acquisition categories.\n\n``https`` streams a direct URL; ``github_release`` resolves a repository, tag, and filename;\n``huggingface`` resolves a repository, optional revision, and filename; ``package_bundle``\nreads a file from an exact installed package; and ``local_path`` copies a repository-relative\nfile. The enum selects validation and acquisition behavior.",
+      "enum": [
+        "https",
+        "github_release",
+        "huggingface",
+        "package_bundle",
+        "local_path"
+      ],
+      "minLength": 1,
+      "title": "CheckpointSourceType",
+      "type": "string"
+    },
+    "CheckpointSpec": {
+      "additionalProperties": false,
+      "description": "Validate one concrete checkpoint source and loader contract.\n\nAttributes\n----------\nschema_version, checkpoint_id, source_type\n    Contract version, canonical asset identity, and acquisition category.\nurl, repository_id, package, package_version, revision, release_tag, filename, local_path\n    Source-specific location fields. Paths and filenames must be safe and repository-relative.\nexpected_sha256, observed_sha256\n    Optional lowercase hexadecimal SHA-256 values; when both exist they must agree.\nformat, loader\n    Serialization format and model-specific loader description.\nlicense\n    Informational license record.\n\nRaises\n------\npydantic.ValidationError\n    If required source fields are missing, contradictory fields are present, a path escapes the\n    repository, or hashes disagree.\n\nNotes\n-----\nValidation performs no network access and does not deserialize model weights.",
+      "properties": {
+        "checkpoint_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Checkpoint Id",
+          "type": "string"
+        },
+        "expected_sha256": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Sha256"
+        },
+        "filename": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Filename"
+        },
+        "format": {
+          "minLength": 1,
+          "title": "Format",
+          "type": "string"
+        },
+        "license": {
+          "$ref": "#/$defs/LicenseRecord"
+        },
+        "loader": {
+          "minLength": 1,
+          "title": "Loader",
+          "type": "string"
+        },
+        "local_path": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Local Path"
+        },
+        "observed_sha256": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observed Sha256"
+        },
+        "package": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Package"
+        },
+        "package_version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Package Version"
+        },
+        "release_tag": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Release Tag"
+        },
+        "repository_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Repository Id"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[0-9a-f]{40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revision"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "minLength": 1,
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_type": {
+          "$ref": "#/$defs/CheckpointSourceType"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "schema_version",
+        "checkpoint_id",
+        "source_type",
+        "format",
+        "loader",
+        "license"
+      ],
+      "title": "CheckpointSpec",
+      "type": "object"
+    },
+    "ExpectedRuntimeEmbedding": {
+      "additionalProperties": false,
+      "description": "Default embedding identity and expected dimension.",
+      "properties": {
+        "dimension": {
+          "exclusiveMinimum": 0,
+          "title": "Dimension",
+          "type": "integer"
+        },
+        "embedding_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Embedding Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "embedding_id",
+        "dimension"
+      ],
+      "title": "ExpectedRuntimeEmbedding",
+      "type": "object"
+    },
+    "ExpectedRuntimeOutput": {
+      "additionalProperties": false,
+      "description": "Expected named output and dimensions before execution.",
+      "properties": {
+        "dimensions": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Dimensions",
+          "type": "array"
+        },
+        "name": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "rank": {
+          "minimum": 0,
+          "title": "Rank",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "rank",
+        "dimensions"
+      ],
+      "title": "ExpectedRuntimeOutput",
+      "type": "object"
+    },
+    "LicenseRecord": {
+      "additionalProperties": false,
+      "description": "Record informational checkpoint-license evidence.\n\nAttributes\n----------\nname, url\n    Optional reported license name and source URL.\nstatus\n    Provenance status: officially reported, observed, inferred, unresolved, not reported, or\n    not applicable.\n\nNotes\n-----\nThis metadata never authorizes use and never blocks acquisition automatically.",
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "status": {
+          "enum": [
+            "officially_reported",
+            "observed",
+            "inferred",
+            "unresolved",
+            "not_reported",
+            "not_applicable"
+          ],
+          "minLength": 1,
+          "title": "Status",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "LicenseRecord",
+      "type": "object"
+    },
+    "RuntimeInputContract": {
+      "additionalProperties": false,
+      "description": "Expected public waveform contract for a verification request.",
+      "properties": {
+        "channels": {
+          "minLength": 1,
+          "title": "Channels",
+          "type": "string"
+        },
+        "dtype": {
+          "minLength": 1,
+          "title": "Dtype",
+          "type": "string"
+        },
+        "shape": {
+          "const": "B,C,T",
+          "minLength": 1,
+          "title": "Shape",
+          "type": "string"
+        },
+        "valid_lengths_shape": {
+          "anyOf": [
+            {
+              "const": "B",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Valid Lengths Shape"
+        }
+      },
+      "required": [
+        "shape",
+        "valid_lengths_shape",
+        "dtype",
+        "channels"
+      ],
+      "title": "RuntimeInputContract",
+      "type": "object"
+    },
+    "RuntimeVerificationLimits": {
+      "additionalProperties": false,
+      "description": "Execution bounds for one requested verification run.",
+      "properties": {
+        "maximum_batch_size": {
+          "exclusiveMinimum": 0,
+          "title": "Maximum Batch Size",
+          "type": "integer"
+        },
+        "maximum_samples_per_item": {
+          "exclusiveMinimum": 0,
+          "title": "Maximum Samples Per Item",
+          "type": "integer"
+        },
+        "profiling_permitted": {
+          "const": false,
+          "default": false,
+          "title": "Profiling Permitted",
+          "type": "boolean"
+        },
+        "repeated_calls": {
+          "minimum": 1,
+          "title": "Repeated Calls",
+          "type": "integer"
+        },
+        "timeout_seconds": {
+          "exclusiveMinimum": 0,
+          "title": "Timeout Seconds",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "timeout_seconds",
+        "maximum_batch_size",
+        "maximum_samples_per_item",
+        "repeated_calls"
+      ],
+      "title": "RuntimeVerificationLimits",
+      "type": "object"
+    }
+  },
+  "$id": "https://torch-dae.local/schemas/runtime-verification-target.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "else": {
+        "properties": {
+          "optional_check_ids": {
+            "maxItems": 0
+          },
+          "required_check_ids": {
+            "maxItems": 0
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "schema_version": {
+            "const": "2.0.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "optional_check_ids": {
+            "type": "array",
+            "uniqueItems": true
+          },
+          "required_check_ids": {
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "required_check_ids",
+          "optional_check_ids"
+        ]
+      }
+    }
+  ],
+  "description": "Strict model/checkpoint/environment request that makes no success claim.",
+  "properties": {
+    "accepted_integration_handoff": {
+      "$ref": "#/$defs/ArtifactEvidence"
+    },
+    "adapter_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Adapter Id",
+      "type": "string"
+    },
+    "checkpoint": {
+      "$ref": "#/$defs/CheckpointSpec"
+    },
+    "checkpoint_acquisition_policy": {
+      "$ref": "#/$defs/CheckpointAcquisitionPolicy"
+    },
+    "default_embedding": {
+      "$ref": "#/$defs/ExpectedRuntimeEmbedding"
+    },
+    "environment_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Environment Id",
+      "type": "string"
+    },
+    "environment_spec_sha256": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Environment Spec Sha256",
+      "type": "string"
+    },
+    "expected_outputs": {
+      "items": {
+        "$ref": "#/$defs/ExpectedRuntimeOutput"
+      },
+      "title": "Expected Outputs",
+      "type": "array"
+    },
+    "future_card_id": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Future Card Id"
+    },
+    "input_contract": {
+      "$ref": "#/$defs/RuntimeInputContract"
+    },
+    "integrated_variant_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Integrated Variant Id",
+      "type": "string"
+    },
+    "known_unresolved_items": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Known Unresolved Items",
+      "type": "array"
+    },
+    "optional_check_ids": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+        "type": "string"
+      },
+      "title": "Optional Check Ids",
+      "type": "array"
+    },
+    "permitted_devices": {
+      "items": {
+        "enum": [
+          "cpu",
+          "mps",
+          "cuda"
+        ],
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Permitted Devices",
+      "type": "array"
+    },
+    "probability_semantics": {
+      "enum": [
+        "sigmoid",
+        "softmax",
+        "other",
+        "unsupported"
+      ],
+      "minLength": 1,
+      "title": "Probability Semantics",
+      "type": "string"
+    },
+    "public_model_entry_point": {
+      "minLength": 1,
+      "title": "Public Model Entry Point",
+      "type": "string"
+    },
+    "registry_identity": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Registry Identity",
+      "type": "string"
+    },
+    "required_check_ids": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+        "type": "string"
+      },
+      "title": "Required Check Ids",
+      "type": "array"
+    },
+    "required_sample_rate_hz": {
+      "exclusiveMinimum": 0,
+      "title": "Required Sample Rate Hz",
+      "type": "integer"
+    },
+    "schema_version": {
+      "enum": [
+        "1.0.0",
+        "2.0.0"
+      ],
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_manifest": {
+      "$ref": "#/$defs/ArtifactEvidence"
+    },
+    "target_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Target Id",
+      "type": "string"
+    },
+    "verification_limits": {
+      "$ref": "#/$defs/RuntimeVerificationLimits"
+    },
+    "workflow_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Workflow Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "target_id",
+    "workflow_id",
+    "integrated_variant_id",
+    "adapter_id",
+    "checkpoint",
+    "public_model_entry_point",
+    "registry_identity",
+    "environment_id",
+    "accepted_integration_handoff",
+    "environment_spec_sha256",
+    "source_manifest",
+    "checkpoint_acquisition_policy",
+    "required_sample_rate_hz",
+    "input_contract",
+    "expected_outputs",
+    "probability_semantics",
+    "default_embedding",
+    "permitted_devices",
+    "verification_limits"
+  ],
+  "title": "RuntimeVerificationTarget",
+  "type": "object"
+}

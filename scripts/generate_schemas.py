@@ -12,6 +12,10 @@ from pydantic import BaseModel
 from torch_dae.cards.models import ModelCard
 from torch_dae.core.checkpoint import CheckpointSpec
 from torch_dae.core.embeddings import EmbeddingSpec
+from torch_dae.environment.results import (
+    EnvironmentMaterializationResult,
+    EnvironmentVerificationResult,
+)
 from torch_dae.environment.specification import EnvironmentSourcesManifest, EnvironmentSpecification
 from torch_dae.environment.verification import VerificationReport
 from torch_dae.onboarding.contracts import (
@@ -21,6 +25,7 @@ from torch_dae.onboarding.contracts import (
     PhaseHandoffManifest,
     WorkflowRecord,
 )
+from torch_dae.runtime_verification import RuntimeVerificationTarget
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "schemas"
@@ -39,6 +44,14 @@ SCHEMAS: dict[str, tuple[str, type[BaseModel]]] = {
         "https://torch-dae.local/schemas/environment-sources.schema.json",
         EnvironmentSourcesManifest,
     ),
+    "environment-materialization-result.schema.json": (
+        "https://torch-dae.local/schemas/environment-materialization-result.schema.json",
+        EnvironmentMaterializationResult,
+    ),
+    "environment-verification-result.schema.json": (
+        "https://torch-dae.local/schemas/environment-verification-result.schema.json",
+        EnvironmentVerificationResult,
+    ),
     "embedding.schema.json": (
         "https://torch-dae.local/schemas/embedding.schema.json",
         EmbeddingSpec,
@@ -46,6 +59,10 @@ SCHEMAS: dict[str, tuple[str, type[BaseModel]]] = {
     "verification-report.schema.json": (
         "https://torch-dae.local/schemas/verification-report.schema.json",
         VerificationReport,
+    ),
+    "runtime-verification-target.schema.json": (
+        "https://torch-dae.local/schemas/runtime-verification-target.schema.json",
+        RuntimeVerificationTarget,
     ),
     "analysis-report.schema.json": (
         "https://torch-dae.local/schemas/analysis-report.schema.json",
@@ -176,6 +193,30 @@ def augment_checkpoint_schema(schema: dict[str, Any]) -> None:
 
 def augment_model_card_schema(schema: dict[str, Any]) -> None:
     defs = schema["$defs"]
+    defs["RecommendedEnvironment"]["allOf"] = [
+        {
+            "if": {"properties": {"verified": {"const": True}}},
+            "then": {
+                "required": [
+                    "fingerprint",
+                    "verification_result",
+                    "verification_result_sha256",
+                ],
+                "properties": {
+                    "fingerprint": {"type": "string"},
+                    "verification_result": {"type": "string"},
+                    "verification_result_sha256": {"type": "string"},
+                },
+            },
+            "else": {
+                "properties": {
+                    "fingerprint": {"type": "null"},
+                    "verification_result": {"type": "null"},
+                    "verification_result_sha256": {"type": "null"},
+                }
+            },
+        }
+    ]
     defs["BooleanCapability"]["allOf"] = [
         {
             "if": {"properties": {"supported": {"const": False}}},
@@ -220,8 +261,18 @@ def augment_model_card_schema(schema: dict[str, Any]) -> None:
                     "usage": {
                         "properties": {
                             "recommended_environment": {
-                                "properties": {"verified": {"const": True}},
-                                "required": ["verified"],
+                                "properties": {
+                                    "verified": {"const": True},
+                                    "fingerprint": {"type": "string"},
+                                    "verification_result": {"type": "string"},
+                                    "verification_result_sha256": {"type": "string"},
+                                },
+                                "required": [
+                                    "verified",
+                                    "fingerprint",
+                                    "verification_result",
+                                    "verification_result_sha256",
+                                ],
                             }
                         }
                     }
@@ -246,8 +297,18 @@ def augment_model_card_schema(schema: dict[str, Any]) -> None:
         {
             "if": {"properties": {"card_status": {"enum": ["runtime_verified", "profiled"]}}},
             "then": {
-                "required": ["verification_report"],
-                "properties": {"verification_report": {"type": "string"}},
+                "required": [
+                    "runtime_verification_target",
+                    "runtime_verification_target_sha256",
+                    "verification_report",
+                    "verification_report_sha256",
+                ],
+                "properties": {
+                    "runtime_verification_target": {"type": "string"},
+                    "runtime_verification_target_sha256": {"type": "string"},
+                    "verification_report": {"type": "string"},
+                    "verification_report_sha256": {"type": "string"},
+                },
             },
         },
         {
@@ -308,6 +369,157 @@ def augment_model_card_schema(schema: dict[str, Any]) -> None:
     ]
 
 
+def augment_verification_report_schema(schema: dict[str, Any]) -> None:
+    """Require target associations and explicit success semantics for target-aware reports."""
+
+    names = [
+        "runtime_target_id",
+        "workflow_id",
+        "integrated_variant_id",
+        "checkpoint_id",
+        "public_model_entry_point",
+        "integration_handoff_sha256",
+        "environment_spec_sha256",
+        "source_manifest_sha256",
+        "required_check_ids",
+        "optional_check_ids",
+    ]
+    schema["allOf"] = [
+        {
+            "if": {"properties": {"schema_version": {"const": "2.0.0"}}},
+            "then": {
+                "required": [*names, "verification_status"],
+                "properties": {
+                    **{
+                        name: {"type": "string"}
+                        for name in names
+                        if name not in {"required_check_ids", "optional_check_ids"}
+                    },
+                    "required_check_ids": {"type": "array", "minItems": 1, "uniqueItems": True},
+                    "optional_check_ids": {"type": "array", "uniqueItems": True},
+                    "checks": {"type": "array", "minItems": 1, "uniqueItems": True},
+                    "verification_status": {"type": "string"},
+                },
+            },
+            "else": {
+                "properties": {
+                    "verification_status": {"type": "null"},
+                    "required_check_ids": {"maxItems": 0},
+                    "optional_check_ids": {"maxItems": 0},
+                }
+            },
+        },
+        {
+            "if": {
+                "required": ["verification_status"],
+                "properties": {"verification_status": {"const": "passed"}},
+            },
+            "then": {
+                "properties": {
+                    "checks": {
+                        "not": {
+                            "contains": {
+                                "type": "object",
+                                "properties": {"status": {"const": "failed"}},
+                                "required": ["status"],
+                            }
+                        }
+                    }
+                }
+            },
+        },
+        {
+            "if": {
+                "required": ["verification_status"],
+                "properties": {"verification_status": {"const": "failed"}},
+            },
+            "then": {
+                "properties": {
+                    "checks": {
+                        "contains": {
+                            "type": "object",
+                            "properties": {"status": {"const": "failed"}},
+                            "required": ["status"],
+                        },
+                        "minContains": 1,
+                    }
+                }
+            },
+        },
+    ]
+
+
+def augment_runtime_verification_target_schema(schema: dict[str, Any]) -> None:
+    """Require an explicit ordered check contract for completeness-aware targets."""
+
+    schema["allOf"] = [
+        {
+            "if": {"properties": {"schema_version": {"const": "2.0.0"}}},
+            "then": {
+                "required": ["required_check_ids", "optional_check_ids"],
+                "properties": {
+                    "required_check_ids": {
+                        "type": "array",
+                        "minItems": 1,
+                        "uniqueItems": True,
+                    },
+                    "optional_check_ids": {"type": "array", "uniqueItems": True},
+                },
+            },
+            "else": {
+                "properties": {
+                    "required_check_ids": {"maxItems": 0},
+                    "optional_check_ids": {"maxItems": 0},
+                }
+            },
+        }
+    ]
+
+
+def augment_environment_verification_result_schema(schema: dict[str, Any]) -> None:
+    """Couple infrastructure verification status to its environment lifecycle outcome."""
+
+    schema["allOf"] = [
+        {
+            "if": {"properties": {"verification_status": {"const": "passed"}}},
+            "then": {
+                "properties": {
+                    "lifecycle_state": {"const": "environment_verified"},
+                    "failure_classification": {"type": "null"},
+                    "import_results": {
+                        "type": "array",
+                        "minItems": 1,
+                        "uniqueItems": True,
+                        "items": {
+                            "allOf": [
+                                ref("VerificationObservation"),
+                                {"properties": {"status": {"const": "passed"}}},
+                            ]
+                        },
+                    },
+                    "environment_smoke_results": {
+                        "type": "array",
+                        "minItems": 1,
+                        "uniqueItems": True,
+                        "items": {
+                            "allOf": [
+                                ref("VerificationObservation"),
+                                {"properties": {"status": {"const": "passed"}}},
+                            ]
+                        },
+                    },
+                }
+            },
+            "else": {
+                "properties": {
+                    "lifecycle_state": {"const": "materialized"},
+                    "failure_classification": {"type": "string"},
+                }
+            },
+        }
+    ]
+
+
 def render() -> dict[Path, str]:
     """Render all schema files."""
 
@@ -318,6 +530,12 @@ def render() -> dict[Path, str]:
             augment_checkpoint_schema(schema)
         elif filename == "model-card.schema.json":
             augment_model_card_schema(schema)
+        elif filename == "environment-verification-result.schema.json":
+            augment_environment_verification_result_schema(schema)
+        elif filename == "verification-report.schema.json":
+            augment_verification_report_schema(schema)
+        elif filename == "runtime-verification-target.schema.json":
+            augment_runtime_verification_target_schema(schema)
         rendered[SCHEMA_DIR / filename] = json.dumps(schema, indent=2, sort_keys=True) + "\n"
     return rendered
 

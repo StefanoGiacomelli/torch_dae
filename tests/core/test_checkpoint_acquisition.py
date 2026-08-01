@@ -727,7 +727,11 @@ def test_package_bundle_malformed_lookup_is_typed_and_reported(
         },
     )
 
-    def fake_ensure(self: object, requested: str) -> ResolvedEnvironment:
+    def fake_resolved_environment(
+        self: object,
+        requested: str,
+        **kwargs: object,
+    ) -> ResolvedEnvironment:
         return ResolvedEnvironment(
             environment_id="synthetic-package-environment",
             model_card_id=requested,
@@ -741,9 +745,41 @@ def test_package_bundle_malformed_lookup_is_typed_and_reported(
             valid=True,
         )
 
+    def fake_materialize(self: object, requested: str, **kwargs: object) -> None:
+        assert requested == "synthetic-shared-environment"
+
+    def fake_verify(self: object, requested: str, **kwargs: object) -> None:
+        assert requested == "synthetic-shared-environment"
+
+    class FakeDefinition:
+        environment_fingerprint = "a" * 64
+
+    def fake_resolve(self: object, requested: str) -> FakeDefinition:
+        assert requested == "synthetic-shared-environment"
+        return FakeDefinition()
+
     from torch_dae.environment import manager as environment_manager
 
-    monkeypatch.setattr(environment_manager.EnvironmentManager, "ensure", fake_ensure)
+    monkeypatch.setattr(
+        environment_manager.EnvironmentManager,
+        "materialize_environment",
+        fake_materialize,
+    )
+    monkeypatch.setattr(
+        environment_manager.EnvironmentManager,
+        "verify_environment",
+        fake_verify,
+    )
+    monkeypatch.setattr(
+        environment_manager.EnvironmentManager,
+        "resolve_environment",
+        fake_resolve,
+    )
+    monkeypatch.setattr(
+        environment_manager.EnvironmentManager,
+        "resolved_environment",
+        fake_resolved_environment,
+    )
     with pytest.raises(CheckpointAcquisitionError) as exc_info:
         CheckpointManager(
             tmp_path,

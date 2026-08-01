@@ -8,7 +8,12 @@
 [Canonical accepted prerequisite handoff path, or None for the first analyze phase.]
 
 ## Produced handoff
-[Promoted canonical handoff path, or the runtime verification report for verify.]
+[Promoted canonical handoff path. For verify, also list target, environment-result, and
+checkpoint-specific report paths separately.]
+
+## Evidence separation
+[Environment materialization/result/fingerprint and checkpoint-specific target/report associations,
+including required/optional check-contract agreement and complete passed required-check coverage.]
 
 ## Artifact supersessions
 [Validated count and affected repository-relative paths, or None.]

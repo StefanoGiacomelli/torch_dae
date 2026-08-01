@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -21,7 +22,10 @@ SCHEMA_MAP = {
     "embedding": "embedding.schema.json",
     "environment": "environment.schema.json",
     "environment-sources": "environment-sources.schema.json",
+    "environment-materialization-result": "environment-materialization-result.schema.json",
+    "environment-verification-result": "environment-verification-result.schema.json",
     "verification-report": "verification-report.schema.json",
+    "runtime-verification-target": "runtime-verification-target.schema.json",
     "analysis-report": "analysis-report.schema.json",
     "environment-resolution-report": "environment-resolution-report.schema.json",
 }
@@ -111,3 +115,68 @@ def test_schema_generation_idempotent(repo_root: Path) -> None:
         text=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_environment_success_schema_requires_complete_passed_observations(
+    repo_root: Path, valid_fixture_dir: Path, tmp_path: Path
+) -> None:
+    data = load_json(valid_fixture_dir / "environment-verification-result.synthetic.json")
+    schema = repo_root / "schemas/environment-verification-result.schema.json"
+    for field, value in [
+        ("import_results", []),
+        (
+            "environment_smoke_results",
+            [{"name": "smoke", "status": "failed", "details": "failed"}],
+        ),
+    ]:
+        candidate = dict(data)
+        candidate[field] = value
+        path = tmp_path / f"environment-{field}.json"
+        path.write_text(json.dumps(candidate))
+        with pytest.raises(JsonSchemaValidationError):
+            schema_validate(path, schema)
+
+
+def test_completeness_aware_target_schema_requires_unique_nonempty_required_checks(
+    repo_root: Path, valid_fixture_dir: Path, tmp_path: Path
+) -> None:
+    data = load_json(valid_fixture_dir / "runtime-verification-target.synthetic.json")
+    schema = repo_root / "schemas/runtime-verification-target.schema.json"
+    for label, value in [
+        ("empty", []),
+        ("duplicate", ["canonical-input", "canonical-input"]),
+    ]:
+        candidate = dict(data)
+        candidate["required_check_ids"] = value
+        path = tmp_path / f"target-{label}.json"
+        path.write_text(json.dumps(candidate))
+        with pytest.raises(JsonSchemaValidationError):
+            schema_validate(path, schema)
+
+
+def test_target_aware_report_schema_rejects_empty_checks(
+    repo_root: Path, valid_fixture_dir: Path, tmp_path: Path
+) -> None:
+    data = load_json(valid_fixture_dir / "verification-report.synthetic.json")
+    data.update(
+        {
+            "schema_version": "2.0.0",
+            "runtime_target_id": "synthetic-runtime-target",
+            "workflow_id": "synthetic-workflow",
+            "integrated_variant_id": "synthetic-variant",
+            "checkpoint_id": "synthetic-checkpoint",
+            "public_model_entry_point": "torch_dae.synthetic:AudioModel",
+            "integration_handoff_sha256": "1" * 64,
+            "environment_spec_sha256": "2" * 64,
+            "source_manifest_sha256": "3" * 64,
+            "required_check_ids": ["canonical-input"],
+            "optional_check_ids": [],
+            "checks": [],
+            "verification_status": "passed",
+        }
+    )
+    path = tmp_path / "empty-target-aware-report.json"
+    path.write_text(json.dumps(data))
+
+    with pytest.raises(JsonSchemaValidationError):
+        schema_validate(path, repo_root / "schemas/verification-report.schema.json")

@@ -13,7 +13,7 @@ uv sync --all-groups
 
 Do not add PyTorch, TorchAudio, Transformers, TensorFlow, JAX, librosa, checkpoints, or other
 model-specific runtime dependencies to the root project. Declare real model dependencies only in a
-committed specification under `environments/<card-id>/`, and materialize them through the isolated
+committed specification under `environments/<environment-id>/`, and materialize them through the isolated
 environment subsystem.
 
 ## Quality checks

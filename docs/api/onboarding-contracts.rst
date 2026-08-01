@@ -63,8 +63,8 @@ Enum values
      - ``md5``, ``sha1``, ``sha256``, ``sha512``, ``blake2b``, ``other``, ``unknown``
      - Exact host-published algorithm; nonstandard or unknown values require an explanation.
    * - ``OnboardingPhase``
-     - ``analyze``, ``resolve-environment``, ``integrate``, ``card``
-     - Accepted pre-runtime handoff phases.
+     - ``analyze``, ``resolve-environment``, ``integrate``, ``verify``, ``card``
+     - Accepted handoff phases; verify produces checkpoint-specific runtime evidence before card.
    * - ``WorkflowStatus`` / ``HandoffStatus``
      - ``active``, ``completed`` / ``draft``, ``accepted``, ``superseded``
      - Workflow and phase-review state.

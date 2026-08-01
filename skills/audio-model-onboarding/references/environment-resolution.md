@@ -16,7 +16,7 @@ Use `generate_environment_candidates.py` to produce ordered unverified candidate
 arbitrary Cartesian search. Trial only explicitly selected candidates and use the environment APIs
 and CLI to materialize or verify isolated model-specific environments.
 
-Successful resolution may prepare `environments/<card-id>/environment.json`, `pyproject.toml`,
+Successful resolution may prepare `environments/<environment-id>/environment.json`, `pyproject.toml`,
 `uv.lock`, `sources.json`, and `verify_environment.py`.
 
 Every package imported directly by the selected minimal runtime source surface is a direct
@@ -61,10 +61,16 @@ from audit archives.
 
 Official-package resolution requires exact `source_package_name` and `source_package_version`
 evidence that matches the selected candidate. Accepted identity provenance is verified upstream
-`package_metadata` or locally observed `environments/<card-id>/pyproject.toml`, `uv.lock`, or
+`package_metadata` or locally observed `environments/<environment-id>/pyproject.toml`, `uv.lock`, or
 `environment.json`; `sources.json`, `verify_environment.py`, arbitrary files, inference, and runtime
 observations cannot prove package identity. Remaining
 source-strategy decision gates block `environment_resolved`; resolved choices belong in decision
 records. Diagnostic references use `.torch-dae`-relative
-`reports/environments/<card-id>/<fingerprint>/<report>.json`, while committed verification reports
-use `verification_reports/<card-id>/<report>.json`.
+`reports/environments/<environment-id>/<fingerprint>/<report>.json`. Accepted normalized
+environment evidence belongs in the verify handoff tree and must retain passed status plus the
+matching fingerprint; only checkpoint-specific runtime reports use
+`verification_reports/<card-id>/<report>.json`. Failed environment evidence remains diagnostic and
+cannot promote lifecycle state.
+A successful environment result additionally requires nonempty import and smoke observations, only
+passed observations, and unique names across both collections. Missing, failed, or unsupported
+required observations cannot accompany successful global status.

@@ -22,11 +22,16 @@ Requirements:
 - Do not silently select an ambiguous variant, checkpoint, source strategy, or embedding
 - Record evidence and provenance for every material conclusion
 - Use isolated model-specific environments
+- Resolve, materialize, and verify environments by environment ID without requiring a model card
+- In verify mode, create strict runtime targets before checkpoint acquisition
+- Declare ordered required and optional runtime check IDs and require complete passed required-check
+  coverage before success
+- Keep environment verification evidence separate from checkpoint-specific runtime reports
 - Validate every generated artifact
 - Run `uv run python scripts/check_worktree_patch.py --json` before phase completion so untracked
   non-ignored outputs receive staged-equivalent whitespace validation without changing the real index
 - Discover and validate accepted prerequisite handoffs before requesting attachments
-- Promote accepted pre-runtime outputs before declaring a phase complete
+- Promote accepted phase outputs before declaring a phase complete
 - Declare exact artifact supersessions when a later phase changes a shared repository output
 - Generate the deterministic review bundle and run scoped cleanup
 - Execute only the requested workflow mode

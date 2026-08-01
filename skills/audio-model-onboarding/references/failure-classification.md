@@ -10,6 +10,12 @@ Resolve-environment failures must be classified with a specific cause, including
 
 The next candidate must be motivated by evidence or failure diagnostics.
 
+Card-independent environment operations additionally distinguish invalid specification, artifact
+hash mismatch, interpreter unavailable, platform incompatibility, dependency installation, source
+preparation, direct-dependency mismatch, verification-script failure, sandbox/execution policy, and
+external-command failure. Environment failures never imply checkpoint incompatibility unless a
+checkpoint was actually acquired and inspected in an authorized verify phase.
+
 Sandbox, DNS, package-index, authentication, and rate-limit failures are external execution
 failures, not model/dependency incompatibilities. Preserve the original log and classification. When
 execution policy permits, one identical evidence-motivated rerun may be recorded alongside the
