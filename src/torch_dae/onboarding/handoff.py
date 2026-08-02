@@ -703,9 +703,6 @@ def promote_phase(
                     raise HandoffManagementError(
                         "superseding handoff does not record the prior accepted handoff hash"
                     )
-                archived = load_handoff(existing_handoff).model_copy(
-                    update={"handoff_status": HandoffStatus.SUPERSEDED}
-                )
             candidate_phase = candidate / phase.value
             historical_handoffs = (
                 tuple(sorted((destination / phase.value).glob("handoff.*.superseded.json")))
@@ -719,10 +716,7 @@ def promote_phase(
                 shutil.copy2(historical_handoff, candidate_phase / historical_handoff.name)
             if previous_hash is not None:
                 archive_path = candidate_phase / f"handoff.{previous_hash}.superseded.json"
-                archive_path.write_text(
-                    canonical_json_text(archived.model_dump(mode="json")),
-                    encoding="utf-8",
-                )
+                shutil.copy2(existing_handoff, archive_path)
             shutil.copy2(source / "workflow.json", candidate / "workflow.json")
         else:
             shutil.copytree(source, candidate, symlinks=True)

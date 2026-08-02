@@ -8,6 +8,7 @@ import typer
 
 from torch_dae.core.errors import (
     EnvironmentAlreadyExistsError,
+    EnvironmentDependencyClosureError,
     EnvironmentMaterializationError,
     EnvironmentNotFoundError,
     EnvironmentVerificationError,
@@ -41,6 +42,8 @@ def _exit_for_error(
     classification = (
         EnvironmentFailureClassification.INTERPRETER_UNAVAILABLE
         if isinstance(exc, PythonInterpreterUnavailableError)
+        else EnvironmentFailureClassification.DEPENDENCY_CLOSURE
+        if isinstance(exc, EnvironmentDependencyClosureError)
         else EnvironmentFailureClassification.VERIFICATION_SCRIPT
         if isinstance(exc, EnvironmentVerificationError)
         else EnvironmentFailureClassification.INVALID_SPECIFICATION
@@ -135,6 +138,27 @@ def materialize(
             typer.echo(json.dumps(payload, indent=2, sort_keys=True))
         else:
             typer.echo(f"materialized: {result.environment_id} {result.status}")
+    except TorchDaeError as exc:
+        _exit_for_error(exc, json_output=json_output, environment_id=environment_id)
+
+
+@app.command("preflight")
+def preflight(
+    environment_id: str,
+    json_output: bool = typer.Option(False, "--json"),
+) -> None:
+    """Check local-wheel runtime requirements against the accepted lock without materializing."""
+
+    try:
+        result = _manager(offline=True, no_python_downloads=True).preflight_environment(
+            environment_id
+        )
+        if json_output:
+            typer.echo(json.dumps(result.model_dump(mode="json"), indent=2, sort_keys=True))
+        else:
+            typer.echo(f"preflight: {result.environment_id} {result.status}")
+        if result.status != "passed":
+            raise typer.Exit(4)
     except TorchDaeError as exc:
         _exit_for_error(exc, json_output=json_output, environment_id=environment_id)
 

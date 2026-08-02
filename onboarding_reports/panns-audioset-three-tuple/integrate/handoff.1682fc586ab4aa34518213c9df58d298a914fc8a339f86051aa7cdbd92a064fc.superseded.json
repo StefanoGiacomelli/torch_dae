@@ -1,0 +1,592 @@
+{
+  "allowed_next_modes": [
+    "verify"
+  ],
+  "artifact_supersessions": [
+    {
+      "new_sha256": "f29ea6262f3bcb2f241e00b157991dce7a602bdef9fc3dbe98a5292a5e4d6729",
+      "path": "environments/panns-cnn14-16k-map-0438/sources.json",
+      "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+      "prior_originating_phase": "resolve-environment",
+      "prior_sha256": "2d5c42a3ac7a94d55d2c5bf6aac22eb2b7b6d1efa356582cc9db23cbfdc68df4",
+      "reason": "Integrate records the selected vendored production source paths in the previously draft source manifest."
+    },
+    {
+      "new_sha256": "ae2a3282db09ad74cc25bee9813d834d3f95007b91e061158020bce4aa0347db",
+      "path": "environments/panns-cnn14-16k-map-0438/verify_environment.py",
+      "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+      "prior_originating_phase": "resolve-environment",
+      "prior_sha256": "f776272f55c43a7da9f8f06d71e7e25ff982d32b927aa8814e52d0b3cea3be97",
+      "reason": "Integrate replaces the constructor-only draft verifier with the fixed public Cnn14_16k wrapper verification."
+    },
+    {
+      "new_sha256": "0ba554a609371bc950b80f0525e7fe4a0b2c3d38c7814711da3b0d665389b994",
+      "path": "environments/panns-resnet38-map-0434/sources.json",
+      "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+      "prior_originating_phase": "resolve-environment",
+      "prior_sha256": "da5f3221b2e8e59a99f90ea95c868ea637e445580b33a3270b77ad2e429567bd",
+      "reason": "Integrate records the selected vendored production source paths in the previously draft source manifest."
+    },
+    {
+      "new_sha256": "ff660209698988256f3d5a7b829630659317c47bee9f488129e143006ebc57aa",
+      "path": "environments/panns-resnet38-map-0434/verify_environment.py",
+      "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+      "prior_originating_phase": "resolve-environment",
+      "prior_sha256": "2c5d31f2621a49098156d9d7fad355e23e50386d28a9774d475fa0e1aad4e5a2",
+      "reason": "Integrate replaces the constructor-only draft verifier with the fixed public ResNet38 wrapper verification."
+    },
+    {
+      "new_sha256": "a76db3dc217ad376d5b0cecedf03c067f2da2414d057ec563e3503ebf329f08f",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/sources.json",
+      "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+      "prior_originating_phase": "resolve-environment",
+      "prior_sha256": "b5333be614396cad2afa3def3d5a701faf446b35629bf24a042a8eeae0473b6f",
+      "reason": "Integrate records the selected vendored production source paths in the previously draft source manifest."
+    },
+    {
+      "new_sha256": "ffde27bdb9eaa17946c17ed15146eb5be0ff9ef5cf3a70f115ba9f0980a39297",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/verify_environment.py",
+      "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+      "prior_originating_phase": "resolve-environment",
+      "prior_sha256": "fba1a1276a75952b2bf033702e4f9a720733c4fdb1cb59dcdeee1c82ecd4ad72",
+      "reason": "Integrate replaces the constructor-only draft verifier with the fixed public Wavegram_Logmel_Cnn14 wrapper verification."
+    }
+  ],
+  "canonical_skill_fingerprint": "87059ce6f75cd992587856b9250821771084121053814ee1cedd5da289b55f39",
+  "handoff_status": "accepted",
+  "input_artifacts": [
+    {
+      "canonical_role": "analyze-handoff",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "analyze",
+      "path": "onboarding_reports/panns-audioset-three-tuple/analyze/handoff.json",
+      "sha256": "dee4f8fcfbc20a47d5c86ebce71e2c25a745b6f19faf5a1b4efc510cf29cece2"
+    },
+    {
+      "canonical_role": "resolve-environment-handoff",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "resolve-environment",
+      "path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/handoff.json",
+      "sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c"
+    }
+  ],
+  "lifecycle_promotion": null,
+  "output_artifacts": [
+    {
+      "canonical_role": "integration-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json",
+      "sha256": "e419c297302ad315e2ef4cfcd4ad3b5a66871ddb64215b8390c3f4dc279ab412"
+    },
+    {
+      "canonical_role": "integration-report-markdown",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.md",
+      "sha256": "1385a010550f7664534208cdc768e953c9c5a6399c47c11e862fca857e951e3d"
+    },
+    {
+      "canonical_role": "source-provenance-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/source-provenance.json",
+      "sha256": "af092c8e6cb8d7dd538bd65f48a020ff068cb3715766d87a94d5b02125bbdecf"
+    },
+    {
+      "canonical_role": "source-reduction-diff",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/source-reduction.diff",
+      "sha256": "d1d8ceec68cc059b563ba9abb5ceac71b2275a592c14308fa558f48f61798033"
+    },
+    {
+      "canonical_role": "source-transformation-record",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/source-transformation.json",
+      "sha256": "3b23b39bc9b524554c6528871299bae408435fac94a96080cf289046ec525ed8"
+    },
+    {
+      "canonical_role": "synthetic-integration-result",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/synthetic-integration-result.json",
+      "sha256": "48851c3737139b9626bec430f1d9c8a15d43a1f706a8e072812efa5d0ab234a3"
+    },
+    {
+      "canonical_role": "environment-materialization-result",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-materialization-result.json",
+      "sha256": "59e5d0566e8f1ec32aa0ec5c87d7e8df947a9f0f88cf51aa63dfa545d2c30f8b"
+    },
+    {
+      "canonical_role": "supersession-validation-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/supersession-validation-report.json",
+      "sha256": "553ee300bd993b63d2c65da5d31ab53de42825e8ce810b288534aacd44a17373"
+    },
+    {
+      "canonical_role": "panns-doc-index",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "docs/index.md",
+      "sha256": "dd9bdd0ef7fb3a2844beeefbd959d126dccc7e8231b93867270c5f5cc59b002c"
+    },
+    {
+      "canonical_role": "panns-model-documentation",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "docs/models/panns.md",
+      "sha256": "c5c5970910293ce67f9e91d727c11ad6c58e8b5c6a8f5ba02204cf2d0e73fe9d"
+    },
+    {
+      "canonical_role": "environment-sources",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "environments/panns-cnn14-16k-map-0438/sources.json",
+      "sha256": "f29ea6262f3bcb2f241e00b157991dce7a602bdef9fc3dbe98a5292a5e4d6729"
+    },
+    {
+      "canonical_role": "environment-verification-script",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "environments/panns-cnn14-16k-map-0438/verify_environment.py",
+      "sha256": "ae2a3282db09ad74cc25bee9813d834d3f95007b91e061158020bce4aa0347db"
+    },
+    {
+      "canonical_role": "environment-sources",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "environments/panns-resnet38-map-0434/sources.json",
+      "sha256": "0ba554a609371bc950b80f0525e7fe4a0b2c3d38c7814711da3b0d665389b994"
+    },
+    {
+      "canonical_role": "environment-verification-script",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "environments/panns-resnet38-map-0434/verify_environment.py",
+      "sha256": "ff660209698988256f3d5a7b829630659317c47bee9f488129e143006ebc57aa"
+    },
+    {
+      "canonical_role": "environment-sources",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/sources.json",
+      "sha256": "a76db3dc217ad376d5b0cecedf03c067f2da2414d057ec563e3503ebf329f08f"
+    },
+    {
+      "canonical_role": "environment-verification-script",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/verify_environment.py",
+      "sha256": "ffde27bdb9eaa17946c17ed15146eb5be0ff9ef5cf3a70f115ba9f0980a39297"
+    },
+    {
+      "canonical_role": "panns-package-root",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/__init__.py",
+      "sha256": "64f045c5543a6f47bd47bee1d199d27b609b3627fe16bf8c261dc685e68623b1"
+    },
+    {
+      "canonical_role": "panns-public-api",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/__init__.py",
+      "sha256": "34589b3c3f45be2fb745e4a0312f26aa634c8e342cbb4b3bd2cfeaae817a71b0"
+    },
+    {
+      "canonical_role": "panns-vendored-license",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/_vendor/LICENSE.MIT",
+      "sha256": "98c2ef776f248a1363e9230ceee291673a0fca3f2bf3ca364ddcb51d3efd0e80"
+    },
+    {
+      "canonical_role": "panns-vendored-package",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/_vendor/__init__.py",
+      "sha256": "b0e64b7f7ec4e2a7d6bacedbc78fd60163ec8514c27f71d878c77e273176982f"
+    },
+    {
+      "canonical_role": "panns-vendored-models",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/_vendor/models.py",
+      "sha256": "9fd2d078c9dbc47843919c61ba94943844f1a74cd92e56d5873d2d51d7e748a5"
+    },
+    {
+      "canonical_role": "panns-vendored-utilities",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/_vendor/pytorch_utils.py",
+      "sha256": "447880ffe7a6bd3e2dadb336d38267d6b20a38f48cc1e094f220af44d237ea23"
+    },
+    {
+      "canonical_role": "panns-identities",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/identities.py",
+      "sha256": "6f00c8c70c21e1a0eceb1ac6d0d2cdcd2f39800b0251d3ae28072993c6bdfebd"
+    },
+    {
+      "canonical_role": "panns-label-loader",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/labels.py",
+      "sha256": "12f3b82971af1b80c370bd5dfd9ad8139c1a5e6188903b5a3425fd30dabbce38"
+    },
+    {
+      "canonical_role": "panns-wrapper",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/model.py",
+      "sha256": "b449979b3ac5edba8a202365c8b49859d05a71bb0225e7a0f870783f84ba3d56"
+    },
+    {
+      "canonical_role": "panns-resource-package",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/resources/__init__.py",
+      "sha256": "887f4aac8ddb70ce56ad464c360ed798020de2dd7c4ba41daf828da5f3ee1455"
+    },
+    {
+      "canonical_role": "panns-audioset-labels",
+      "external_label": null,
+      "media_type": "text/csv",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/resources/class_labels_indices.csv",
+      "sha256": "cdd1049833c4b86127c2773ac0d14a2754b6a6d0d1798002ed5c66e699708429"
+    },
+    {
+      "canonical_role": "panns-metadata-tests",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "tests/models/test_panns_metadata.py",
+      "sha256": "024469dc14bcafab15fc5c49e28331ee345f4825dbb3873e436a4a00c063bf1d"
+    },
+    {
+      "canonical_role": "panns-runtime-tests",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "tests/models/test_panns_runtime.py",
+      "sha256": "e105079422f4fbdc8a3d0f5ce165d0e5b7e00c195febd0ac84830e0174c19524"
+    },
+    {
+      "canonical_role": "panns-public-metadata-tests",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "tests/test_public_metadata.py",
+      "sha256": "306fd046d6096a5e3947c2dab88d90e9eaa51e82b1ed2dc4560f542e30557ee7"
+    },
+    {
+      "canonical_role": "whitespace-validation-closure",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/whitespace-validation-closure.json",
+      "sha256": "1e9ef459579916e0de9cf5e017788b0082026a7158e330feff0b4b76eb8c1591"
+    },
+    {
+      "canonical_role": "scoped-git-whitespace-policy",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": ".gitattributes",
+      "sha256": "0f45c8a113b3e086384363473c822b8035e126bb858c5e6af08e31ed4a471290"
+    },
+    {
+      "canonical_role": "whitespace-validation-changelog",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "CHANGELOG.md",
+      "sha256": "48c4c04426dadbd93b4ead67988b26ca33f604cca771873451b083de2f7aa815"
+    },
+    {
+      "canonical_role": "repository-validation-readme",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "README.md",
+      "sha256": "abf051719814de3a6dd2cb38791ac3ed791954227df88a32d6f426ab852cc2b2"
+    },
+    {
+      "canonical_role": "repository-validation-documentation",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "docs/development/testing.md",
+      "sha256": "89d827f1511237c7a2f1f39766c92673077fb6c9c798661e78c64db677bc1ecf"
+    },
+    {
+      "canonical_role": "integrate-validation-documentation",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "docs/skill/integrate.md",
+      "sha256": "74e5e4b5070c331524e1d18b1262d6cc9b3e26f22600f0f588a89235bf7bb5ae"
+    },
+    {
+      "canonical_role": "phase-handoff-schema",
+      "external_label": null,
+      "media_type": "application/schema+json",
+      "originating_phase": "integrate",
+      "path": "schemas/phase-handoff.schema.json",
+      "sha256": "f19d063a62fa33466736e36d6b6e0daaebbe97f1e6bf0ebf4b48f56cf5451dd4"
+    },
+    {
+      "canonical_role": "staged-equivalent-validator",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "scripts/check_worktree_patch.py",
+      "sha256": "a63edfa7adf5220b4f01e32b22b50b1de3421bf47da23779399a15a7f0c24eee"
+    },
+    {
+      "canonical_role": "repository-validator",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "scripts/validate_repository.py",
+      "sha256": "7c249dc562f05378ef39d342ce35e694338437aa280b455aff0b874b9b92a290"
+    },
+    {
+      "canonical_role": "canonical-onboarding-skill",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "skills/audio-model-onboarding/SKILL.md",
+      "sha256": "684fd6b41249f656464c3a88a91e0a7faf98025303d088793692e8f012066ba7"
+    },
+    {
+      "canonical_role": "integrate-validation-reference",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "skills/audio-model-onboarding/references/integration-planning.md",
+      "sha256": "cfa11abb0f476fca47dba1870f9b6d8bad1b805f3d56d40a57ef310667683c42"
+    },
+    {
+      "canonical_role": "agent-request-template",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "skills/audio-model-onboarding/templates/agent-request.md",
+      "sha256": "4dd964434af641ab5c5bfeac272adf8254ab32cd63056eb94d0283e01f9da686"
+    },
+    {
+      "canonical_role": "agent-response-template",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "skills/audio-model-onboarding/templates/agent-response.md",
+      "sha256": "ff10cf89ac670fc8643ce540965245044858a67a3c883b6983e2a57ffbe3a717"
+    },
+    {
+      "canonical_role": "repository-path-contract",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/contracts.py",
+      "sha256": "60700af566c3d999211d809ab5e1fca9a540a116704822548e44a2caa7cb8a98"
+    },
+    {
+      "canonical_role": "handoff-output-contract",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/onboarding/contracts.py",
+      "sha256": "76b344dca40f42f4b48c3e1f049f265e38e5907df0ac9771faebdc042d670e0d"
+    },
+    {
+      "canonical_role": "same-phase-handoff-preservation",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/onboarding/handoff.py",
+      "sha256": "bdd5dea164cc681b1314f90d27b214de7692b08025a8e2a3b05100c1c0ae4fbb"
+    },
+    {
+      "canonical_role": "handoff-closure-regression-tests",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "tests/onboarding/test_handoff_management.py",
+      "sha256": "3a7aa82fc4a4565ad484a7b79ffc54d03d8f21c324895f5cedd7981c68111b27"
+    },
+    {
+      "canonical_role": "staged-equivalent-regression-tests",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "tests/test_check_worktree_patch.py",
+      "sha256": "952be957d4d3396060b4504397c1bcba81b096609953cf534b7c954e3e78ca84"
+    },
+    {
+      "canonical_role": "coverage-validation-closure",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/coverage-validation-closure.json",
+      "sha256": "949b1c6a6d50bf8c9babff92ceb99faa3ae692ab54f9604470ed82da43ee09a3"
+    },
+    {
+      "canonical_role": "root-coverage-policy",
+      "external_label": null,
+      "media_type": "application/toml",
+      "originating_phase": "integrate",
+      "path": "pyproject.toml",
+      "sha256": "89d505568611bd617b13ef921cf930d394460480b1fe18e4ebf6e10babf53635"
+    }
+  ],
+  "phase": "integrate",
+  "project_spec_sha256": "177a4f1712873e39284588b99296a6ad0057d23d9f9535f25b46d2f7668400d0",
+  "repository_commit": "56258501cdc334cdfb511058bc362a45dd81c27c",
+  "schema_version": "1.0.0",
+  "superseded_handoff_sha256": "0ff5d363eff37e80461569d3ec93734f04dff78b862c4c9440795018e290ec4a",
+  "target_card_ids": [
+    "panns-cnn14-16k-map-0438",
+    "panns-resnet38-map-0434",
+    "panns-wavegram-logmel-cnn14-map-0439"
+  ],
+  "target_checkpoint_ids": [
+    "panns-cnn14-16k-map-0438",
+    "panns-resnet38-map-0434",
+    "panns-wavegram-logmel-cnn14-map-0439"
+  ],
+  "target_variant_ids": [
+    "panns-cnn14-16k",
+    "panns-resnet38",
+    "panns-wavegram-logmel-cnn14"
+  ],
+  "unresolved_items_carried_forward": [
+    {
+      "description": "Exact checkpoint-to-source equivalence remains unresolved for all three tuples.",
+      "item_id": "risk-checkpoint-source-equivalence",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    },
+    {
+      "description": "Cnn14_16k source semantics differ from the retained chronological comparison revision.",
+      "item_id": "risk-cnn14-16k-source-semantics",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    },
+    {
+      "description": "The paper Hamming versus selected-source Hann window discrepancy remains unresolved.",
+      "item_id": "risk-window-function",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    },
+    {
+      "description": "Checkpoint acquisition, hashing, loading, and inspection remain unperformed.",
+      "item_id": "risk-checkpoint-acquisition",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    },
+    {
+      "description": "Padded variable-length batch semantics remain unsupported.",
+      "item_id": "risk-padded-batch-semantics",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    },
+    {
+      "description": "Temporal embedding timing and Wavegram/log-mel branch embedding contracts remain unresolved.",
+      "item_id": "risk-temporal-embedding",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    },
+    {
+      "description": "CUDA, MPS, Linux, and other Python/platform combinations remain unverified.",
+      "item_id": "risk-platform-coverage",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    },
+    {
+      "description": "Checkpoint compatibility and pretrained numerical behavior remain unverified.",
+      "item_id": "risk-pretrained-runtime",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    }
+  ],
+  "user_decisions_consumed": [
+    {
+      "decision": "Use a minimal vendored adaptation for the production source substrate.",
+      "decision_id": "d-source-strategy",
+      "selected_option": "minimal-vendored-adaptation"
+    },
+    {
+      "decision": "Use one common source revision while preserving tuple-specific checkpoint-equivalence uncertainty.",
+      "decision_id": "d-common-source-revision",
+      "selected_option": "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0"
+    },
+    {
+      "decision": "Use the observed modern dependency stack for all three tuple integrations.",
+      "decision_id": "d-shared-environment-stack",
+      "selected_option": "python-3.12.13-numpy-2.4.6-torch-2.13.0-torchlibrosa-0.1.0"
+    },
+    {
+      "decision": "Keep environment lifecycle state unpromoted because integrate mode cannot create the missing model cards.",
+      "decision_id": "d-no-lifecycle-promotion",
+      "selected_option": "draft-resolution-complete"
+    },
+    {
+      "decision": "Recover and complete the existing production integration without beginning verify or card.",
+      "decision_id": "d-integrate-recovery-authorized",
+      "selected_option": "preserve-existing-integration"
+    }
+  ],
+  "validation_summary": {
+    "checks": [
+      "repository and accepted-handoff baseline",
+      "strict artifact-supersession contract and focused regressions",
+      "six prior and new environment artifact hashes",
+      "PANNs lazy metadata and public identity validation",
+      "three isolated environment verification scripts",
+      "random-weight logits, probabilities, and 2048-dimensional embedding",
+      "0.64, 1.0, and 2.0 second duration sweep for all variants",
+      "explicit minimum and Wavegram alignment validation",
+      "complete upstream, selected range, AST node, and integrated source hashes",
+      "deterministic source-reduction diff reproduction",
+      "zero checkpoint and pretrained inference activity",
+      "exact PANNs .gitattributes rules report whitespace unset",
+      "staged-equivalent complete working-tree whitespace validation passed",
+      "real Git index hash remained unchanged",
+      "focused staged-equivalent validator regressions passed",
+      "repeated same-phase supersession preserves complete handoff history",
+      "root coverage excludes only isolated PANNs runtime and vendored source",
+      "pre-promotion line and branch coverage thresholds passed"
+    ],
+    "errors": [],
+    "passed": true
+  },
+  "workflow_id": "panns-audioset-three-tuple"
+}

@@ -61,6 +61,10 @@ class EnvironmentMaterializationError(TorchDaeError):
     """Raised when environment creation fails."""
 
 
+class EnvironmentDependencyClosureError(EnvironmentMaterializationError):
+    """Raised before materialization when the accepted lock cannot satisfy the local wheel."""
+
+
 class EnvironmentVerificationError(TorchDaeError):
     """Raised when environment verification fails."""
 

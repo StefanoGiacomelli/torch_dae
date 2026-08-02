@@ -1,0 +1,35 @@
+{
+  "local_package_identity": "content-sha256:7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+  "no_python_downloads": true,
+  "offline": true,
+  "package_reinstall": false,
+  "package_wheel_sha256": "218fbf4e5bfe576d8beed092d22c620c858b191a0164ddf6f7f8fa3940e33a31",
+  "results": [
+    {
+      "environment_fingerprint": "77a6c70f32a060ca52e69e7a768276c291e14b5ce6e7243ba3b80f8bd39eb05f",
+      "environment_id": "panns-cnn14-16k-map-0438",
+      "fingerprint_equal": true,
+      "package_identity_equal": true,
+      "status": "reused",
+      "wheel_sha256_equal": true
+    },
+    {
+      "environment_fingerprint": "8366c858f14884301afd1db6b1fab3bcd594f3c1a5668d449eb63c3f10ed7fcc",
+      "environment_id": "panns-resnet38-map-0434",
+      "fingerprint_equal": true,
+      "package_identity_equal": true,
+      "status": "reused",
+      "wheel_sha256_equal": true
+    },
+    {
+      "environment_fingerprint": "c4f3ab5be95c952ea18b750eba1b9a8c5f9fa720553521390c4d281bab198521",
+      "environment_id": "panns-wavegram-logmel-cnn14-map-0439",
+      "fingerprint_equal": true,
+      "package_identity_equal": true,
+      "status": "reused",
+      "wheel_sha256_equal": true
+    }
+  ],
+  "schema_version": "1.0.0",
+  "status": "passed"
+}

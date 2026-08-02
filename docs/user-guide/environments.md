@@ -13,12 +13,13 @@ from torch_dae.environment import EnvironmentManager
 
 manager = EnvironmentManager(Path.cwd())
 definition = manager.resolve_environment("example-environment")
+closure = manager.preflight_environment(definition.environment_id)
 materialized = manager.materialize_environment(definition.environment_id)
 verified = manager.verify_environment(
     definition.environment_id,
     expected_fingerprint=definition.environment_fingerprint,
 )
-print(materialized.status, verified.environment_fingerprint)
+print(closure.status, materialized.status, verified.environment_fingerprint)
 ```
 
 Successful verification returns `verification_status = passed` and
@@ -31,6 +32,7 @@ a verified model card.
 uv run torch-dae env create <card-id>
 uv run torch-dae env ensure <card-id>
 uv run torch-dae env resolve <environment-id>
+uv run torch-dae env preflight <environment-id>
 uv run torch-dae env materialize <environment-id>
 uv run torch-dae env verify <environment-id>
 uv run torch-dae env info <card-id>
@@ -49,6 +51,7 @@ ID. Source ambiguity remains explicit until decided.
 See {class}`torch_dae.environment.EnvironmentSpecification`,
 {class}`torch_dae.environment.EnvironmentManager`,
 {meth}`~torch_dae.environment.EnvironmentManager.resolve_environment`,
+{meth}`~torch_dae.environment.EnvironmentManager.preflight_environment`,
 {meth}`~torch_dae.environment.EnvironmentManager.materialize_environment`,
 {meth}`~torch_dae.environment.EnvironmentManager.verify_environment`,
 {meth}`~torch_dae.environment.EnvironmentManager.create`,

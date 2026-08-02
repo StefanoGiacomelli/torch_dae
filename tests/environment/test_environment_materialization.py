@@ -258,10 +258,20 @@ def test_environment_lifecycle(
         "python-resolution",
         "uv-venv",
         "uv-sync",
-        "local-wheel-build",
         "local-wheel-install",
         "dependency-check",
     }.issubset(operations)
+    preflight_logs = list(
+        (
+            tmp_path
+            / ".torch-dae/reports/environments/synthetic-shared-environment"
+            / resolved.fingerprint
+            / "preflight-commands"
+        ).glob("*.json")
+    )
+    assert any(
+        json.loads(path.read_text())["operation"] == "local-wheel-build" for path in preflight_logs
+    )
     assert "verification-script" not in operations
 
     verification = manager.verify(card_id)

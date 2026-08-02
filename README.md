@@ -113,7 +113,7 @@ uv run torch-dae env --help
 uv run torch-dae checkpoint --help
 ```
 
-Direct `env resolve`, `env materialize`, and `env verify` commands require an accepted environment
+Direct `env resolve`, `env preflight`, `env materialize`, and `env verify` commands require an accepted environment
 definition; they do not require a model card. Card-oriented `env create`, `env ensure`, `env run`,
 `env info`, and `env remove` remain compatibility conveniences where applicable. Checkpoint
 commands remain card/checkpoint-specific. No pretrained checkpoint or checkpoint-specific card is
@@ -173,6 +173,7 @@ uv run torch-dae card validate <card-id-or-path>
 uv run torch-dae env create <card-id>
 uv run torch-dae env ensure <card-id>
 uv run torch-dae env resolve <environment-id>
+uv run torch-dae env preflight <environment-id>
 uv run torch-dae env materialize <environment-id>
 uv run torch-dae env verify <environment-id>
 uv run torch-dae env remove <card-id>
@@ -187,6 +188,12 @@ uv run torch-dae checkpoint remove <card-id>
 The CLI also exposes `uv run torch-dae model inspect <card-id>` and
 `uv run torch-dae model verify <card-id>` as explicit unavailable-feature placeholders. They do not
 perform onboarding or runtime verification.
+
+Local package and environment identities are stable across commits: the package identity hashes
+only deterministic wheel build inputs, while Git HEAD and cleanliness are separate informational
+provenance. Shared local-wheel cache creation is safe across concurrent processes and publishes one
+validated cache entry atomically, so parallel environment materialization requires no manual
+serialization.
 
 ## Audio-model-onboarding skill
 

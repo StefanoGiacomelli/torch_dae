@@ -16,6 +16,15 @@ from torch_dae.environment.specification import EnvironmentSourcesManifest, Envi
 
 
 @dataclass(frozen=True)
+class LocalPackageProvenance:
+    """Informational repository state kept outside package and environment identity."""
+
+    repository_head: str | None
+    repository_dirty: bool | None
+    package_content_sha256: str
+
+
+@dataclass(frozen=True)
 class FingerprintInputs:
     """Inputs that define a materialized model environment."""
 
@@ -73,7 +82,23 @@ def canonical_platform_tag(system: str | None = None, machine: str | None = None
 
 
 def local_package_identity(repository_root: Path) -> str:
-    """Return a deterministic local package identity before or after first commit."""
+    """Return the content-addressed identity of local wheel build inputs.
+
+    Git state is deliberately excluded: identical package inputs have identical identity before
+    and after a commit, and the function also works outside a Git repository.
+    """
+
+    return package_identity_from_content_digest(local_package_content_digest(repository_root))
+
+
+def package_identity_from_content_digest(content_digest: str) -> str:
+    """Format a previously calculated package-content SHA-256 as its semantic identity."""
+
+    return f"content-sha256:{content_digest}"
+
+
+def local_package_provenance(repository_root: Path) -> LocalPackageProvenance:
+    """Observe optional Git provenance separately from the content identity."""
 
     head = subprocess.run(
         ["git", "rev-parse", "--verify", "HEAD"],
@@ -89,10 +114,11 @@ def local_package_identity(repository_root: Path) -> str:
         capture_output=True,
         text=True,
     )
-    content_digest = local_package_content_digest(repository_root)
-    if head.returncode == 0 and status.returncode == 0 and not status.stdout.strip():
-        return f"git:{head.stdout.strip()}:content:{content_digest}"
-    return f"content:{content_digest}"
+    return LocalPackageProvenance(
+        repository_head=head.stdout.strip() if head.returncode == 0 else None,
+        repository_dirty=bool(status.stdout.strip()) if status.returncode == 0 else None,
+        package_content_sha256=local_package_content_digest(repository_root),
+    )
 
 
 def local_package_content_digest(repository_root: Path) -> str:

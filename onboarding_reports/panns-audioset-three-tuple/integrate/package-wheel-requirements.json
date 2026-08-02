@@ -1,0 +1,58 @@
+{
+  "active_runtime_requirements": [
+    {
+      "name": "jsonschema",
+      "selected_version": "4.26.0",
+      "specifier": ">=4.25.0"
+    },
+    {
+      "name": "packaging",
+      "selected_version": "26.2",
+      "specifier": ">=26.0"
+    },
+    {
+      "name": "platformdirs",
+      "selected_version": "4.11.0",
+      "specifier": ">=4.3.0"
+    },
+    {
+      "name": "pydantic",
+      "selected_version": "2.13.4",
+      "specifier": ">=2.11.0"
+    },
+    {
+      "name": "pypdf",
+      "selected_version": "6.14.2",
+      "specifier": ">=6,<7"
+    },
+    {
+      "name": "typer",
+      "selected_version": "0.27.0",
+      "specifier": ">=0.16.0"
+    }
+  ],
+  "conflicts": [],
+  "derivation_sources": [
+    "current deterministic local wheel METADATA Requires-Dist",
+    "three accepted PANNs environment locks",
+    "content-addressed local package build inputs"
+  ],
+  "inactive_requirements": [
+    "furo; extra == 'docs'",
+    "myst-parser; extra == 'docs'",
+    "sphinx; extra == 'docs'"
+  ],
+  "local_package_identity": "content-sha256:7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+  "package_content_sha256": "7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+  "package_wheel_identity": "torch-deepaudioembedding==0.1.0",
+  "package_wheel_sha256": "218fbf4e5bfe576d8beed092d22c620c858b191a0164ddf6f7f8fa3940e33a31",
+  "platform": "macos-arm64",
+  "python_version": "3.12.13",
+  "repository_dirty": true,
+  "repository_head": "74da00ad8504e3f0e47006c85c57e2ba50def618",
+  "schema_version": "1.0.0",
+  "status": "reconciled_commit_stable",
+  "wheel_cache_key": "cbb86d2621dc6b485ff157384b96ecbe68d87ce56de708a62ce0b45770fdc76e",
+  "wheel_cache_path": "source-builds/torch-deepaudioembedding/cbb86d2621dc6b485ff157384b96ecbe68d87ce56de708a62ce0b45770fdc76e",
+  "wheel_cache_record_sha256": "ea3a2bc8d0219194d019057e84d88177b03c5a90b042bc1d60b2b53c473b7be5"
+}

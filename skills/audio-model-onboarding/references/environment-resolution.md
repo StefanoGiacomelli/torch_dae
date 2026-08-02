@@ -23,6 +23,21 @@ Every package imported directly by the selected minimal runtime source surface i
 dependency. Do not rely on transitive installation. When dependencies are exactly pinned, the
 verification script checks every declared direct dependency and exact version.
 
+The environment manager installs the local package wheel with dependency resolution disabled after
+locked-project synchronization. Before creating an environment, validate the wheel's active
+`Requires-Dist` set against only packages reachable from the accepted lock for the selected
+Python/platform. A reachable transitive lock entry is sufficient under this policy; an orphan lock
+entry is not. Keep optional extras inactive unless explicitly selected, perform no network access,
+and preserve missing versus incompatible requirement evidence separately. Passing this preflight
+proves lock completeness only, not environment verification.
+
+Local package identity is the content-addressed SHA-256 identity of deterministic wheel build
+inputs. Git HEAD and cleanliness are recorded only as separate informational provenance and never
+affect package identity, environment fingerprint, wheel-cache key, offline reuse, or eligibility.
+The identity must remain available outside a Git repository. Same-identity wheel-cache creation is
+inter-process safe, bounded, stale-lock aware, process-temporary, and atomically published; distinct
+identities do not share a global lock. Manual serialization is not the required race workaround.
+
 When multiple tuples may share future source, identify the minimum files and symbols and compare
 candidate revisions for byte identity, symbol identity, and semantic differences. Select one common
 revision only when it preserves every required variant; otherwise retain tuple-specific provenance.

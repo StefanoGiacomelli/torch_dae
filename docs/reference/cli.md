@@ -8,6 +8,7 @@ torch-dae card validate <card-id-or-path>
 torch-dae env create <card-id>
 torch-dae env ensure <card-id>
 torch-dae env resolve <environment-id>
+torch-dae env preflight <environment-id>
 torch-dae env materialize <environment-id>
 torch-dae env verify <environment-id>
 torch-dae env remove <card-id>
@@ -28,6 +29,10 @@ without network access.
 
 Run `uv run torch-dae <group> --help` for option details. Model inspection and verification CLI
 entries are unavailable-feature placeholders in this release.
+
+`env preflight` is card-independent and network-free. It validates active local-wheel
+`Requires-Dist` requirements against packages reachable from the accepted environment lock and
+returns structured missing or incompatible requirement evidence without creating an environment.
 
 Onboarding handoff management is a root control-plane script:
 

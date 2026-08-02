@@ -503,6 +503,30 @@ Model-specific environments MUST install:
 * the selected upstream source or package;
 * only dependencies required by that integration.
 
+Before materialization, the environment manager MUST build or reuse the deterministic local
+package wheel without network access and validate that every active `Requires-Dist` requirement is
+satisfiable from the accepted lock under the canonical installation policy. Marker evaluation MUST
+use the environment's selected Python version and platform, optional extras MUST remain inactive
+unless explicitly selected, and only direct or transitive lock entries reachable from the locked
+environment project may satisfy the check. Missing and incompatible versions MUST remain distinct
+structured evidence. This preflight is environment-lock completeness evidence only; it MUST NOT
+create an environment, import a model, require a model card, or establish environment verification,
+checkpoint compatibility, or runtime verification.
+
+The local package identity MUST be content-addressed exclusively over deterministic wheel build
+inputs and MUST use a stable form such as `content-sha256:<digest>`. Identical package inputs MUST
+have the same identity before and after a Git commit, after a HEAD-only change, and outside a Git
+repository. Git HEAD and cleanliness MAY be recorded separately as `repository_head` and
+`repository_dirty`, with `package_content_sha256`, but this provenance MUST NOT affect package
+identity, wheel-cache keys, environment fingerprints, offline reuse, or eligibility.
+
+Concurrent requests for one local package identity MUST coordinate through a bounded,
+inter-process-safe managed-runtime lock. At most one authoritative builder may publish; waiters MUST
+reuse the completed validated cache entry. Process-specific build paths, safe stale-lock handling,
+failure cleanup, and atomic cache publication are required. One process MUST NOT delete another
+process's valid entry, and distinct identities MUST NOT be serialized by a global lock. Manual
+serialization of environment materialization is not the required race workaround.
+
 ---
 
 # 9. Environment specification
@@ -551,8 +575,9 @@ ordered evidence and MUST depend on:
 
 Changing any of these inputs MUST produce a different fingerprint.
 Model-card prose, checkpoint bytes, absolute paths, timestamps, usernames, temporary paths, and
-mutable log paths MUST NOT contribute to the fingerprint. Logical environment IDs remain distinct
-even when their dependency evidence is otherwise equivalent.
+mutable log paths MUST NOT contribute to the fingerprint. Git HEAD and repository cleanliness are
+informational provenance and MUST NOT contribute. Logical environment IDs remain distinct even when
+their dependency evidence is otherwise equivalent.
 
 ## 9.2 Environment resolution and recreation
 
@@ -684,6 +709,15 @@ present, supersession chains and affected paths MUST be explicit, and each share
 MUST appear with its latest accepted repository bytes without claiming that an earlier hash equals
 the current file.
 
+The final validation matrix for a phase MUST begin only after the current handoff and every
+repository evidence artifact have been generated. From that point, mutation of source, tests,
+schemas, documentation, environment definitions, reports, workflow records, handoffs, or superseded
+handoff archives invalidates the entire final matrix and requires it to be rerun. The final
+staged-equivalent inventory and exact current handoff SHA-256 MUST be recorded and rechecked after
+the matrix. Deterministic audit archives MUST then be generated automatically and read-only outside
+the repository; no archive member may come from a repository file absent from the recorded final
+inventory.
+
 ---
 
 # 10. Environment-management API
@@ -720,6 +754,11 @@ class EnvironmentManager:
         *,
         expected_spec_sha256: str | None = None,
     ) -> EnvironmentMaterializationResult:
+        ...
+
+    def preflight_environment(
+        self, environment_id: str
+    ) -> EnvironmentDependencyClosureResult:
         ...
 
     def verify_environment(
@@ -779,6 +818,7 @@ The root CLI MUST expose:
 torch-dae env create <card-id>
 torch-dae env ensure <card-id>
 torch-dae env resolve <environment-id>
+torch-dae env preflight <environment-id>
 torch-dae env materialize <environment-id>
 torch-dae env verify <environment-id>
 torch-dae env remove <card-id>
@@ -793,6 +833,7 @@ Required semantics:
 | `create` | Creates a new environment and fails if a valid or invalid materialization already exists |
 | `ensure` | Reuses a valid environment or creates/rebuilds it                                        |
 | `resolve` | Validates and fingerprints accepted environment artifacts without materializing         |
+| `preflight` | Proves the accepted lock can satisfy active local-wheel runtime requirements offline |
 | `materialize` | Creates or reuses accepted locked environment infrastructure                       |
 | `verify` | Validates an existing environment without changing it                                    |
 | `remove` | Deletes only local cached environment state                                              |
@@ -1674,6 +1715,14 @@ Every package imported directly by the selected minimal runtime source surface M
 direct environment dependency. Direct imports MUST NOT rely only on transitive installation. When
 exact pins are used, the environment verification script MUST verify every declared direct
 dependency and its exact version.
+
+The local `torch-deepaudioembedding` wheel is installed only after locked-project synchronization
+and with dependency resolution disabled (`--no-deps`). Its active package-runtime requirements
+therefore MUST already be reachable and version-compatible in the accepted environment lock. A
+reachable transitive entry MAY satisfy a wheel requirement because locked synchronization installs
+that closure; an orphan lock entry MUST NOT satisfy it. Direct declaration remains required when no
+reachable dependency path otherwise installs the requirement. Dependency-closure preflight MUST run
+before environment creation and wheel installation and MUST emit a deterministic strict result.
 
 When variants or checkpoints may share a future source substrate, resolution MUST identify the
 minimum required files and symbols and compare candidate revisions at byte, symbol, and semantic

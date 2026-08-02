@@ -17,6 +17,7 @@ from torch_dae.core.checkpoint import (
 )
 from torch_dae.core.embeddings import EmbeddingSpec
 from torch_dae.environment.results import (
+    EnvironmentDependencyClosureResult,
     EnvironmentMaterializationResult,
     EnvironmentVerificationResult,
 )
@@ -59,6 +60,10 @@ SCHEMAS: dict[str, tuple[str, type[BaseModel]]] = {
     "environment-materialization-result.schema.json": (
         "https://torch-dae.local/schemas/environment-materialization-result.schema.json",
         EnvironmentMaterializationResult,
+    ),
+    "environment-dependency-closure-result.schema.json": (
+        "https://torch-dae.local/schemas/environment-dependency-closure-result.schema.json",
+        EnvironmentDependencyClosureResult,
     ),
     "environment-verification-result.schema.json": (
         "https://torch-dae.local/schemas/environment-verification-result.schema.json",

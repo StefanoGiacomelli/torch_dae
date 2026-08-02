@@ -5,7 +5,7 @@ Committed state and ignored runtime state are deliberately separated:
 
 .. container:: api-flow
 
-   **environment specification + lockfile + sources** → **materialization result** →
+   **environment specification + lockfile + local-wheel dependency preflight** → **materialization result** →
    **passed environment verification result + matching fingerprint** → identifies **verified
    isolated runtime**
 
@@ -27,6 +27,11 @@ verification-script identities without a card. ``create`` fails if current state
 a verified target or removes and rebuilds invalid current state. Neither operation deletes older
 fingerprints. ``verify`` checks metadata hashes, Python, the local project wheel, installed sources,
 dependency consistency, and the committed verification script without repairing state.
+
+``preflight_environment`` performs no environment creation or network access. It evaluates active
+local-wheel requirements and selected-platform markers against only the installable closure
+reachable from the accepted lock, preserving distinct missing and incompatible results. It is lock
+completeness evidence, not an environment lifecycle transition.
 
 Materialization resolves exact CPython, runs locked ``uv`` synchronization, builds a deterministic
 local project wheel, installs package/Git/vendored sources, records inventories, and writes ignored
@@ -60,6 +65,8 @@ lookup); it does not remove checkpoints, committed inputs, or reports.
 
 .. autoclass:: torch_dae.environment.results.ResolvedEnvironmentDefinition
 
+.. autoclass:: torch_dae.environment.results.EnvironmentDependencyClosureResult
+
 .. autoclass:: torch_dae.environment.results.EnvironmentMaterializationResult
 
 .. autoclass:: torch_dae.environment.results.EnvironmentVerificationResult
@@ -72,6 +79,7 @@ lookup); it does not remove checkpoints, committed inputs, or reports.
    .. automethod:: load_sources_manifest
    .. automethod:: fingerprint_for
    .. automethod:: resolve_environment
+   .. automethod:: preflight_environment
    .. automethod:: materialize_environment
    .. automethod:: verify_environment
    .. automethod:: resolved_environment

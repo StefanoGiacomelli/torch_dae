@@ -16,6 +16,10 @@ preparation, direct-dependency mismatch, verification-script failure, sandbox/ex
 external-command failure. Environment failures never imply checkpoint incompatibility unless a
 checkpoint was actually acquired and inspected in an authorized verify phase.
 
+Local-wheel preflight failures use `dependency_closure` and retain separate nonempty collections for
+missing requirements and incompatible reachable versions. A lock entry that is not reachable under
+locked-project synchronization is missing for the local-wheel `--no-deps` installation policy.
+
 Authoritative checkpoint operations distinguish `metadata_identity_mismatch`,
 `metadata_response_invalid`, `metadata_response_oversized`, `untrusted_authority_url`,
 `exact_size_mismatch`, `truncated_transfer`, `oversized_response`,

@@ -4,6 +4,28 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Stable local-package identity and concurrent wheel caching
+
+- Made local package identity content-addressed over wheel build inputs so Git commits, HEAD-only
+  changes, and evidence/report changes do not alter package identity, environment fingerprints, or
+  wheel-cache keys; Git state is retained only as separate informational provenance.
+- Added bounded cross-platform inter-process locking, safe stale-lock recovery, process-specific
+  build paths, deterministic timestamps, and atomic publication for shared local wheel caches.
+- Added real process-level regression coverage for same-identity contention, failed builders,
+  waiter recovery, stale/live locks, identity-scoped parallelism, final-state validation, and
+  read-only audit generation.
+
+### Environment wheel dependency closure
+
+- Added a deterministic card-independent preflight that validates active local-wheel runtime
+  requirements against direct and transitive packages reachable from each accepted lock before
+  environment creation; missing and incompatible requirements remain separate structured evidence.
+- Corrected all three PANNs environment projects with the six derived package-runtime pins and
+  canonically regenerated their locks without changing Python or numerical runtime pins.
+- Made local wheel builds offline, linked successful preflight evidence into materialization
+  results, and added marker, extras, normalization, reachability, ordering, reuse, and isolation
+  regressions.
+
 ### Authoritative checkpoint acquisition
 
 - Added strict schema `2.0.0` checkpoint authority contracts with Zenodo metadata-only resolution,

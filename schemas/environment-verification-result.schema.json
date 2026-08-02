@@ -33,6 +33,7 @@
         "dependency_installation",
         "source_preparation",
         "direct_dependency_mismatch",
+        "dependency_closure",
         "verification_script",
         "sandbox_or_execution_policy",
         "external_command"

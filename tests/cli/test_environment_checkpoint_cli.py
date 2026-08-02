@@ -27,6 +27,7 @@ from torch_dae.environment.manager import (
 )
 from torch_dae.environment.results import (
     ArtifactEvidence,
+    EnvironmentDependencyClosureResult,
     EnvironmentVerificationResult,
     VerificationObservation,
 )
@@ -92,6 +93,25 @@ class FakeEnvironmentManager:
                 }
 
         return Materialization()
+
+    def preflight_environment(self, environment_id: str) -> EnvironmentDependencyClosureResult:
+        return EnvironmentDependencyClosureResult(
+            schema_version="1.0.0",
+            environment_id=environment_id,
+            package_wheel_identity="torch-deepaudioembedding==0.1.0",
+            package_wheel_sha256="e" * 64,
+            python_version="3.12.0",
+            platform="synthetic",
+            installation_policy="locked-project-closure-then-local-wheel-no-deps",
+            active_runtime_requirements=(),
+            satisfied_requirements=(),
+            missing_requirements=(),
+            incompatible_requirements=(),
+            lockfile_sha256="f" * 64,
+            status="passed",
+            failure_classification=None,
+            result_path="reports/environments/card/preflight.json",
+        )
 
     def verify(self, card_id: str) -> EnvironmentVerification:
         return EnvironmentVerification(card_id, True, "valid", "valid")
@@ -191,6 +211,8 @@ def test_environment_cli_success_paths(monkeypatch: pytest.MonkeyPatch) -> None:
     assert '"fingerprint"' in runner.invoke(app, ["env", "ensure", "card", "--json"]).output
     resolve = runner.invoke(app, ["env", "resolve", "card", "--json"])
     assert '"result_status": "resolved"' in resolve.output
+    preflight = runner.invoke(app, ["env", "preflight", "card", "--json"])
+    assert '"status": "passed"' in preflight.output
     materialize = runner.invoke(app, ["env", "materialize", "card", "--json"])
     assert '"environment_fingerprint"' in materialize.output
     assert '"evidence_path"' in materialize.output

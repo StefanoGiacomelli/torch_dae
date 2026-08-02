@@ -6,11 +6,13 @@ from typing import TYPE_CHECKING
 
 from torch_dae.environment.results import (
     ArtifactEvidence,
+    EnvironmentDependencyClosureResult,
     EnvironmentFailureClassification,
     EnvironmentLifecycleState,
     EnvironmentMaterializationResult,
     EnvironmentVerificationResult,
     ResolvedEnvironmentDefinition,
+    RuntimeRequirementEvidence,
     VerificationObservation,
 )
 from torch_dae.environment.specification import (
@@ -42,6 +44,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "ArtifactEvidence",
+    "EnvironmentDependencyClosureResult",
     "EnvironmentFailureClassification",
     "EnvironmentInfo",
     "EnvironmentLifecycleState",
@@ -59,6 +62,7 @@ __all__ = [
     "PythonSpecification",
     "ResolvedEnvironment",
     "ResolvedEnvironmentDefinition",
+    "RuntimeRequirementEvidence",
     "SourceInstallationType",
     "TensorDimension",
     "TensorObservation",

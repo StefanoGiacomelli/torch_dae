@@ -1,0 +1,177 @@
+{
+  "issues": [
+    {
+      "adaptation": "re-derived wheel metadata requirements, added exact accepted direct pins, and regenerated locks",
+      "classification": "panns_environment_definition_defect",
+      "expected_behavior": "accepted lock satisfies the local wheel runtime closure",
+      "files_changed": [
+        "environments/panns-cnn14-16k-map-0438/pyproject.toml",
+        "environments/panns-cnn14-16k-map-0438/uv.lock",
+        "environments/panns-resnet38-map-0434/pyproject.toml",
+        "environments/panns-resnet38-map-0434/uv.lock",
+        "environments/panns-wavegram-logmel-cnn14-map-0439/pyproject.toml",
+        "environments/panns-wavegram-logmel-cnn14-map-0439/uv.lock"
+      ],
+      "first_attempt_evidence": ".torch-dae/reports/onboarding/panns-audioset-three-tuple/verify-blocked/20260801t102330z/blocked-verification-audit.json",
+      "issue_id": "panns-closure-001",
+      "lifecycle_semantics_changed": false,
+      "observed_behavior": "uv pip check reported six absent package-runtime requirements",
+      "operation": "blocked environment verification",
+      "regression_tests_added": [
+        "original incomplete PANNs fixture reports all six requirements",
+        "three corrected PANNs environments pass"
+      ],
+      "remaining_hardening_recommendation": "none for environment closure",
+      "scope": "PANNs-specific"
+    },
+    {
+      "adaptation": "added an offline wheel-METADATA versus reachable-lock dependency-closure preflight",
+      "classification": "generic_environment_preflight_gap",
+      "expected_behavior": "an incomplete accepted lock fails before environment creation",
+      "files_changed": [
+        "src/torch_dae/environment/dependency_closure.py",
+        "src/torch_dae/environment/manager.py"
+      ],
+      "first_attempt_evidence": ".torch-dae/reports/onboarding/panns-audioset-three-tuple/verify-blocked/20260801t102330z/normal-user-execution-trace.json",
+      "issue_id": "panns-closure-002",
+      "lifecycle_semantics_changed": false,
+      "observed_behavior": "the prior manager reached wheel installation before uv pip check exposed the gap",
+      "operation": "pre-materialization validation",
+      "regression_tests_added": [
+        "tests/environment/test_dependency_closure.py"
+      ],
+      "remaining_hardening_recommendation": "retain preflight evidence with every materialization",
+      "scope": "generic"
+    },
+    {
+      "adaptation": "retried the same canonical offline build with approved cache-read access",
+      "classification": "sandbox_or_execution_policy",
+      "expected_behavior": "offline build reads the existing uv cache",
+      "files_changed": [],
+      "first_attempt_evidence": "original canonical command log in the managed workspace",
+      "issue_id": "panns-closure-003",
+      "lifecycle_semantics_changed": false,
+      "observed_behavior": "sandbox denied the user-cache read",
+      "operation": "first canonical wheel build",
+      "regression_tests_added": [],
+      "remaining_hardening_recommendation": "keep offline cache access explicit in restricted execution environments",
+      "scope": "generic"
+    },
+    {
+      "adaptation": "serialized the two failed materializations; all three then passed and reused deterministically",
+      "classification": "environment_materialization_failure",
+      "expected_behavior": "three environments share one immutable local wheel build",
+      "files_changed": [],
+      "first_attempt_evidence": "uv build produced no local wheel and shared temporary-tree FileNotFoundError",
+      "issue_id": "panns-closure-004",
+      "lifecycle_semantics_changed": false,
+      "observed_behavior": "two processes raced on the same deterministic wheel build directory",
+      "operation": "parallel final materialization",
+      "regression_tests_added": [],
+      "remaining_hardening_recommendation": "add an inter-process lock around shared local wheel builds",
+      "scope": "generic"
+    },
+    {
+      "adaptation": "materialized new fingerprinted environments and confirmed only exact final fingerprints reused",
+      "classification": "stale_environment_reuse_rejected",
+      "expected_behavior": "only exact fingerprints are reusable",
+      "files_changed": [],
+      "first_attempt_evidence": "retained environment inventories and final materialization records",
+      "issue_id": "panns-closure-005",
+      "lifecycle_semantics_changed": false,
+      "observed_behavior": "retained diagnostic environments had different definition, wheel, or control-plane fingerprints",
+      "operation": "environment reuse",
+      "regression_tests_added": [
+        "stale preflight evidence is rejected"
+      ],
+      "remaining_hardening_recommendation": "continue retaining categorized environments by fingerprint",
+      "scope": "PANNs-specific"
+    },
+    {
+      "adaptation": "made package identity content-sha256-only and retained Git state as separate provenance",
+      "affected_fingerprints": [
+        "1b1f229cd9bf9f2bb8c08c9c456a00bf7da32d9254e8f2d9b3782fa677acdb68",
+        "b77ac422e84bf10ec0bbeb08b9c4c0428084965d035f7f43b937b0d0d64c97af",
+        "7819897563a6bfcb6ccae4c829e0244a3c6b0584ebca65bb7bce24abeb04a93d"
+      ],
+      "classification": "generic_environment_identity_defect",
+      "clean_identity_predicted_by_old_behavior": "git:74da00ad8504e3f0e47006c85c57e2ba50def618:content:e5fa637874bb578df183d0e73fe311c1567ab9b346b3142a8407ab505c4af270",
+      "content_digest": "e5fa637874bb578df183d0e73fe311c1567ab9b346b3142a8407ab505c4af270",
+      "dirty_identity": "content:e5fa637874bb578df183d0e73fe311c1567ab9b346b3142a8407ab505c4af270",
+      "expected_behavior": "identical wheel build inputs retain identity across Git commits",
+      "files_changed": [
+        "src/torch_dae/environment/fingerprint.py",
+        "src/torch_dae/environment/manager.py",
+        "src/torch_dae/environment/results.py",
+        "src/torch_dae/environment/runtime.py"
+      ],
+      "issue_id": "panns-closure-006",
+      "lifecycle_semantics_changed": false,
+      "observed_behavior": "clean repositories added Git HEAD to the content identity",
+      "operation": "local package identity and environment fingerprinting",
+      "regression_tests_added": [
+        "dirty and clean identity equality",
+        "commit and HEAD-only stability",
+        "report, model-card, and verification-report exclusion",
+        "packaged source, README, and metadata sensitivity",
+        "fingerprint and wheel-cache-key commit stability"
+      ],
+      "remaining_hardening_recommendation": "none",
+      "scope": "generic"
+    },
+    {
+      "adaptation": "added identity-scoped managed directory locking, process-specific build roots, failure cleanup, and atomic publication",
+      "classification": "generic_environment_concurrency_defect",
+      "concurrent_operations": [
+        "panns-cnn14-16k-map-0438",
+        "panns-resnet38-map-0434",
+        "panns-wavegram-logmel-cnn14-map-0439"
+      ],
+      "expected_behavior": "same-identity wheel requests publish once and all reuse",
+      "files_changed": [
+        "src/torch_dae/environment/locking.py",
+        "src/torch_dae/environment/manager.py"
+      ],
+      "initial_failures": 2,
+      "issue_id": "panns-closure-007",
+      "lifecycle_semantics_changed": false,
+      "observed_behavior": "two concurrent operations failed while sharing deterministic cache and temporary paths",
+      "operation": "three concurrent PANNs environment materializations",
+      "regression_tests_added": [
+        "tests/environment/test_local_wheel_concurrency.py",
+        "three concurrent PANNs preflights and materializations"
+      ],
+      "remaining_hardening_recommendation": "none",
+      "scope": "generic",
+      "serialized_workaround_used_previously": true,
+      "shared_paths": [
+        ".torch-dae/source-builds/torch-deepaudioembedding/61c1fcd84af79a4a58830be18b5b18fa4ac0fe68c3f98395fbc4da9f84efcf21",
+        ".torch-dae/source-builds/torch-deepaudioembedding/.61c1fcd84af79a4a58830be18b5b18fa4ac0fe68c3f98395fbc4da9f84efcf21.build"
+      ]
+    },
+    {
+      "adaptation": "added a final-mutation barrier, exact inventory recheck, and read-only audit generation",
+      "classification": "validation_final_state_drift",
+      "expected_behavior": "final gate inventory equals final repository inventory",
+      "files_changed": [
+        "scripts/check_final_state.py",
+        "scripts/generate_worktree_audit.py",
+        "tests/test_worktree_audit.py"
+      ],
+      "final_file_count": 62,
+      "issue_id": "panns-closure-008",
+      "late_added_handoff_path": "onboarding_reports/panns-audioset-three-tuple/integrate/handoff.38d14224db368c99eef14cd6788f588ca6e4e380f743eff4e455aa9e26bcab4f.superseded.json",
+      "lifecycle_semantics_changed": false,
+      "observed_behavior": "one superseded handoff archive was added after a 61-file validation",
+      "operation": "prior final staged-equivalent validation",
+      "regression_tests_added": [
+        "final state record/recheck equality",
+        "read-only normalized audit archive generation"
+      ],
+      "remaining_hardening_recommendation": "rerun the complete final matrix after any repository mutation",
+      "scope": "generic",
+      "validated_file_count": 61
+    }
+  ],
+  "schema_version": "1.0.0"
+}

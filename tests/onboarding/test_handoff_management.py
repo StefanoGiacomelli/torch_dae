@@ -277,8 +277,10 @@ def test_repeated_same_phase_supersession_preserves_complete_handoff_history(
     )
 
     phase_root = canonical.parent
-    assert (phase_root / f"handoff.{first_hash}.superseded.json").is_file()
-    assert (phase_root / f"handoff.{second_hash}.superseded.json").is_file()
+    first_history = phase_root / f"handoff.{first_hash}.superseded.json"
+    second_history = phase_root / f"handoff.{second_hash}.superseded.json"
+    assert sha256_file(first_history) == first_hash
+    assert sha256_file(second_history) == second_hash
     validate_workflow(root, "workflow-one")
 
 
@@ -1756,13 +1758,19 @@ def test_panns_migration_is_valid_and_preserves_accepted_artifacts(repo_root: Pa
         "resolve-environment",
         "integrate",
     ]
-    assert result["validated_supersession_count"] == 6
+    assert result["validated_supersession_count"] == 12
     assert result["superseded_artifact_paths"] == [
+        "environments/panns-cnn14-16k-map-0438/pyproject.toml",
         "environments/panns-cnn14-16k-map-0438/sources.json",
+        "environments/panns-cnn14-16k-map-0438/uv.lock",
         "environments/panns-cnn14-16k-map-0438/verify_environment.py",
+        "environments/panns-resnet38-map-0434/pyproject.toml",
         "environments/panns-resnet38-map-0434/sources.json",
+        "environments/panns-resnet38-map-0434/uv.lock",
         "environments/panns-resnet38-map-0434/verify_environment.py",
+        "environments/panns-wavegram-logmel-cnn14-map-0439/pyproject.toml",
         "environments/panns-wavegram-logmel-cnn14-map-0439/sources.json",
+        "environments/panns-wavegram-logmel-cnn14-map-0439/uv.lock",
         "environments/panns-wavegram-logmel-cnn14-map-0439/verify_environment.py",
     ]
     root = repo_root / "onboarding_reports/panns-audioset-three-tuple"
@@ -1791,9 +1799,11 @@ def test_panns_migration_is_valid_and_preserves_accepted_artifacts(repo_root: Pa
         "resolve-environment/source-revision-comparison.json": (
             "04f419093df438cff3d1bd1e8629d1b099cb48495d03c6f6b035943146fd2938"
         ),
-        "integrate/handoff.json": (
-            "1682fc586ab4aa34518213c9df58d298a914fc8a339f86051aa7cdbd92a064fc"
-        ),
+        (
+            "integrate/handoff."
+            "1682fc586ab4aa34518213c9df58d298a914fc8a339f86051aa7cdbd92a064fc."
+            "superseded.json"
+        ): ("1682fc586ab4aa34518213c9df58d298a914fc8a339f86051aa7cdbd92a064fc"),
     }
     assert {path: sha256_file(root / path) for path in expected_hashes} == expected_hashes
     workflow = json.loads((root / "workflow.json").read_text())
@@ -1808,7 +1818,7 @@ def test_panns_migration_is_valid_and_preserves_accepted_artifacts(repo_root: Pa
     integrate = PhaseHandoffManifest.model_validate_json(
         (root / "integrate/handoff.json").read_text()
     )
-    assert len(integrate.artifact_supersessions) == 6
+    assert len(integrate.artifact_supersessions) == 12
     assert all(
         item.prior_handoff_sha256
         == "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c"

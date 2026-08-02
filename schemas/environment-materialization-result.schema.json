@@ -33,6 +33,7 @@
         "dependency_installation",
         "source_preparation",
         "direct_dependency_mismatch",
+        "dependency_closure",
         "verification_script",
         "sandbox_or_execution_policy",
         "external_command"
@@ -53,6 +54,9 @@
       "title": "Completed At",
       "type": "string"
     },
+    "dependency_closure_preflight": {
+      "$ref": "#/$defs/ArtifactEvidence"
+    },
     "dependency_installation_status": {
       "enum": [
         "complete",
@@ -61,6 +65,12 @@
       ],
       "minLength": 1,
       "title": "Dependency Installation Status",
+      "type": "string"
+    },
+    "environment_fingerprint": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Environment Fingerprint",
       "type": "string"
     },
     "environment_id": {
@@ -97,6 +107,17 @@
       "title": "Lifecycle State",
       "type": "string"
     },
+    "local_package_identity": {
+      "minLength": 1,
+      "title": "Local Package Identity",
+      "type": "string"
+    },
+    "local_package_wheel_sha256": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Local Package Wheel Sha256",
+      "type": "string"
+    },
     "lockfile_sha256": {
       "minLength": 1,
       "pattern": "^[0-9a-f]{64}$",
@@ -111,6 +132,12 @@
     "materialization_record": {
       "$ref": "#/$defs/ArtifactEvidence"
     },
+    "package_content_sha256": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Package Content Sha256",
+      "type": "string"
+    },
     "platform": {
       "minLength": 1,
       "title": "Platform",
@@ -121,6 +148,29 @@
       "pattern": "^[0-9a-f]{64}$",
       "title": "Project File Sha256",
       "type": "string"
+    },
+    "repository_dirty": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Repository Dirty"
+    },
+    "repository_head": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Repository Head"
     },
     "schema_version": {
       "const": "1.0.0",
@@ -184,6 +234,12 @@
     "lockfile_sha256",
     "source_manifest_sha256",
     "verification_script_sha256",
+    "environment_fingerprint",
+    "local_package_identity",
+    "package_content_sha256",
+    "repository_head",
+    "repository_dirty",
+    "local_package_wheel_sha256",
     "interpreter",
     "platform",
     "managed_identifier",
@@ -193,7 +249,8 @@
     "lifecycle_state",
     "started_at",
     "completed_at",
-    "materialization_record"
+    "materialization_record",
+    "dependency_closure_preflight"
   ],
   "title": "EnvironmentMaterializationResult",
   "type": "object"

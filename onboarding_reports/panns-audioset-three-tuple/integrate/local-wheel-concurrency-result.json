@@ -1,0 +1,18 @@
+{
+  "all_materializations_passed": true,
+  "all_materializations_same_wheel": true,
+  "all_preflights_same_wheel": true,
+  "authoritative_build_count": 1,
+  "authoritative_build_logs": [
+    "reports/environments/panns-resnet38-map-0434/8366c858f14884301afd1db6b1fab3bcd594f3c1a5668d449eb63c3f10ed7fcc/preflight-commands/local-wheel-build-fd00a58958984f1f84f659aa86b392fc.json"
+  ],
+  "concurrent_request_count": 3,
+  "local_package_identity": "content-sha256:7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+  "lock_directories_remaining": [],
+  "package_wheel_sha256": "218fbf4e5bfe576d8beed092d22c620c858b191a0164ddf6f7f8fa3940e33a31",
+  "process_regression_tests": "tests/environment/test_local_wheel_concurrency.py",
+  "schema_version": "1.0.0",
+  "status": "passed",
+  "temporary_build_directories_remaining": [],
+  "wheel_cache_key": "cbb86d2621dc6b485ff157384b96ecbe68d87ce56de708a62ce0b45770fdc76e"
+}

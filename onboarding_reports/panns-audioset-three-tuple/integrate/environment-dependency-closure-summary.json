@@ -1,0 +1,93 @@
+{
+  "all_materializations_completed": true,
+  "all_preflights_passed": true,
+  "all_verifications_passed": true,
+  "checkpoint_activity": "none",
+  "concurrent_materialization_passed": true,
+  "installation_policy": "locked-project-closure-then-local-wheel-no-deps",
+  "local_package_identity": "content-sha256:7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+  "materialization_results": [
+    {
+      "environment_id": "panns-cnn14-16k-map-0438",
+      "fingerprint": "77a6c70f32a060ca52e69e7a768276c291e14b5ce6e7243ba3b80f8bd39eb05f",
+      "local_package_identity": "content-sha256:7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+      "local_package_wheel_sha256": "218fbf4e5bfe576d8beed092d22c620c858b191a0164ddf6f7f8fa3940e33a31",
+      "package_content_sha256": "7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+      "path": "environments/panns-cnn14-16k-map-0438/77a6c70f32a060ca52e69e7a768276c291e14b5ce6e7243ba3b80f8bd39eb05f/torch-dae-materialization.json",
+      "sha256": "bc82e6977c29ecd0d3c0a96d2806f366f05355b5f381cd7f2ab764278b7b5e19",
+      "status": "created_then_reused_offline"
+    },
+    {
+      "environment_id": "panns-resnet38-map-0434",
+      "fingerprint": "8366c858f14884301afd1db6b1fab3bcd594f3c1a5668d449eb63c3f10ed7fcc",
+      "local_package_identity": "content-sha256:7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+      "local_package_wheel_sha256": "218fbf4e5bfe576d8beed092d22c620c858b191a0164ddf6f7f8fa3940e33a31",
+      "package_content_sha256": "7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+      "path": "environments/panns-resnet38-map-0434/8366c858f14884301afd1db6b1fab3bcd594f3c1a5668d449eb63c3f10ed7fcc/torch-dae-materialization.json",
+      "sha256": "262bef70a42ec534a81b66459d16a676c4e8401c4f4d27f1f83dedd02f53f652",
+      "status": "created_then_reused_offline"
+    },
+    {
+      "environment_id": "panns-wavegram-logmel-cnn14-map-0439",
+      "fingerprint": "c4f3ab5be95c952ea18b750eba1b9a8c5f9fa720553521390c4d281bab198521",
+      "local_package_identity": "content-sha256:7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+      "local_package_wheel_sha256": "218fbf4e5bfe576d8beed092d22c620c858b191a0164ddf6f7f8fa3940e33a31",
+      "package_content_sha256": "7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/c4f3ab5be95c952ea18b750eba1b9a8c5f9fa720553521390c4d281bab198521/torch-dae-materialization.json",
+      "sha256": "488cad44df471e6816bf8832259517bf338ba7fa7726ce66b2f6925e24d704b3",
+      "status": "created_then_reused_offline"
+    }
+  ],
+  "model_card_required": false,
+  "offline_reuse_passed": true,
+  "package_content_sha256": "7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+  "package_wheel_identity": "torch-deepaudioembedding==0.1.0",
+  "package_wheel_sha256": "218fbf4e5bfe576d8beed092d22c620c858b191a0164ddf6f7f8fa3940e33a31",
+  "preflight_results": [
+    {
+      "environment_id": "panns-cnn14-16k-map-0438",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-preflight/panns-cnn14-16k-map-0438.json",
+      "sha256": "a28ad9228f92557d6328f7c7dfd9161617eee5aa5264857d5bef3009ccb692a7",
+      "status": "passed"
+    },
+    {
+      "environment_id": "panns-resnet38-map-0434",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-preflight/panns-resnet38-map-0434.json",
+      "sha256": "6749ae15dcbb202c35adca76c2d2d8ea16aa01beee21835079fa8f62ce6a261d",
+      "status": "passed"
+    },
+    {
+      "environment_id": "panns-wavegram-logmel-cnn14-map-0439",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-preflight/panns-wavegram-logmel-cnn14-map-0439.json",
+      "sha256": "608133d01382847b0c16f00363b5159da73cd8fcb7dc776609337d803fb1552c",
+      "status": "passed"
+    }
+  ],
+  "repository_dirty": true,
+  "repository_head": "74da00ad8504e3f0e47006c85c57e2ba50def618",
+  "schema_version": "1.0.0",
+  "verification_results": [
+    {
+      "environment_id": "panns-cnn14-16k-map-0438",
+      "fingerprint": "77a6c70f32a060ca52e69e7a768276c291e14b5ce6e7243ba3b80f8bd39eb05f",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-results/panns-cnn14-16k-map-0438.json",
+      "sha256": "122d78c60e45547a11235dc82716e03173b0daf3a577fb187381635841d905b9",
+      "verification_status": "passed"
+    },
+    {
+      "environment_id": "panns-resnet38-map-0434",
+      "fingerprint": "8366c858f14884301afd1db6b1fab3bcd594f3c1a5668d449eb63c3f10ed7fcc",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-results/panns-resnet38-map-0434.json",
+      "sha256": "ac5e487d2ff0bcf1ffe372d241cd9e645d58739ca7eecda068bc70a7f1fe06e8",
+      "verification_status": "passed"
+    },
+    {
+      "environment_id": "panns-wavegram-logmel-cnn14-map-0439",
+      "fingerprint": "c4f3ab5be95c952ea18b750eba1b9a8c5f9fa720553521390c4d281bab198521",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-results/panns-wavegram-logmel-cnn14-map-0439.json",
+      "sha256": "8f6fbb1426446b67a1b46f5498cf7ed36cf31ef6ad059d326499aab028b5c960",
+      "verification_status": "passed"
+    }
+  ],
+  "workflow_id": "panns-audioset-three-tuple"
+}

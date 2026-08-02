@@ -23,6 +23,7 @@ SCHEMA_MAP = {
     "environment": "environment.schema.json",
     "environment-sources": "environment-sources.schema.json",
     "environment-materialization-result": "environment-materialization-result.schema.json",
+    "environment-dependency-closure-result": "environment-dependency-closure-result.schema.json",
     "environment-verification-result": "environment-verification-result.schema.json",
     "verification-report": "verification-report.schema.json",
     "runtime-verification-target": "runtime-verification-target.schema.json",

@@ -84,6 +84,20 @@ root; categorized environments and caches are retained by category. Final Git in
 read-only cached-diff/status checks or the staged-equivalent validator and does not require
 `git write-tree` when Git metadata is intentionally non-writable.
 
+Package identity is content-addressed over deterministic local wheel build inputs. Record Git HEAD
+and cleanliness separately as informational provenance; they never affect package identity,
+environment fingerprint, wheel-cache key, offline reuse, or eligibility. Local wheel-cache creation
+must use the generic concurrency-safe manager with bounded locking, safe stale-lock handling,
+process-specific temporary paths, validation, and atomic publication. Manual serialization is not
+the required workaround for shared-cache races.
+
+Generate the current handoff and every repository evidence artifact before starting a phase's final
+validation matrix. Repository mutation is forbidden once that matrix begins; any source, test,
+schema, documentation, environment, report, workflow, handoff, or superseded-archive mutation
+invalidates all final gates. Record and later recompare the final staged-equivalent inventory and
+current handoff hash. Generate deterministic audit archives automatically and read-only after this
+barrier, so no archive member comes from outside the validated final inventory.
+
 When a legal later phase changes a shared repository output declared by an earlier accepted phase,
 the later handoff must declare a strict `artifact_supersessions` edge with the exact prior phase and
 hash, exact new hash, and a reason. Historical handoffs remain immutable evidence. Discovery,
@@ -238,12 +252,18 @@ and the user explicitly authorized production integration.
 Ordered procedure:
 
 1. Discover and validate accepted analyze and resolve-environment handoffs.
-2. Define wrapper package path, model construction, checkpoint loading, preprocessing ownership,
+2. Before environment materialization, validate the active runtime requirements of the current
+   local package wheel against packages reachable from each accepted environment lock. Evaluate
+   markers for the selected Python/platform, keep extras inactive unless selected, perform no
+   network access, and preserve missing or incompatible requirements as structured evidence.
+   Use the content-addressed local package identity and concurrency-safe shared wheel cache; retain
+   Git provenance only as separate informational evidence.
+3. Define wrapper package path, model construction, checkpoint loading, preprocessing ownership,
    sample-rate/channel/length behavior, output mapping, embedding interface, device behavior,
    deterministic behavior, and tests.
-3. Verify source-strategy rules in `references/source-strategy.md`.
-4. Preserve upstream inference semantics and document any deviation.
-5. Add the wrapper, model-specific package code, committed environment and checkpoint
+4. Verify source-strategy rules in `references/source-strategy.md`.
+5. Preserve upstream inference semantics and document any deviation.
+6. Add the wrapper, model-specific package code, committed environment and checkpoint
    specifications, integration documentation, and tests needed for the selected model.
 
 Evidence requirements: source provenance, upstream forward semantics, preprocessing evidence,
@@ -265,7 +285,8 @@ reimplementation without provenance, or presenting logits/task decisions as embe
 Completion criteria: integration plan is reviewable, evidence-backed, declares verification
 requirements, carries unresolved items forward, passes
 `uv run python scripts/check_worktree_patch.py --json` against a temporary index, is promoted with
-an accepted handoff, is bundled, and has completed scoped cleanup. `git diff --check` remains useful
+an accepted handoff, records a passed dependency-closure preflight before any materialized
+environment it creates or reuses, is bundled, and has completed scoped cleanup. `git diff --check` remains useful
 for tracked unstaged changes, but it is not the complete phase gate when untracked outputs exist.
 The real Git index must remain unchanged.
 

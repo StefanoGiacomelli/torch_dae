@@ -7,6 +7,7 @@ import json
 import os
 import shutil
 import tomllib
+import uuid
 import zipfile
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -22,6 +23,7 @@ from packaging.version import Version
 from torch_dae.contracts import contained_path, ensure_canonical_id, ensure_repository_relative
 from torch_dae.core.errors import (
     EnvironmentAlreadyExistsError,
+    EnvironmentDependencyClosureError,
     EnvironmentIdentityMismatchError,
     EnvironmentMaterializationError,
     EnvironmentNotFoundError,
@@ -29,16 +31,20 @@ from torch_dae.core.errors import (
     PythonInterpreterUnavailableError,
 )
 from torch_dae.core.registry import ModelCardRegistry
+from torch_dae.environment.dependency_closure import validate_wheel_dependency_closure
 from torch_dae.environment.fingerprint import (
     FingerprintInputs,
     calculate_environment_fingerprint,
     canonical_platform_tag,
-    local_package_identity,
+    local_package_provenance,
+    package_identity_from_content_digest,
 )
+from torch_dae.environment.locking import ManagedDirectoryLock, ManagedLockTimeoutError
 from torch_dae.environment.materialization import materialization_path
 from torch_dae.environment.policy import ExecutionPolicy
 from torch_dae.environment.results import (
     ArtifactEvidence,
+    EnvironmentDependencyClosureResult,
     EnvironmentLifecycleState,
     EnvironmentMaterializationResult,
     EnvironmentVerificationResult,
@@ -75,8 +81,19 @@ COMPLETE_MARKER = ".torch-dae-complete"
 MATERIALIZED_MARKER = ".torch-dae-materialized"
 MATERIALIZATION_JSON = "torch-dae-materialization.json"
 VERIFICATION_RESULT_JSON = "environment-verification-result.json"
+DEPENDENCY_CLOSURE_RESULT_JSON = "environment-dependency-closure-preflight.json"
 DISTRIBUTION_NAME = "torch-deepaudioembedding"
 CONSOLE_COMMAND = "torch-dae"
+LOCAL_WHEEL_SOURCE_DATE_EPOCH = "315532800"
+LOCAL_WHEEL_LOCK_TIMEOUT_SECONDS = 300.0
+LOCAL_WHEEL_LOCK_STALE_SECONDS = 900.0
+LOCAL_WHEEL_LOCK_POLL_SECONDS = 0.05
+
+
+def local_wheel_cache_key(package_identity: str) -> str:
+    """Return the deterministic cache key for one content-addressed package identity."""
+
+    return hashlib.sha256(package_identity.encode("utf-8")).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -239,11 +256,17 @@ class EnvironmentManager:
         *,
         policy: ExecutionPolicy | None = None,
         executor: CommandExecutor | None = None,
+        wheel_lock_timeout_seconds: float = LOCAL_WHEEL_LOCK_TIMEOUT_SECONDS,
+        wheel_lock_stale_seconds: float = LOCAL_WHEEL_LOCK_STALE_SECONDS,
+        wheel_lock_poll_seconds: float = LOCAL_WHEEL_LOCK_POLL_SECONDS,
     ) -> None:
         self.repository_root = repository_root.resolve()
         self.runtime_root = self.repository_root / ".torch-dae"
         self.policy = policy or ExecutionPolicy()
         self.executor = executor or CommandExecutor()
+        self.wheel_lock_timeout_seconds = wheel_lock_timeout_seconds
+        self.wheel_lock_stale_seconds = wheel_lock_stale_seconds
+        self.wheel_lock_poll_seconds = wheel_lock_poll_seconds
 
     @classmethod
     def from_repository_root(
@@ -459,7 +482,10 @@ class EnvironmentManager:
                     source_hashes[relative] = sha256_file(path)
         platform = canonical_platform_tag()
         validate_platform_constraint(specification, platform)
-        package_identity = local_package_identity(self.repository_root)
+        package_provenance = local_package_provenance(self.repository_root)
+        package_identity = package_identity_from_content_digest(
+            package_provenance.package_content_sha256
+        )
         fingerprint_inputs = FingerprintInputs(
             specification=specification,
             lockfile_bytes=lock_path.read_bytes(),
@@ -497,6 +523,9 @@ class EnvironmentManager:
             direct_dependencies=direct_dependencies,
             referenced_source_hashes=source_hashes,
             local_package_identity=package_identity,
+            package_content_sha256=package_provenance.package_content_sha256,
+            repository_head=package_provenance.repository_head,
+            repository_dirty=package_provenance.repository_dirty,
             environment_fingerprint=calculate_environment_fingerprint(fingerprint_inputs),
         )
 
@@ -615,6 +644,14 @@ class EnvironmentManager:
             raise EnvironmentIdentityMismatchError(
                 "environment specification SHA-256 does not match expected value"
             )
+        preflight = self._preflight_definition(definition)
+        if preflight.status != "passed":
+            missing = [item.requirement for item in preflight.missing_requirements]
+            incompatible = [item.requirement for item in preflight.incompatible_requirements]
+            raise EnvironmentDependencyClosureError(
+                "local package wheel dependency closure preflight failed: "
+                f"missing={missing}, incompatible={incompatible}, evidence={preflight.result_path}"
+            )
         inputs = self._inputs_from_definition(definition)
         target = materialization_path(
             self.runtime_root,
@@ -628,7 +665,68 @@ class EnvironmentManager:
             raise EnvironmentAlreadyExistsError(
                 f"conflicting environment materialization exists: {target}: {existing.details}"
             )
-        return self._materialize(inputs, target)
+        return self._materialize(inputs, target, preflight)
+
+    def preflight_environment(self, environment_id: str) -> EnvironmentDependencyClosureResult:
+        """Validate the local wheel's active runtime requirements without materializing.
+
+        The accepted environment lock is the only dependency-resolution authority. The check
+        builds or reuses the deterministic local package wheel offline, evaluates PEP 508 markers
+        for the selected interpreter and platform, and walks only lock entries reachable through
+        canonical locked-project synchronization.
+
+        Parameters
+        ----------
+        environment_id
+            Canonical environment identifier to validate.
+
+        Returns
+        -------
+        EnvironmentDependencyClosureResult
+            Strict evidence describing the wheel requirements satisfied by the accepted lock.
+        """
+
+        return self._preflight_definition(self.resolve_environment(environment_id))
+
+    def _preflight_definition(
+        self,
+        definition: ResolvedEnvironmentDefinition,
+    ) -> EnvironmentDependencyClosureResult:
+        inputs = self._inputs_from_definition(definition)
+        report_sink = RuntimeReportSink(
+            self.runtime_root,
+            "reports",
+            "environments",
+            definition.environment_id,
+            definition.environment_fingerprint,
+            "preflight-commands",
+        )
+        original_executor = self.executor
+        self.executor = original_executor.with_report_sink(report_sink)
+        try:
+            local_wheel, _ = self._build_local_wheel(inputs.package_identity)
+        finally:
+            self.executor = original_executor
+        report_path = (
+            self.runtime_root
+            / "reports"
+            / "environments"
+            / definition.environment_id
+            / definition.environment_fingerprint
+            / DEPENDENCY_CLOSURE_RESULT_JSON
+        )
+        relative_result_path = report_path.relative_to(self.runtime_root).as_posix()
+        result = validate_wheel_dependency_closure(
+            environment_id=definition.environment_id,
+            wheel_path=local_wheel,
+            project_path=inputs.project_path,
+            lock_path=inputs.lock_path,
+            python_version=definition.python_version,
+            platform=definition.platform,
+            result_path=relative_result_path,
+        )
+        write_json_atomic(report_path, result)
+        return result
 
     def verify_environment(
         self,
@@ -1257,10 +1355,16 @@ class EnvironmentManager:
         self,
         inputs: EnvironmentInputs,
         target: Path,
+        preflight: EnvironmentDependencyClosureResult,
     ) -> EnvironmentMaterializationResult:
         created_at = utc_now()
         target.mkdir(parents=True, exist_ok=False)
-        record = self._base_record(inputs, "building", created_at)
+        preflight_path = self.runtime_root / preflight.result_path
+        preflight_evidence = ArtifactEvidence(
+            path=preflight.result_path,
+            sha256=sha256_file(preflight_path),
+        )
+        record = self._base_record(inputs, "building", created_at, preflight_evidence)
         metadata_path = target / MATERIALIZATION_JSON
         report_sink = RuntimeReportSink(
             self.runtime_root,
@@ -1386,6 +1490,7 @@ class EnvironmentManager:
         inputs: EnvironmentInputs,
         status: Literal["building", "complete", "failed"],
         created_at: str,
+        preflight_evidence: ArtifactEvidence,
     ) -> EnvironmentMaterializationRecord:
         return EnvironmentMaterializationRecord(
             schema_version="1.0.0",
@@ -1402,6 +1507,11 @@ class EnvironmentManager:
             source_manifest_sha256=sha256_file(inputs.sources_path),
             verification_script_sha256=sha256_file(inputs.verification_script),
             local_package_identity=inputs.package_identity,
+            package_content_sha256=inputs.definition.package_content_sha256,
+            repository_head=inputs.definition.repository_head,
+            repository_dirty=inputs.definition.repository_dirty,
+            dependency_closure_preflight_path=preflight_evidence.path,
+            dependency_closure_preflight_sha256=preflight_evidence.sha256,
         )
 
     def _materialization_result(
@@ -1415,7 +1525,7 @@ class EnvironmentManager:
         record = EnvironmentMaterializationRecord.model_validate_json(
             metadata_path.read_text(encoding="utf-8")
         )
-        if record.completed_at is None:
+        if record.completed_at is None or record.local_package_wheel_sha256 is None:
             raise EnvironmentMaterializationError("materialization metadata is incomplete")
         return EnvironmentMaterializationResult(
             schema_version="1.0.0",
@@ -1425,6 +1535,12 @@ class EnvironmentManager:
             lockfile_sha256=inputs.definition.lockfile_sha256,
             source_manifest_sha256=inputs.definition.source_manifest_sha256,
             verification_script_sha256=inputs.definition.verification_script_sha256,
+            environment_fingerprint=inputs.fingerprint,
+            local_package_identity=inputs.package_identity,
+            package_content_sha256=inputs.definition.package_content_sha256,
+            repository_head=inputs.definition.repository_head,
+            repository_dirty=inputs.definition.repository_dirty,
+            local_package_wheel_sha256=record.local_package_wheel_sha256,
             interpreter=f"CPython {record.python_actual_version}",
             platform=inputs.platform,
             managed_identifier=target.relative_to(self.runtime_root).as_posix(),
@@ -1437,6 +1553,10 @@ class EnvironmentManager:
             materialization_record=ArtifactEvidence(
                 path=metadata_path.relative_to(self.runtime_root).as_posix(),
                 sha256=sha256_file(metadata_path),
+            ),
+            dependency_closure_preflight=ArtifactEvidence(
+                path=record.dependency_closure_preflight_path,
+                sha256=record.dependency_closure_preflight_sha256,
             ),
         )
 
@@ -1535,53 +1655,84 @@ print(".".join(str(part) for part in sys.version_info[:3]))
         )
 
     def _build_local_wheel(self, package_identity: str) -> tuple[Path, str]:
-        path_identity = hashlib.sha256(package_identity.encode()).hexdigest()
-        wheel_dir = contained_path(
-            self.runtime_root / f"source-builds/{DISTRIBUTION_NAME}",
-            path_identity,
-        )
-        metadata = wheel_dir / "wheel.json"
+        path_identity = local_wheel_cache_key(package_identity)
+        cache_root = self.runtime_root / f"source-builds/{DISTRIBUTION_NAME}"
+        wheel_dir = contained_path(cache_root, path_identity)
         wheel, record = self._valid_local_wheel_cache(wheel_dir, package_identity)
         if wheel is not None and record is not None:
             return wheel, record.wheel_sha256
-        if wheel_dir.exists():
-            replace_tree(wheel_dir)
-        wheel_dir.mkdir(parents=True, exist_ok=True)
-        self._build_local_wheel_with_backend(wheel_dir)
-        wheel = valid_single_wheel(wheel_dir)
-        if wheel is None:
-            raise EnvironmentMaterializationError(
-                f"local {DISTRIBUTION_NAME} wheel build produced no wheel"
-            )
-        distribution, version = wheel_distribution_metadata(wheel)
-        if canonicalize_name(distribution) != DISTRIBUTION_NAME:
-            raise EnvironmentMaterializationError(
-                f"local wheel distribution is not {DISTRIBUTION_NAME}"
-            )
-        sha = sha256_file(wheel)
-        source_date_epoch = self._source_date_epoch()
-        record = LocalWheelCacheRecord(
-            schema_version="1.0.0",
-            package_identity=package_identity,
-            distribution_name=distribution,
-            distribution_version=version,
-            wheel_filename=wheel.name,
-            wheel_sha256=sha,
-            source_date_epoch=source_date_epoch,
-            build_command=(
-                "uv",
-                "build",
-                "--wheel",
-                "--out-dir",
-                str(wheel_dir),
-                "--no-create-gitignore",
-                "--no-build-isolation",
-                str(self.repository_root),
-            ),
-            created_at=utc_now(),
+        cache_root.mkdir(parents=True, exist_ok=True)
+        lock = ManagedDirectoryLock(
+            cache_root / f".{path_identity}.lock",
+            resource_id=path_identity,
+            timeout_seconds=self.wheel_lock_timeout_seconds,
+            stale_after_seconds=self.wheel_lock_stale_seconds,
+            poll_interval_seconds=self.wheel_lock_poll_seconds,
         )
-        write_json_atomic(metadata, record)
-        return wheel, sha
+        try:
+            with lock:
+                wheel, record = self._valid_local_wheel_cache(wheel_dir, package_identity)
+                if wheel is not None and record is not None:
+                    return wheel, record.wheel_sha256
+                if wheel_dir.exists():
+                    self._discard_invalid_local_wheel_cache(wheel_dir)
+                build_dir = cache_root / (
+                    f".{path_identity}.build-{os.getpid()}-{uuid.uuid4().hex}"
+                )
+                build_dir.mkdir()
+                try:
+                    self._build_local_wheel_with_backend(build_dir)
+                    wheel = valid_single_wheel(build_dir)
+                    if wheel is None:
+                        raise EnvironmentMaterializationError(
+                            f"local {DISTRIBUTION_NAME} wheel build produced no wheel"
+                        )
+                    distribution, version = wheel_distribution_metadata(wheel)
+                    if canonicalize_name(distribution) != DISTRIBUTION_NAME:
+                        raise EnvironmentMaterializationError(
+                            f"local wheel distribution is not {DISTRIBUTION_NAME}"
+                        )
+                    sha = sha256_file(wheel)
+                    record = LocalWheelCacheRecord(
+                        schema_version="1.0.0",
+                        package_identity=package_identity,
+                        distribution_name=distribution,
+                        distribution_version=version,
+                        wheel_filename=wheel.name,
+                        wheel_sha256=sha,
+                        source_date_epoch=LOCAL_WHEEL_SOURCE_DATE_EPOCH,
+                        build_command=(
+                            "uv",
+                            "build",
+                            "--wheel",
+                            "--out-dir",
+                            "<managed-wheel-cache>",
+                            "--no-create-gitignore",
+                            "--no-build-isolation",
+                            "--offline",
+                            "<repository-root>",
+                        ),
+                        created_at=utc_now(),
+                    )
+                    write_json_atomic(build_dir / "wheel.json", record)
+                    os.replace(build_dir, wheel_dir)
+                    published = wheel_dir / wheel.name
+                    return published, sha
+                finally:
+                    if build_dir.exists():
+                        replace_tree(build_dir)
+        except ManagedLockTimeoutError as exc:
+            raise EnvironmentMaterializationError(str(exc)) from exc
+
+    def _discard_invalid_local_wheel_cache(self, wheel_dir: Path) -> None:
+        """Quarantine and remove only a cache entry proven invalid under its identity lock."""
+
+        discarded = wheel_dir.with_name(f".{wheel_dir.name}.invalid-{uuid.uuid4().hex}")
+        try:
+            wheel_dir.rename(discarded)
+        except FileNotFoundError:
+            return
+        replace_tree(discarded)
 
     def _valid_local_wheel_cache(
         self,
@@ -1618,49 +1769,30 @@ print(".".join(str(part) for part in sys.version_info[:3]))
         return version
 
     def _build_local_wheel_with_backend(self, wheel_dir: Path) -> None:
-        tmp = wheel_dir.with_name(f".{wheel_dir.name}.build")
-        if tmp.exists():
-            replace_tree(tmp)
-        tmp.mkdir(parents=True)
-        try:
-            self.executor.run(
-                [
-                    "uv",
-                    "build",
-                    "--wheel",
-                    "--out-dir",
-                    str(tmp),
-                    "--no-create-gitignore",
-                    "--no-build-isolation",
-                    str(self.repository_root),
-                ],
-                operation="local-wheel-build",
-                cwd=self.repository_root,
-                env={"SOURCE_DATE_EPOCH": self._source_date_epoch()},
-                env_remove=python_env_remove(),
-                timeout=self.policy.command_timeout_seconds,
-                check=True,
-            )
-            wheel = valid_single_wheel(tmp)
-            if wheel is None:
-                raise EnvironmentMaterializationError("uv build produced no local wheel")
-            shutil.move(str(wheel), str(wheel_dir / wheel.name))
-        finally:
-            if tmp.exists():
-                replace_tree(tmp)
-
-    def _source_date_epoch(self) -> str:
-        result = self.executor.run(
-            ["git", "show", "-s", "--format=%ct", "HEAD"],
-            operation="source-date-epoch",
+        self.executor.run(
+            [
+                "uv",
+                "build",
+                "--wheel",
+                "--out-dir",
+                str(wheel_dir),
+                "--no-create-gitignore",
+                "--no-build-isolation",
+                "--offline",
+                str(self.repository_root),
+            ],
+            operation="local-wheel-build",
             cwd=self.repository_root,
+            env={"SOURCE_DATE_EPOCH": LOCAL_WHEEL_SOURCE_DATE_EPOCH},
             env_remove=python_env_remove(),
             timeout=self.policy.command_timeout_seconds,
-            check=False,
+            check=True,
         )
-        if result.returncode == 0 and result.stdout.strip().isdigit():
-            return result.stdout.strip()
-        return "0"
+        if valid_single_wheel(wheel_dir) is None:
+            raise EnvironmentMaterializationError("uv build produced no local wheel")
+
+    def _source_date_epoch(self) -> str:
+        return LOCAL_WHEEL_SOURCE_DATE_EPOCH
 
     def _verify_materialization(
         self,
@@ -1701,6 +1833,23 @@ print(".".join(str(part) for part in sys.version_info[:3]))
         for field, expected in expected_hashes.items():
             if getattr(record, field) != expected:
                 return EnvironmentVerification(inputs.card_id, False, f"{field} is stale", "stale")
+        preflight_path = (
+            self.runtime_root
+            / "reports"
+            / "environments"
+            / inputs.card_id
+            / inputs.fingerprint
+            / DEPENDENCY_CLOSURE_RESULT_JSON
+        )
+        expected_preflight_path = preflight_path.relative_to(self.runtime_root).as_posix()
+        if (
+            record.dependency_closure_preflight_path != expected_preflight_path
+            or not preflight_path.is_file()
+            or record.dependency_closure_preflight_sha256 != sha256_file(preflight_path)
+        ):
+            return EnvironmentVerification(
+                inputs.card_id, False, "dependency closure preflight evidence is stale", "stale"
+            )
         if (
             record.card_id != inputs.card_id
             or record.environment_id != inputs.specification.environment_id
@@ -1775,7 +1924,7 @@ print(".".join(str(part) for part in sys.version_info[:3]))
     ) -> str | None:
         wheel_dir = contained_path(
             self.runtime_root / f"source-builds/{DISTRIBUTION_NAME}",
-            hashlib.sha256(inputs.package_identity.encode()).hexdigest(),
+            local_wheel_cache_key(inputs.package_identity),
         )
         local_wheel, local_record = self._valid_local_wheel_cache(
             wheel_dir,

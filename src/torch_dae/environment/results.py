@@ -30,6 +30,7 @@ class EnvironmentFailureClassification(StrEnum):
     DEPENDENCY_INSTALLATION = "dependency_installation"
     SOURCE_PREPARATION = "source_preparation"
     DIRECT_DEPENDENCY_MISMATCH = "direct_dependency_mismatch"
+    DEPENDENCY_CLOSURE = "dependency_closure"
     VERIFICATION_SCRIPT = "verification_script"
     SANDBOX_OR_EXECUTION_POLICY = "sandbox_or_execution_policy"
     EXTERNAL_COMMAND = "external_command"
@@ -48,6 +49,62 @@ class VerificationObservation(StrictBaseModel):
     name: str
     status: Literal["passed", "failed", "unsupported"]
     details: str | None = None
+
+
+class RuntimeRequirementEvidence(StrictBaseModel):
+    """One active local-wheel requirement and its reachable accepted-lock versions."""
+
+    requirement: str
+    normalized_name: str
+    specifier: str | None = None
+    marker: str | None = None
+    reachable_versions: tuple[str, ...] = ()
+
+
+class EnvironmentDependencyClosureResult(StrictBaseModel):
+    """Offline proof that a lock can satisfy the local package wheel runtime metadata."""
+
+    schema_version: Literal["1.0.0"]
+    environment_id: CanonicalId
+    package_wheel_identity: str
+    package_wheel_sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    python_version: str
+    platform: str
+    installation_policy: Literal["locked-project-closure-then-local-wheel-no-deps"]
+    active_runtime_requirements: tuple[str, ...]
+    satisfied_requirements: tuple[RuntimeRequirementEvidence, ...]
+    missing_requirements: tuple[RuntimeRequirementEvidence, ...]
+    incompatible_requirements: tuple[RuntimeRequirementEvidence, ...]
+    lockfile_sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    status: Literal["passed", "failed"]
+    failure_classification: EnvironmentFailureClassification | None = None
+    result_path: str
+
+    @model_validator(mode="after")
+    def status_matches_evidence(self) -> EnvironmentDependencyClosureResult:
+        active = tuple(
+            item.requirement
+            for item in (
+                *self.satisfied_requirements,
+                *self.missing_requirements,
+                *self.incompatible_requirements,
+            )
+        )
+        if sorted(active) != sorted(self.active_runtime_requirements):
+            raise ValueError("preflight classifications must cover every active requirement")
+        if len(active) != len(set(active)):
+            raise ValueError("active runtime requirements must be classified exactly once")
+        if self.status == "passed":
+            if self.missing_requirements or self.incompatible_requirements:
+                raise ValueError("passed preflight cannot contain unsatisfied requirements")
+            if self.failure_classification is not None:
+                raise ValueError("passed preflight cannot carry failure_classification")
+        else:
+            if not self.missing_requirements and not self.incompatible_requirements:
+                raise ValueError("failed preflight requires missing or incompatible requirements")
+            if self.failure_classification != EnvironmentFailureClassification.DEPENDENCY_CLOSURE:
+                raise ValueError("failed preflight requires dependency_closure classification")
+        return self
 
 
 class ResolvedEnvironmentDefinition(StrictBaseModel):
@@ -73,6 +130,9 @@ class ResolvedEnvironmentDefinition(StrictBaseModel):
     direct_dependencies: dict[str, str]
     referenced_source_hashes: dict[str, Annotated[str, Field(pattern=SHA256_PATTERN)]]
     local_package_identity: str
+    package_content_sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    repository_head: str | None
+    repository_dirty: bool | None
     environment_fingerprint: Annotated[str, Field(pattern=SHA256_PATTERN)]
 
     @model_validator(mode="after")
@@ -94,6 +154,12 @@ class EnvironmentMaterializationResult(StrictBaseModel):
     lockfile_sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
     source_manifest_sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
     verification_script_sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    environment_fingerprint: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    local_package_identity: str
+    package_content_sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    repository_head: str | None
+    repository_dirty: bool | None
+    local_package_wheel_sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
     interpreter: str
     platform: str
     managed_identifier: str
@@ -106,6 +172,7 @@ class EnvironmentMaterializationResult(StrictBaseModel):
     started_at: datetime
     completed_at: datetime
     materialization_record: ArtifactEvidence
+    dependency_closure_preflight: ArtifactEvidence
 
     @model_validator(mode="after")
     def success_has_no_failure(self) -> EnvironmentMaterializationResult:

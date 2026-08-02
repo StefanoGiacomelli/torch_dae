@@ -1,0 +1,43 @@
+{
+  "all_materialized": true,
+  "concurrent_materialization": true,
+  "local_package_identity": "content-sha256:7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+  "package_content_sha256": "7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+  "package_wheel_sha256": "218fbf4e5bfe576d8beed092d22c620c858b191a0164ddf6f7f8fa3940e33a31",
+  "repository_dirty": true,
+  "repository_head": "74da00ad8504e3f0e47006c85c57e2ba50def618",
+  "results": [
+    {
+      "environment_id": "panns-cnn14-16k-map-0438",
+      "fingerprint": "77a6c70f32a060ca52e69e7a768276c291e14b5ce6e7243ba3b80f8bd39eb05f",
+      "local_package_identity": "content-sha256:7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+      "local_package_wheel_sha256": "218fbf4e5bfe576d8beed092d22c620c858b191a0164ddf6f7f8fa3940e33a31",
+      "package_content_sha256": "7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+      "path": "environments/panns-cnn14-16k-map-0438/77a6c70f32a060ca52e69e7a768276c291e14b5ce6e7243ba3b80f8bd39eb05f/torch-dae-materialization.json",
+      "sha256": "bc82e6977c29ecd0d3c0a96d2806f366f05355b5f381cd7f2ab764278b7b5e19",
+      "status": "created_then_reused_offline"
+    },
+    {
+      "environment_id": "panns-resnet38-map-0434",
+      "fingerprint": "8366c858f14884301afd1db6b1fab3bcd594f3c1a5668d449eb63c3f10ed7fcc",
+      "local_package_identity": "content-sha256:7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+      "local_package_wheel_sha256": "218fbf4e5bfe576d8beed092d22c620c858b191a0164ddf6f7f8fa3940e33a31",
+      "package_content_sha256": "7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+      "path": "environments/panns-resnet38-map-0434/8366c858f14884301afd1db6b1fab3bcd594f3c1a5668d449eb63c3f10ed7fcc/torch-dae-materialization.json",
+      "sha256": "262bef70a42ec534a81b66459d16a676c4e8401c4f4d27f1f83dedd02f53f652",
+      "status": "created_then_reused_offline"
+    },
+    {
+      "environment_id": "panns-wavegram-logmel-cnn14-map-0439",
+      "fingerprint": "c4f3ab5be95c952ea18b750eba1b9a8c5f9fa720553521390c4d281bab198521",
+      "local_package_identity": "content-sha256:7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+      "local_package_wheel_sha256": "218fbf4e5bfe576d8beed092d22c620c858b191a0164ddf6f7f8fa3940e33a31",
+      "package_content_sha256": "7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/c4f3ab5be95c952ea18b750eba1b9a8c5f9fa720553521390c4d281bab198521/torch-dae-materialization.json",
+      "sha256": "488cad44df471e6816bf8832259517bf338ba7fa7726ce66b2f6925e24d704b3",
+      "status": "created_then_reused_offline"
+    }
+  ],
+  "schema_version": "1.0.0",
+  "stale_diagnostic_environments_reused": false
+}

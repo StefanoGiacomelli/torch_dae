@@ -29,6 +29,7 @@ from torch_dae.core.checkpoint import (
 from torch_dae.core.embeddings import EmbeddingSpec
 from torch_dae.core.registry import ModelCardRegistry
 from torch_dae.environment.results import (
+    EnvironmentDependencyClosureResult,
     EnvironmentLifecycleState,
     EnvironmentMaterializationResult,
     EnvironmentVerificationResult,
@@ -79,6 +80,7 @@ REQUIRED = [
     "schemas/environment.schema.json",
     "schemas/environment-sources.schema.json",
     "schemas/environment-materialization-result.schema.json",
+    "schemas/environment-dependency-closure-result.schema.json",
     "schemas/environment-verification-result.schema.json",
     "schemas/embedding.schema.json",
     "schemas/verification-report.schema.json",
@@ -126,6 +128,7 @@ def pydantic_validate(fixture: Path) -> None:
         "environment": EnvironmentSpecification,
         "environment-sources": EnvironmentSourcesManifest,
         "environment-materialization-result": EnvironmentMaterializationResult,
+        "environment-dependency-closure-result": EnvironmentDependencyClosureResult,
         "environment-verification-result": EnvironmentVerificationResult,
         "verification-report": VerificationReport,
         "runtime-verification-target": RuntimeVerificationTarget,
@@ -1083,6 +1086,8 @@ def main() -> int:
         "environment-sources": ROOT / "schemas/environment-sources.schema.json",
         "environment-materialization-result": ROOT
         / "schemas/environment-materialization-result.schema.json",
+        "environment-dependency-closure-result": ROOT
+        / "schemas/environment-dependency-closure-result.schema.json",
         "environment-verification-result": ROOT
         / "schemas/environment-verification-result.schema.json",
         "checkpoint": ROOT / "schemas/checkpoint.schema.json",
@@ -1345,7 +1350,7 @@ def main() -> int:
     runtime_module = (ROOT / "src/torch_dae/environment/runtime.py").read_text()
     if "_write_local_wheel" in env_manager or "wheel_record_hash" in env_manager:
         fail("handwritten local wheel implementation remains present", failures)
-    if '"uv",\n                    "build"' not in env_manager:
+    if '"uv",\n                "build"' not in env_manager:
         fail("local torch-dae wheel is not built through uv/build backend", failures)
     if "source-builds/torch-dae/current" in source_manager:
         fail("stale hard-coded local wheel cache lookup remains", failures)
@@ -1370,10 +1375,30 @@ def main() -> int:
         "local_package_content_digest",
         "local_package_build_inputs",
         'src_root = repository_root / "src" / "torch_dae"',
-        "git:{head.stdout.strip()}:content:",
+        "content-sha256:",
+        "local_package_provenance",
     ):
         if required not in fingerprint_module:
             fail(f"local package identity coverage is missing: {required}", failures)
+    locking_module = (ROOT / "src/torch_dae/environment/locking.py").read_text()
+    for required in (
+        "ManagedDirectoryLock",
+        "ManagedLockTimeoutError",
+        "stale_after_seconds",
+        "owner_token",
+        "os.kill(pid, 0)",
+    ):
+        if required not in locking_module:
+            fail(f"managed cache locking coverage is missing: {required}", failures)
+    for required in (
+        "local_wheel_cache_key",
+        "ManagedDirectoryLock",
+        "os.replace(build_dir, wheel_dir)",
+        ".build-{os.getpid()}",
+        "LOCAL_WHEEL_SOURCE_DATE_EPOCH",
+    ):
+        if required not in env_manager:
+            fail(f"concurrency-safe local wheel caching is missing: {required}", failures)
     if '["git", "clone", source.url, str(checkout)]' in source_manager:
         fail("Git source acquisition still clones directly into the final cache path", failures)
     for required in (
