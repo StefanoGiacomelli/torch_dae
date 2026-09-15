@@ -1,0 +1,61 @@
+{
+  "schema_version": "2.0.0",
+  "checkpoint_id": "panns-cnn14-16k-map-0438",
+  "source_type": "https",
+  "source_description": "https",
+  "resolved_url_or_location": "https://zenodo.org/api/records/3987831/files/Cnn14_16k_mAP=0.438.pth/content",
+  "filename": "Cnn14_16k_mAP=0.438.pth",
+  "sha256": "e2ee543a27919542c2ea03eabaa70b24dcd4e6c8e05621de6b67a94e4c5058e6",
+  "size_bytes": 358668570,
+  "acquired_at": "2026-09-15T15:19:51.668082+00:00",
+  "cache_path": "checkpoints/panns-cnn14-16k-map-0438/e2ee543a27919542c2ea03eabaa70b24dcd4e6c8e05621de6b67a94e4c5058e6",
+  "expected_sha256": null,
+  "observed_sha256": "e2ee543a27919542c2ea03eabaa70b24dcd4e6c8e05621de6b67a94e4c5058e6",
+  "environment_id": null,
+  "specification_fingerprint": "afd1ae34d56c5e298f7779573ef2bd578d32d3ebed5eb175cd8325b6da3cd7cd",
+  "command_log_references": [
+    "reports/checkpoints/panns-cnn14-16k-map-0438/remote-open-a837b324179d4387b640ec39729f8385.json",
+    "reports/checkpoints/panns-cnn14-16k-map-0438/remote-stream-521a98fc175846ffa07001e61667a568.json",
+    "reports/checkpoints/panns-cnn14-16k-map-0438/size-validation-a7997ef448cf43b090f6d9c6df7584b8.json",
+    "reports/checkpoints/panns-cnn14-16k-map-0438/published-checksum-validation-15e73410eaa149ecb176499567e6344c.json",
+    "reports/checkpoints/panns-cnn14-16k-map-0438/hash-validation-fa1b85a2cc7b482184724b610e68ae25.json",
+    "reports/checkpoints/panns-cnn14-16k-map-0438/remote-finalize-add5555094174400b3fbc96198694038.json"
+  ],
+  "authority": {
+    "provider": "zenodo",
+    "record_id": "3987831",
+    "filename": "Cnn14_16k_mAP=0.438.pth",
+    "expected_size_bytes": 358668570,
+    "published_checksums": [
+      {
+        "algorithm": "md5",
+        "digest": "362fc5ff18f1d6ad2f6d464b45893f2c"
+      }
+    ],
+    "record_url": "https://zenodo.org/records/3987831",
+    "provenance_status": "authoritative_provider_declared"
+  },
+  "expected_size_bytes": 358668570,
+  "observed_size_bytes": 358668570,
+  "published_checksums": [
+    {
+      "algorithm": "md5",
+      "digest": "362fc5ff18f1d6ad2f6d464b45893f2c"
+    }
+  ],
+  "observed_checksums": [
+    {
+      "algorithm": "md5",
+      "digest": "362fc5ff18f1d6ad2f6d464b45893f2c"
+    },
+    {
+      "algorithm": "sha256",
+      "digest": "e2ee543a27919542c2ea03eabaa70b24dcd4e6c8e05621de6b67a94e4c5058e6"
+    }
+  ],
+  "metadata_resolution_reference": "checkpoints/panns-cnn14-16k-map-0438/.authority/d28324eca9009bf5ed7e7f6d6ea9bf99774b06c86ed9b160aa3cfcc7c74ea46e/checkpoint-authority-resolution.json",
+  "metadata_resolution_sha256": "8523d7b6046c46885d11397852c47db230530ff89fb38b4c46574bab63c48669",
+  "payload_etag": null,
+  "payload_last_modified": null,
+  "materialization_status": "downloaded"
+}

@@ -7,7 +7,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from scripts.validate_repository import validate_integration_artifacts
+from scripts.validate_repository import _wrapper_symbol_exists, validate_integration_artifacts
 from torch_dae.onboarding.handoff import skill_fingerprint
 
 
@@ -433,6 +433,32 @@ def test_invalid_model_card_fails(repo_root: Path, tmp_path: Path) -> None:
     failures: list[str] = []
     validate_integration_artifacts(tmp_path, failures)
     assert any("invalid model card" in failure for failure in failures)
+
+
+def test_lazy_wrapper_symbol_resolves_from_declared_exports(tmp_path: Path) -> None:
+    package = tmp_path / "src/torch_dae/lazy_model"
+    package.mkdir(parents=True)
+    (package / "__init__.py").write_text(
+        """
+_RUNTIME_EXPORTS = {"LazyAudioModel"}
+
+def __getattr__(name):
+    if name not in _RUNTIME_EXPORTS:
+        raise AttributeError(name)
+    raise RuntimeError("runtime import is intentionally not executed by static validation")
+
+__all__ = ["LazyAudioModel"]
+"""
+    )
+
+    assert _wrapper_symbol_exists(
+        tmp_path,
+        "torch_dae.lazy_model:LazyAudioModel",
+    )
+    assert not _wrapper_symbol_exists(
+        tmp_path,
+        "torch_dae.lazy_model:UndeclaredModel",
+    )
 
 
 def test_missing_wrapper_symbol_fails(repo_root: Path, tmp_path: Path) -> None:

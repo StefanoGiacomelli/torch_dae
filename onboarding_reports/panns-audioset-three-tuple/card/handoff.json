@@ -1,0 +1,127 @@
+{
+  "allowed_next_modes": [
+    "profile"
+  ],
+  "artifact_supersessions": [],
+  "canonical_skill_fingerprint": "0a55b5f730a13ec9d8dca6ea9a97ebaf20fdbff618099f9bdbcd8e48a5306762",
+  "handoff_status": "accepted",
+  "input_artifacts": [
+    {
+      "canonical_role": "verify-handoff",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "verify",
+      "path": "onboarding_reports/panns-audioset-three-tuple/verify/handoff.json",
+      "sha256": "261d0fe7dde1ac1b60ad6ee522dc4032c7bfe161872d0727b34e109caa785c82"
+    }
+  ],
+  "lifecycle_promotion": "runtime_verified",
+  "output_artifacts": [
+    {
+      "canonical_role": "model-card",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "card",
+      "path": "model_cards/panns/panns-cnn14-16k-map-0438.json",
+      "sha256": "b4aa9393f342ddc66950b3aae6ab1e0336664e1b7d54215845409e3b922e898e"
+    },
+    {
+      "canonical_role": "card-checkpoint-materialization",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "card",
+      "path": "onboarding_reports/panns-audioset-three-tuple/card/checkpoint-materializations/panns-cnn14-16k-map-0438.json",
+      "sha256": "f45a42aff860d0456e153c883c3a945d995c3c40079c34cec466e56b85038a47"
+    },
+    {
+      "canonical_role": "model-card",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "card",
+      "path": "model_cards/panns/panns-resnet38-map-0434.json",
+      "sha256": "fe8e1818900dd35d236d0bb0acadb80a2bf5b2c30678b879d6d747d12616292b"
+    },
+    {
+      "canonical_role": "card-checkpoint-materialization",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "card",
+      "path": "onboarding_reports/panns-audioset-three-tuple/card/checkpoint-materializations/panns-resnet38-map-0434.json",
+      "sha256": "dd7da1eddac2876e51c0ba2a23e747e375d510417c117a80b55b09f38c11bdbf"
+    },
+    {
+      "canonical_role": "model-card",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "card",
+      "path": "model_cards/panns/panns-wavegram-logmel-cnn14-map-0439.json",
+      "sha256": "fe814ed5540a12e6c01e71cbc481779f7d1f1a7af67867413e23f1ac5f0201e0"
+    },
+    {
+      "canonical_role": "card-checkpoint-materialization",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "card",
+      "path": "onboarding_reports/panns-audioset-three-tuple/card/checkpoint-materializations/panns-wavegram-logmel-cnn14-map-0439.json",
+      "sha256": "c1fb6ae3b308361b2f46f7f4e0a3e4832e7e01dc6bd40325fe12eeffed478b75"
+    }
+  ],
+  "phase": "card",
+  "project_spec_sha256": "468a9d35567aaf9e65d205e3efb6a3f4e3e0aee560b55b06b80b95a6446fd57f",
+  "repository_commit": "b2f41ea160f19a0f16f34bcfd636b017b6e36e11",
+  "schema_version": "1.0.0",
+  "superseded_handoff_sha256": null,
+  "target_card_ids": [
+    "panns-cnn14-16k-map-0438",
+    "panns-resnet38-map-0434",
+    "panns-wavegram-logmel-cnn14-map-0439"
+  ],
+  "target_checkpoint_ids": [
+    "panns-cnn14-16k-map-0438",
+    "panns-resnet38-map-0434",
+    "panns-wavegram-logmel-cnn14-map-0439"
+  ],
+  "target_variant_ids": [
+    "panns-cnn14-16k",
+    "panns-resnet38",
+    "panns-wavegram-logmel-cnn14"
+  ],
+  "unresolved_items_carried_forward": [
+    {
+      "description": "Exact checkpoint-to-source historical equivalence remains unresolved for all three tuples.",
+      "item_id": "risk-checkpoint-source-equivalence",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    },
+    {
+      "description": "The paper Hamming versus selected-source Hann window discrepancy remains unresolved.",
+      "item_id": "risk-window-function",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    }
+  ],
+  "user_decisions_consumed": [
+    {
+      "decision": "Continue the existing three-tuple work through canonical runtime verification.",
+      "decision_id": "d-integrate-recovery-authorized",
+      "selected_option": "verify-all-three-final-tuples"
+    }
+  ],
+  "validation_summary": {
+    "checks": [
+      "all three cards validated through Pydantic ModelCard.model_validate",
+      "all three cards validated through schemas/model-card.schema.json (Draft 2020-12)",
+      "all three cards validated through the repository torch-dae card validate CLI",
+      "each card's checkpoint carries observed_sha256 populated from the accepted verify checkpoint materialization",
+      "each card's checkpoint_specification_fingerprint recomputed via checkpoint_specification_fingerprint(final_card.checkpoint)",
+      "each card references its accepted promoted environment-verification result (status=passed, lifecycle_state=environment_verified) by fingerprint and hash",
+      "each card references its accepted runtime-verification target and checkpoint-specific verification report (status=passed) by exact repository path and SHA-256",
+      "each card preserves the exact required/optional runtime check-id contract from its runtime-verification target with no undeclared check",
+      "each card exposes only the accepted clipwise post-fc1 [B,2048] embedding as default",
+      "each card records MPS as locally verified and CUDA/Linux explicitly unverified",
+      "each card retains the checkpoint-source equivalence and Hann/Hamming window issues as open, and keeps profiling sections not_profiled",
+      "no accepted analyze/resolve-environment/integrate/verify artifact was modified"
+    ],
+    "errors": [],
+    "passed": true
+  },
+  "workflow_id": "panns-audioset-three-tuple"
+}

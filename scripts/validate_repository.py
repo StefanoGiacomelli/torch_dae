@@ -227,8 +227,48 @@ def _wrapper_symbol_exists(root: Path, entry_point: str) -> bool:
         tree = ast.parse(source_path.read_text(), filename=str(source_path))
     except (OSError, SyntaxError, UnicodeDecodeError):
         return False
+
     definitions = (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
-    return any(isinstance(node, definitions) and node.name == symbol for node in tree.body)
+    if any(isinstance(node, definitions) and node.name == symbol for node in tree.body):
+        return True
+
+    # Packages may intentionally expose runtime-heavy public symbols lazily
+    # through module-level __getattr__, while keeping root imports lightweight.
+    has_module_getattr = any(
+        isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        and node.name == "__getattr__"
+        for node in tree.body
+    )
+    if not has_module_getattr:
+        return False
+
+    lazy_exports: set[str] = set()
+
+    for node in tree.body:
+        name: str | None = None
+        value: ast.expr | None = None
+
+        if isinstance(node, ast.Assign) and len(node.targets) == 1:
+            target = node.targets[0]
+            if isinstance(target, ast.Name):
+                name = target.id
+                value = node.value
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            name = node.target.id
+            value = node.value
+
+        if name is None or value is None:
+            continue
+        if name != "__all__" and not name.endswith("_EXPORTS"):
+            continue
+        if not isinstance(value, (ast.List, ast.Tuple, ast.Set)):
+            continue
+
+        for element in value.elts:
+            if isinstance(element, ast.Constant) and isinstance(element.value, str):
+                lazy_exports.add(element.value)
+
+    return symbol in lazy_exports
 
 
 def _is_binary_asset(path: Path) -> bool:
