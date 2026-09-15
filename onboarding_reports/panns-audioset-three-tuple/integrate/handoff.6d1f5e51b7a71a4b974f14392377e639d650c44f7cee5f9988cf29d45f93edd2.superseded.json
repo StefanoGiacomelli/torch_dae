@@ -100,7 +100,7 @@
       "reason": "Integrate supersedes the incomplete PANNs environment definition or lock with the validated local-wheel runtime dependency closure."
     }
   ],
-  "canonical_skill_fingerprint": "9e58c3d7030802e423c8a79db3d1ceab791f8f6300c2e6d7def2d0d32604b314",
+  "canonical_skill_fingerprint": "15228833513b9c4921583b10aa585b22103d91b7bff91b50ca1788f4237f7c8d",
   "handoff_status": "accepted",
   "input_artifacts": [
     {
@@ -160,7 +160,7 @@
       "media_type": "text/plain",
       "originating_phase": "integrate",
       "path": "docs/api/public-api.toml",
-      "sha256": "47e1f09e578482cb7712c246fceff4111db5b04308f43d708cd4ef707632432c"
+      "sha256": "441b0c94ef784527dcd05aa0ee7055f51c0aef641b1247c3ff03c3a659a020a9"
     },
     {
       "canonical_role": "repository-validation-documentation",
@@ -168,7 +168,7 @@
       "media_type": "text/markdown",
       "originating_phase": "integrate",
       "path": "docs/development/testing.md",
-      "sha256": "1dd14432ae0cf84695cb459fa46a825d7709f55d1636862b1e98b52a69728323"
+      "sha256": "2e531b31ea8cac1425c25fe71617acd1706627b9163c2a62311420ee239b4b71"
     },
     {
       "canonical_role": "documentation",
@@ -184,7 +184,7 @@
       "media_type": "text/markdown",
       "originating_phase": "integrate",
       "path": "docs/index.md",
-      "sha256": "aee646eb54ffaeef1dfd6805024879c9653ef26eef9f5aaa2d4798fd20ad982f"
+      "sha256": "dd9bdd0ef7fb3a2844beeefbd959d126dccc7e8231b93867270c5f5cc59b002c"
     },
     {
       "canonical_role": "panns-model-documentation",
@@ -200,7 +200,7 @@
       "media_type": "text/plain",
       "originating_phase": "integrate",
       "path": "docs/reference/cli.md",
-      "sha256": "589d654e8dd52c91eb1297babc5dc57754e557a3663f3832c46ca9bb39c9f474"
+      "sha256": "03a055451ea208999fd2ec4e5782b8c6936acddfedaf931f7c3c28775bb332da"
     },
     {
       "canonical_role": "integrate-validation-documentation",
@@ -321,14 +321,6 @@
       "originating_phase": "integrate",
       "path": "onboarding_reports/panns-audioset-three-tuple/integrate/coverage-validation-closure.json",
       "sha256": "949b1c6a6d50bf8c9babff92ceb99faa3ae692ab54f9604470ed82da43ee09a3"
-    },
-    {
-      "canonical_role": "superseded-integrate-handoff",
-      "external_label": null,
-      "media_type": "application/json",
-      "originating_phase": "integrate",
-      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/handoff.6d1f5e51b7a71a4b974f14392377e639d650c44f7cee5f9988cf29d45f93edd2.superseded.json",
-      "sha256": "6d1f5e51b7a71a4b974f14392377e639d650c44f7cee5f9988cf29d45f93edd2"
     },
     {
       "canonical_role": "integration-report",
@@ -464,7 +456,7 @@
       "media_type": "application/json",
       "originating_phase": "integrate",
       "path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json",
-      "sha256": "34c23a4cf1eee4d0f6b92a315cf93c4fcc60ef21b7d53f2de2df48de6da69690"
+      "sha256": "e419c297302ad315e2ef4cfcd4ad3b5a66871ddb64215b8390c3f4dc279ab412"
     },
     {
       "canonical_role": "integration-report-markdown",
@@ -472,15 +464,7 @@
       "media_type": "text/markdown",
       "originating_phase": "integrate",
       "path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.md",
-      "sha256": "00f6fd759c94e48211ff83cc202c9af0b310cc353edb7afd5dfb02f8755df5e5"
-    },
-    {
-      "canonical_role": "runtime-loader-refresh-evidence",
-      "external_label": null,
-      "media_type": "application/json",
-      "originating_phase": "integrate",
-      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/runtime-loader-refresh.json",
-      "sha256": "7e8eaf07860b45d4bb4c2f4f4c6a13054c9cd1f38a25cfeda77d6af133ef5e4f"
+      "sha256": "1385a010550f7664534208cdc768e953c9c5a6399c47c11e862fca857e951e3d"
     },
     {
       "canonical_role": "integration-report",
@@ -560,7 +544,7 @@
       "media_type": "application/toml",
       "originating_phase": "integrate",
       "path": "pyproject.toml",
-      "sha256": "51eeb4ef6799dc8e0b58129dc2aa498367ef6780c1e3babf390e6f93ccb59b98"
+      "sha256": "89d505568611bd617b13ef921cf930d394460480b1fe18e4ebf6e10babf53635"
     },
     {
       "canonical_role": "schema",
@@ -712,7 +696,7 @@
       "media_type": "text/plain",
       "originating_phase": "integrate",
       "path": "src/torch_dae/environment/manager.py",
-      "sha256": "2e9149a610e7b37307203ff946905dea2a96329ff1c67965b86057014e74ac0c"
+      "sha256": "acfa220df4ae0cfba514cf66ec322f6252e1a3f1341b5d4cf5d4eb24f6819e4f"
     },
     {
       "canonical_role": "implementation",
@@ -800,15 +784,7 @@
       "media_type": "text/x-python",
       "originating_phase": "integrate",
       "path": "src/torch_dae/models/panns/model.py",
-      "sha256": "4cbd10f045875514c0cb302a97c6954496cd7d63852e6dc50519ad22005781e0"
-    },
-    {
-      "canonical_role": "panns-runtime-verification-provider",
-      "external_label": null,
-      "media_type": "text/x-python",
-      "originating_phase": "integrate",
-      "path": "src/torch_dae/models/panns/verification.py",
-      "sha256": "638bea4d81e8e087d8d54c9998dfe7ec664ca44f33c80d68d6381c3b60be9a4a"
+      "sha256": "b449979b3ac5edba8a202365c8b49859d05a71bb0225e7a0f870783f84ba3d56"
     },
     {
       "canonical_role": "panns-resource-package",
@@ -840,7 +816,7 @@
       "media_type": "text/x-python",
       "originating_phase": "integrate",
       "path": "src/torch_dae/onboarding/handoff.py",
-      "sha256": "6a48a95f97c31a7874e2511584c09bb637f36874640c9e654866320d7b4149f0"
+      "sha256": "290195b67ba3bfa9c9d73705eab59f3a5834eab03700e22297ca64f4cbffab4d"
     },
     {
       "canonical_role": "regression-test",
@@ -896,7 +872,7 @@
       "media_type": "text/x-python",
       "originating_phase": "integrate",
       "path": "tests/models/test_panns_runtime.py",
-      "sha256": "df36557ba7a0ee4fdfa633c391c3c784b9fe3965d81ebadc70ff2c19a8b35aeb"
+      "sha256": "e105079422f4fbdc8a3d0f5ce165d0e5b7e00c195febd0ac84830e0174c19524"
     },
     {
       "canonical_role": "handoff-closure-regression-tests",
@@ -904,7 +880,7 @@
       "media_type": "text/x-python",
       "originating_phase": "integrate",
       "path": "tests/onboarding/test_handoff_management.py",
-      "sha256": "dc2e9e15a2de3322645844c577ebdfa949bbc77456c0df7142525d70932ab021"
+      "sha256": "8e3f6d1358c555a1c444c32200e0e3ee5f7e900b681d2a711f58ac7f6508c405"
     },
     {
       "canonical_role": "regression-test",
@@ -1005,9 +981,9 @@
   ],
   "phase": "integrate",
   "project_spec_sha256": "6e44a34b9da8ed347c0184680e6acfd6deb803968607c7c060642f898ef02c96",
-  "repository_commit": "38a6e5ad7f6d77df7995e68f7e5e31163b4e7a4a",
+  "repository_commit": "56258501cdc334cdfb511058bc362a45dd81c27c",
   "schema_version": "1.0.0",
-  "superseded_handoff_sha256": "9800ca8d0f6c4da6a3289e442783131f197d82b171ec6c2fa75690b6b8924b1f",
+  "superseded_handoff_sha256": "212bf7b41aba2958bbf27072fdfc6b5befc7d28c1ad3332866d801ba02fd8b6b",
   "target_card_ids": [
     "panns-cnn14-16k-map-0438",
     "panns-resnet38-map-0434",
@@ -1102,11 +1078,8 @@
       "all three environments reused offline",
       "package, wheel, fingerprint, and canonical evidence consistency passed",
       "artifact supersession count remains 12",
-      "public PANNs loader retained weights_only=True with four checkpoint-derived NumPy safe globals",
-      "authoritative Cnn14 public strict-load and synthetic loader regressions passed",
-      "differentiability requires finite fc_audioset and trainable backbone gradients without requiring a nonzero waveform gradient",
-      "final package identity and all three environment fingerprints were refreshed offline",
-      "same-phase handoff supersession preserves the complete integrate history"
+      "checkpoint and verify activity remained absent",
+      "final validation matrix required after this handoff promotion"
     ],
     "errors": [],
     "passed": true

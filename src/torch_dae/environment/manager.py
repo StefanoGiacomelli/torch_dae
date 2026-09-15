@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import shutil
+import sys
 import tomllib
 import uuid
 import zipfile
@@ -1709,6 +1710,8 @@ print(".".join(str(part) for part in sys.version_info[:3]))
                             "<managed-wheel-cache>",
                             "--no-create-gitignore",
                             "--no-build-isolation",
+                            "--python",
+                            sys.executable,
                             "--offline",
                             "<repository-root>",
                         ),
@@ -1778,6 +1781,8 @@ print(".".join(str(part) for part in sys.version_info[:3]))
                 str(wheel_dir),
                 "--no-create-gitignore",
                 "--no-build-isolation",
+                "--python",
+                sys.executable,
                 "--offline",
                 str(self.repository_root),
             ],

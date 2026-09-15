@@ -36,9 +36,15 @@ extension, final integrated hashes, and a byte-reproduced deterministic diff.
 
 ## Phase boundary
 
-No checkpoint was requested, downloaded, loaded, or inspected. No pretrained inference occurred.
-No model card or runtime-verification report was created. Exact checkpoint/source equivalence,
-checkpoint compatibility, pretrained numerical behavior, padded batches, temporal branch
-embeddings, and non-CPU platform behavior remain unresolved for later phases.
+The verify continuation refreshed the public loader without redownloading checkpoint bytes. The
+retained official Cnn14 legacy checkpoint strictly loads with `weights_only=True` inside a scoped
+four-item NumPy safe-global context; the generic checkpoint subsystem is unchanged. Focused
+regressions also require finite `fc_audioset` gradients and at least one finite trainable backbone
+gradient while allowing the deterministic Wavegram ramp's waveform gradient to be zero.
+
+This integrate refresh makes no runtime-verification lifecycle claim. Exact checkpoint/source
+equivalence, padded batches, temporal branch embeddings, and non-CPU platform behavior remain
+explicit limitations for verify and card. The final package identity and all three passed
+environment fingerprints are recorded in `runtime-loader-refresh.json`.
 
 After candidate validation and atomic promotion, the recommended next mode is `verify`.

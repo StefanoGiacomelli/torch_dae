@@ -3,15 +3,15 @@
 Run the complete local quality and validation sequence:
 
 ```bash
-uv sync --all-groups --frozen
-uv run pytest -q
-uv run ruff format --check
-uv run ruff check
-uv run mypy src scripts
-uv run python scripts/generate_schemas.py --check
-uv run python scripts/check_worktree_patch.py --json
-uv run python scripts/validate_repository.py
-uv run python skills/audio-model-onboarding/scripts/validate_skill_artifacts.py . --json
+uv sync --python 3.11 --all-groups --frozen
+uv run --python 3.11 --all-groups --frozen pytest -q
+uv run --python 3.11 --all-groups --frozen ruff format --check
+uv run --python 3.11 --all-groups --frozen ruff check
+uv run --python 3.11 --all-groups --frozen mypy src scripts
+uv run --python 3.11 --all-groups --frozen python scripts/generate_schemas.py --check
+uv run --python 3.11 --all-groups --frozen python scripts/check_worktree_patch.py --json
+uv run --python 3.11 --all-groups --frozen python scripts/validate_repository.py
+uv run --python 3.11 --all-groups --frozen python skills/audio-model-onboarding/scripts/validate_skill_artifacts.py . --json
 ```
 
 `git diff --check` checks tracked unstaged changes, but it does not inspect new untracked files.
@@ -22,9 +22,16 @@ unchanged.
 
 Coverage gates require at least 85% line coverage and 70% branch coverage. Synthetic integration
 fixtures must not require a network connection, checkpoint download, or model-specific dependency.
+The PANNs wrapper and its verification provider run only in managed model environments; both are
+excluded from the root control-plane coverage denominator. Their actual runtime evidence comes from
+the target executor. Generic worker dispatch, report validation and orchestration remain covered
+by the root suite.
 
-For Python 3.11, begin with `uv sync --all-groups --frozen --python 3.11` before the unchanged full
-suite. Environment dependency-closure regressions exercise wheel markers, extras, normalized names,
+Every Python 3.11 gate uses `uv run --python 3.11 --all-groups --frozen ...`;
+selecting an interpreter only at sync time does not constrain later `uv run` commands.
+For the Python 3.12 leg, use the same commands with `--python 3.12`.
+Twine 7 validates Core Metadata 2.5 emitted by the current build backend without changing
+package metadata semantics. See the [Twine changelog](https://twine.readthedocs.io/en/latest/changelog.html). Environment dependency-closure regressions exercise wheel markers, extras, normalized names,
 version incompatibility, reachable and orphan transitive lock entries, no-network behavior,
 pre-materialization ordering, deterministic results, and root dependency isolation.
 Package-identity regressions use temporary Git repositories to prove dirty-to-clean and HEAD-only

@@ -1,0 +1,61 @@
+{
+  "acquired_at": "2026-09-15T15:30:31.992933+00:00",
+  "authority": {
+    "expected_size_bytes": 328692198,
+    "filename": "Wavegram_Logmel_Cnn14_mAP=0.439.pth",
+    "provenance_status": "authoritative_provider_declared",
+    "provider": "zenodo",
+    "published_checksums": [
+      {
+        "algorithm": "md5",
+        "digest": "17fa9ab65af3c0eb5ffbc5f65552c4e1"
+      }
+    ],
+    "record_id": "3987831",
+    "record_url": "https://zenodo.org/records/3987831"
+  },
+  "cache_path": "checkpoints/panns-wavegram-logmel-cnn14-map-0439/6c1c917d780967c40bbfd0f20027bd394a7da72453ca716745fe8657206200ae",
+  "checkpoint_id": "panns-wavegram-logmel-cnn14-map-0439",
+  "command_log_references": [
+    "reports/checkpoints/panns-wavegram-logmel-cnn14-map-0439/remote-open-5e9c3fa9ee6b4a1e99724e4250738fe0.json",
+    "reports/checkpoints/panns-wavegram-logmel-cnn14-map-0439/remote-stream-534183bf96644342a5750cecd27c7859.json",
+    "reports/checkpoints/panns-wavegram-logmel-cnn14-map-0439/size-validation-0a23df13aa6c435aa7a483b8e8ba7b8c.json",
+    "reports/checkpoints/panns-wavegram-logmel-cnn14-map-0439/published-checksum-validation-319516d86b0a4ae9b24964e739332437.json",
+    "reports/checkpoints/panns-wavegram-logmel-cnn14-map-0439/hash-validation-c289b5536611482783f341912ebc101d.json",
+    "reports/checkpoints/panns-wavegram-logmel-cnn14-map-0439/remote-finalize-79fd50bfac014ab8b106a2b2553f96f7.json"
+  ],
+  "environment_id": null,
+  "expected_sha256": null,
+  "expected_size_bytes": 328692198,
+  "filename": "Wavegram_Logmel_Cnn14_mAP=0.439.pth",
+  "materialization_status": "downloaded",
+  "metadata_resolution_reference": "checkpoints/panns-wavegram-logmel-cnn14-map-0439/.authority/3d6a613693ff2a60c16db9646f44b8fb81d17b8d4af2721545165aa060d91d3d/checkpoint-authority-resolution.json",
+  "metadata_resolution_sha256": "2040c5e39ac7880e20d0fd5e216286592584d4f2e3f9d44ecd721a9737885763",
+  "observed_checksums": [
+    {
+      "algorithm": "md5",
+      "digest": "17fa9ab65af3c0eb5ffbc5f65552c4e1"
+    },
+    {
+      "algorithm": "sha256",
+      "digest": "6c1c917d780967c40bbfd0f20027bd394a7da72453ca716745fe8657206200ae"
+    }
+  ],
+  "observed_sha256": "6c1c917d780967c40bbfd0f20027bd394a7da72453ca716745fe8657206200ae",
+  "observed_size_bytes": 328692198,
+  "payload_etag": null,
+  "payload_last_modified": null,
+  "published_checksums": [
+    {
+      "algorithm": "md5",
+      "digest": "17fa9ab65af3c0eb5ffbc5f65552c4e1"
+    }
+  ],
+  "resolved_url_or_location": "https://zenodo.org/api/records/3987831/files/Wavegram_Logmel_Cnn14_mAP=0.439.pth/content",
+  "schema_version": "2.0.0",
+  "sha256": "6c1c917d780967c40bbfd0f20027bd394a7da72453ca716745fe8657206200ae",
+  "size_bytes": 328692198,
+  "source_description": "https",
+  "source_type": "https",
+  "specification_fingerprint": "3d6a613693ff2a60c16db9646f44b8fb81d17b8d4af2721545165aa060d91d3d"
+}

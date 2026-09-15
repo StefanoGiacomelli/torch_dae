@@ -18,9 +18,9 @@ control-plane document-analysis dependency. Report creation of the root environm
 but do not call the legitimate root `.venv` contamination. Bytecode and tool caches remain ignored
 and must not enter audit archives.
 
-For the Python 3.11 validation leg, switch the root interpreter only through
-`uv sync --all-groups --frozen --python 3.11` before running the complete suite so documentation and
-all optional validation groups are present.
+For the Python 3.11 validation leg, run every gate with
+`uv run --python 3.11 --all-groups --frozen ...` so interpreter selection and all validation
+groups remain explicit on every invocation. Sync alone does not constrain subsequent runs.
 
 Supplied local papers may be read with `scripts/extract_pdf_text.py`. The utility extracts only an
 available text layer, preserves page boundaries, and provides no OCR. Extracted text is a reading

@@ -169,6 +169,8 @@ def validate_runtime_verification_target(
     if sha256_file(handoff_path) != target.accepted_integration_handoff.sha256:
         raise ValueError("runtime target integration handoff SHA-256 mismatch")
     handoff = load_handoff(handoff_path)
+    if handoff.workflow_id != target.workflow_id or handoff.phase != OnboardingPhase.INTEGRATE:
+        raise ValueError("runtime target integration handoff identity mismatch")
     if handoff.handoff_status != HandoffStatus.ACCEPTED:
         raise ValueError("runtime target requires an accepted integration handoff")
     if target.integrated_variant_id not in handoff.target_variant_ids:

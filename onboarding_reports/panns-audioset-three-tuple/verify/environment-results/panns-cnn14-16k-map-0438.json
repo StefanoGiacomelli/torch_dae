@@ -1,0 +1,99 @@
+{
+  "completed_at": "2026-09-15T17:36:38.475691Z",
+  "direct_dependency_versions": {
+    "jsonschema": "4.26.0",
+    "numpy": "2.4.6",
+    "packaging": "26.2",
+    "platformdirs": "4.11.0",
+    "pydantic": "2.13.4",
+    "pypdf": "6.14.2",
+    "torch": "2.13.0",
+    "torchlibrosa": "0.1.0",
+    "typer": "0.27.0"
+  },
+  "environment_fingerprint": "db47eb04412793e51daf7905b4c2d4d012046a9e8d267cc6f1ad0e1487b6e6c3",
+  "environment_id": "panns-cnn14-16k-map-0438",
+  "environment_smoke_results": [
+    {
+      "details": "Direct dependencies, installed sources, and the local wheel matched.",
+      "name": "dependency-and-source-integrity",
+      "status": "passed"
+    }
+  ],
+  "environment_spec_sha256": "6048cbf0376c895be98e1264b5b0f36d8b27ab628cbd1cb4f44120503916909f",
+  "evidence": [
+    {
+      "path": "environments/panns-cnn14-16k-map-0438/environment.json",
+      "sha256": "6048cbf0376c895be98e1264b5b0f36d8b27ab628cbd1cb4f44120503916909f"
+    },
+    {
+      "path": "environments/panns-cnn14-16k-map-0438/pyproject.toml",
+      "sha256": "80474b42e952af2d056f9cd402727891df658ceb5b17f9f58180571e2bcfec9a"
+    },
+    {
+      "path": "environments/panns-cnn14-16k-map-0438/uv.lock",
+      "sha256": "d08d9781a18fafcc7f19dd122646ba0d3c035c11d249d03fd0f6d72e7249e738"
+    },
+    {
+      "path": "environments/panns-cnn14-16k-map-0438/sources.json",
+      "sha256": "f29ea6262f3bcb2f241e00b157991dce7a602bdef9fc3dbe98a5292a5e4d6729"
+    },
+    {
+      "path": "environments/panns-cnn14-16k-map-0438/verify_environment.py",
+      "sha256": "ae2a3282db09ad74cc25bee9813d834d3f95007b91e061158020bce4aa0347db"
+    },
+    {
+      "path": "reports/environments/panns-cnn14-16k-map-0438/db47eb04412793e51daf7905b4c2d4d012046a9e8d267cc6f1ad0e1487b6e6c3/verification-commands/python-inspection-4d5aa5dcc49c48b0a8fdb2c1bfc72ebd.json",
+      "sha256": "82fb74d17d76b670cbab0846d02fb9f313991f3010e4ac01482be2bb153b3454"
+    },
+    {
+      "path": "reports/environments/panns-cnn14-16k-map-0438/db47eb04412793e51daf7905b4c2d4d012046a9e8d267cc6f1ad0e1487b6e6c3/verification-commands/installed-distributions-4e607fd514fe408fb717655aeb84fe71.json",
+      "sha256": "01b6718cd6c93d2a1cb915db7c392b853cb4d1c5df2cf2dae61ec0a639e6bc57"
+    },
+    {
+      "path": "reports/environments/panns-cnn14-16k-map-0438/db47eb04412793e51daf7905b4c2d4d012046a9e8d267cc6f1ad0e1487b6e6c3/verification-commands/dependency-check-636e53b699494011a67329565e1d97f6.json",
+      "sha256": "fc7c5d1c8e27816fe23e0c0e1df1b7791b2e25f352c3212082aa1e1b94aa48a8"
+    },
+    {
+      "path": "reports/environments/panns-cnn14-16k-map-0438/db47eb04412793e51daf7905b4c2d4d012046a9e8d267cc6f1ad0e1487b6e6c3/verification-commands/distribution-inspection-ade06ffcfee147cb83ac494c8dad16ed.json",
+      "sha256": "39b93fab62fec3b737669c3af2f25210b8a1556795ad58543ee4e0118a53962f"
+    },
+    {
+      "path": "reports/environments/panns-cnn14-16k-map-0438/db47eb04412793e51daf7905b4c2d4d012046a9e8d267cc6f1ad0e1487b6e6c3/verification-commands/local-wheel-import-check-d2221940656c4342a07cb46f123eacb5.json",
+      "sha256": "3c9147c7cb791bbdebff04dfbe5b3e7a6f2bdfebc3ae363b593e3d1622ce0677"
+    },
+    {
+      "path": "reports/environments/panns-cnn14-16k-map-0438/db47eb04412793e51daf7905b4c2d4d012046a9e8d267cc6f1ad0e1487b6e6c3/verification-commands/installed-distributions-8cf383b1835c4774bc77d1180a900aa9.json",
+      "sha256": "ec7141e9644efd5e5c3548a1ba22eeda6a75354958ff8ce642dbc0df393c548a"
+    },
+    {
+      "path": "reports/environments/panns-cnn14-16k-map-0438/db47eb04412793e51daf7905b4c2d4d012046a9e8d267cc6f1ad0e1487b6e6c3/verification-commands/distribution-inspection-098c69d26f6641d39193c1067e085295.json",
+      "sha256": "362cef878a8f3bb7ab09bb46c9ecb9c878b09886bca55c86d8075e159a1e8890"
+    },
+    {
+      "path": "reports/environments/panns-cnn14-16k-map-0438/db47eb04412793e51daf7905b4c2d4d012046a9e8d267cc6f1ad0e1487b6e6c3/verification-commands/verification-script-aa5b91914d314b3bbfbba29e31428899.json",
+      "sha256": "a0195119c3a78dd6d489eb5701fafc6f420bb4330e836aeb1ce10d0bba6d1ffa"
+    }
+  ],
+  "exact_interpreter": "CPython 3.12.13",
+  "failure_classification": null,
+  "import_results": [
+    {
+      "details": "The committed environment verification script completed.",
+      "name": "verification-script-imports",
+      "status": "passed"
+    }
+  ],
+  "lifecycle_state": "environment_verified",
+  "materialization_result_reference": {
+    "path": "environments/panns-cnn14-16k-map-0438/db47eb04412793e51daf7905b4c2d4d012046a9e8d267cc6f1ad0e1487b6e6c3/torch-dae-materialization.json",
+    "sha256": "8247799c8fd5b71b3101f85ca0138d43303fe726f503a42cba6f998ed93b9e13"
+  },
+  "platform": "macos-arm64",
+  "result_path": "reports/environments/panns-cnn14-16k-map-0438/db47eb04412793e51daf7905b4c2d4d012046a9e8d267cc6f1ad0e1487b6e6c3/environment-verification-result.json",
+  "schema_version": "1.0.0",
+  "started_at": "2026-09-15T17:36:34.566025Z",
+  "verification_script_sha256": "ae2a3282db09ad74cc25bee9813d834d3f95007b91e061158020bce4aa0347db",
+  "verification_status": "passed",
+  "warnings": []
+}

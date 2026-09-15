@@ -19,14 +19,18 @@ def test_card_list_empty(repo_root: object) -> None:
     assert result.output == ""
 
 
-def test_deferred_model_commands_fail_truthfully() -> None:
+def test_model_verification_requires_an_explicit_target() -> None:
     runner = CliRunner()
     result = runner.invoke(app, ["env", "create", "synthetic"])
     assert result.exit_code == 4
     assert "model card not found" in result.output
     result = runner.invoke(app, ["model", "verify", "synthetic"])
     assert result.exit_code == 2
-    assert "is not available in the control-plane CLI" in result.output
+    assert "--target" in result.output
+    help_result = runner.invoke(app, ["model", "verify", "--help"])
+    assert help_result.exit_code == 0
+    assert "--target" in help_result.output
+    assert "--offline" in help_result.output
 
 
 def test_env_info_absent() -> None:

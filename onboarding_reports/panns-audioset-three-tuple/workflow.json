@@ -11,10 +11,14 @@
     {
       "handoff_path": "onboarding_reports/panns-audioset-three-tuple/integrate/handoff.json",
       "phase": "integrate"
+    },
+    {
+      "handoff_path": "onboarding_reports/panns-audioset-three-tuple/verify/handoff.json",
+      "phase": "verify"
     }
   ],
   "created_repository_commit": "c156433b2432b2549ed5169fb5dada7386005d3b",
-  "current_accepted_phase": "integrate",
+  "current_accepted_phase": "verify",
   "model_family": "PANNs",
   "schema_version": "1.0.0",
   "status": "active",

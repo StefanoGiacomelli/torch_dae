@@ -101,6 +101,7 @@ reference/lifecycle
 
 checkpoint-management
 environment-management
+runtime-execution
 model-onboarding-skill
 onboarding-artifacts
 onboarding-evidence-policy

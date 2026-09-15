@@ -75,3 +75,9 @@ emitted before the command exits unsuccessfully.
 root. Environments and caches are retained by category and are not redundantly declared as retained
 diagnostics. Under intentionally non-writable Git metadata, final inventory uses read-only status and
 cached-diff checks or the staged-equivalent validator rather than `git write-tree`.
+
+## Card-independent runtime verification
+
+`torch-dae model verify --target <runtime-target.json> --json [--offline]` executes
+a schema-2 target in its verified model environment before a model card exists.
+See [runtime execution](../runtime-execution.md) for provider and evidence details.

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from pathlib import Path
-from typing import ClassVar, Self, cast
+from typing import Any, ClassVar, Self, cast
 
 from torch_dae.core.checkpoint import CheckpointSourceType, CheckpointSpec
 from torch_dae.core.embeddings import EmbeddingSpec
@@ -37,6 +37,31 @@ _MINIMUM_SAMPLE_COUNTS = {
 }
 _WAVEGRAM_ALIGNMENT_MODULUS = 640
 _WAVEGRAM_INCOMPATIBLE_REMAINDER = range(320, 636)
+
+
+def _panns_legacy_checkpoint_safe_globals() -> list[Any]:
+    """Return the minimal NumPy globals used by the official legacy Cnn14 payload."""
+
+    import numpy as np  # type: ignore[import-not-found]
+    from numpy.core.multiarray import _reconstruct  # type: ignore[import-not-found]
+
+    return [
+        (_reconstruct, "numpy.core.multiarray._reconstruct"),
+        np.ndarray,
+        np.dtype,
+        type(np.dtype(np.int64)),
+    ]
+
+
+def _load_panns_checkpoint_payload(
+    path: Path,
+    *,
+    map_location: str | torch.device,
+) -> object:
+    """Deserialize an official PANNs payload with scoped weights-only compatibility."""
+
+    with torch.serialization.safe_globals(_panns_legacy_checkpoint_safe_globals()):
+        return torch.load(path, map_location=map_location, weights_only=True)
 
 
 class _PannsAudioTagger(nn.Module):  # type: ignore[misc]
@@ -132,7 +157,7 @@ class _PannsAudioTagger(nn.Module):  # type: ignore[misc]
         path = self._checkpoint_path(checkpoint)
         if not path.is_file():
             raise FileNotFoundError(path)
-        payload = torch.load(path, map_location=map_location, weights_only=True)
+        payload = _load_panns_checkpoint_payload(path, map_location=map_location)
         if not isinstance(payload, Mapping) or "model" not in payload:
             raise ValueError("PANNs checkpoint must be a mapping containing the 'model' key")
         state_dict = payload["model"]

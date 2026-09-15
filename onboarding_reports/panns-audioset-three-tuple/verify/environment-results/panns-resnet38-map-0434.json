@@ -1,0 +1,99 @@
+{
+  "completed_at": "2026-09-15T17:38:57.745441Z",
+  "direct_dependency_versions": {
+    "jsonschema": "4.26.0",
+    "numpy": "2.4.6",
+    "packaging": "26.2",
+    "platformdirs": "4.11.0",
+    "pydantic": "2.13.4",
+    "pypdf": "6.14.2",
+    "torch": "2.13.0",
+    "torchlibrosa": "0.1.0",
+    "typer": "0.27.0"
+  },
+  "environment_fingerprint": "d66ce6f1081759c455ca4923bafac2648bf34e49bf423b1d621c3beb93009ef9",
+  "environment_id": "panns-resnet38-map-0434",
+  "environment_smoke_results": [
+    {
+      "details": "Direct dependencies, installed sources, and the local wheel matched.",
+      "name": "dependency-and-source-integrity",
+      "status": "passed"
+    }
+  ],
+  "environment_spec_sha256": "2855e171ef7184ffaa04fe8455fd7602c8b12ef1ecc9f8e4b048434a3c2fb594",
+  "evidence": [
+    {
+      "path": "environments/panns-resnet38-map-0434/environment.json",
+      "sha256": "2855e171ef7184ffaa04fe8455fd7602c8b12ef1ecc9f8e4b048434a3c2fb594"
+    },
+    {
+      "path": "environments/panns-resnet38-map-0434/pyproject.toml",
+      "sha256": "f163a0e81e8c883d694284f1331d63a451966a008f2f2d69bfef90c3bbe0be01"
+    },
+    {
+      "path": "environments/panns-resnet38-map-0434/uv.lock",
+      "sha256": "0fca8d79f42fb767530dec3b3d649aad9389627b27263f403082acf83760f187"
+    },
+    {
+      "path": "environments/panns-resnet38-map-0434/sources.json",
+      "sha256": "0ba554a609371bc950b80f0525e7fe4a0b2c3d38c7814711da3b0d665389b994"
+    },
+    {
+      "path": "environments/panns-resnet38-map-0434/verify_environment.py",
+      "sha256": "ff660209698988256f3d5a7b829630659317c47bee9f488129e143006ebc57aa"
+    },
+    {
+      "path": "reports/environments/panns-resnet38-map-0434/d66ce6f1081759c455ca4923bafac2648bf34e49bf423b1d621c3beb93009ef9/verification-commands/python-inspection-bdfb02fe2aca4dc3935fb21276918d38.json",
+      "sha256": "aa0405e1a15d501ba6c57ced35466af98f993f81e9c210cef6d24c642563e00d"
+    },
+    {
+      "path": "reports/environments/panns-resnet38-map-0434/d66ce6f1081759c455ca4923bafac2648bf34e49bf423b1d621c3beb93009ef9/verification-commands/installed-distributions-a25ddce891c34e9c9c383d78c7b8ea38.json",
+      "sha256": "41983704c74ae63276126403b79657614ece52bb6647d0dfdbe660896813434f"
+    },
+    {
+      "path": "reports/environments/panns-resnet38-map-0434/d66ce6f1081759c455ca4923bafac2648bf34e49bf423b1d621c3beb93009ef9/verification-commands/dependency-check-de59300607a3495382e5ba4677ce09bc.json",
+      "sha256": "e5a6f4fc4663bbfd9b407fb3594c633e155ee0602aed51ac615179b74c6bd7d9"
+    },
+    {
+      "path": "reports/environments/panns-resnet38-map-0434/d66ce6f1081759c455ca4923bafac2648bf34e49bf423b1d621c3beb93009ef9/verification-commands/distribution-inspection-c5a45c77098a41e087d5ad0be76469f5.json",
+      "sha256": "c7b08bda0c265ea8c9a0abc47e387f51d5ef7e0d444c5278a525b50520d18f12"
+    },
+    {
+      "path": "reports/environments/panns-resnet38-map-0434/d66ce6f1081759c455ca4923bafac2648bf34e49bf423b1d621c3beb93009ef9/verification-commands/local-wheel-import-check-dc572a6f9b8e49489fdd0acdf38ea4cf.json",
+      "sha256": "e0160d3aa33f1dbb7b1110ca2cd3caab45d3648b5f18de8735e855bb0253c367"
+    },
+    {
+      "path": "reports/environments/panns-resnet38-map-0434/d66ce6f1081759c455ca4923bafac2648bf34e49bf423b1d621c3beb93009ef9/verification-commands/installed-distributions-5c8f8859684f47a2863a2160577d5336.json",
+      "sha256": "af3c01ae52180a078347f80339fcd2d2f39a36d20e6dc637f5f02d8684638567"
+    },
+    {
+      "path": "reports/environments/panns-resnet38-map-0434/d66ce6f1081759c455ca4923bafac2648bf34e49bf423b1d621c3beb93009ef9/verification-commands/distribution-inspection-65c31cedc5db4300aa02a948dbdbff52.json",
+      "sha256": "d03992efbff30dd014f4d56516549a961b8a5a5b9dbe3e47496bf57d4b88b952"
+    },
+    {
+      "path": "reports/environments/panns-resnet38-map-0434/d66ce6f1081759c455ca4923bafac2648bf34e49bf423b1d621c3beb93009ef9/verification-commands/verification-script-b010c75f982b402a857f4b1a39a67fd3.json",
+      "sha256": "95113be603e9b8e87c30c0019e576ba3b245e501bf1185ed80b6152a4cd58c6f"
+    }
+  ],
+  "exact_interpreter": "CPython 3.12.13",
+  "failure_classification": null,
+  "import_results": [
+    {
+      "details": "The committed environment verification script completed.",
+      "name": "verification-script-imports",
+      "status": "passed"
+    }
+  ],
+  "lifecycle_state": "environment_verified",
+  "materialization_result_reference": {
+    "path": "environments/panns-resnet38-map-0434/d66ce6f1081759c455ca4923bafac2648bf34e49bf423b1d621c3beb93009ef9/torch-dae-materialization.json",
+    "sha256": "0b5e90998cb2cdeda0f7d003afc970a12621bccbdce2a2c91c031c3e44ac79d2"
+  },
+  "platform": "macos-arm64",
+  "result_path": "reports/environments/panns-resnet38-map-0434/d66ce6f1081759c455ca4923bafac2648bf34e49bf423b1d621c3beb93009ef9/environment-verification-result.json",
+  "schema_version": "1.0.0",
+  "started_at": "2026-09-15T17:38:54.120809Z",
+  "verification_script_sha256": "ff660209698988256f3d5a7b829630659317c47bee9f488129e143006ebc57aa",
+  "verification_status": "passed",
+  "warnings": []
+}

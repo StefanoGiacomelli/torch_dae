@@ -74,3 +74,12 @@ runtime-verified card. Failed evidence remains diagnostic and never promotes lif
 .. autoclass:: torch_dae.environment.verification.TensorObservation
 
 .. autoclass:: torch_dae.environment.verification.VerificationReport
+
+Execution
+---------
+
+.. autofunction:: torch_dae.runtime_executor.execute_runtime_verification
+
+.. autofunction:: torch_dae.runtime_executor.validate_runtime_report
+
+.. autoclass:: torch_dae.runtime_executor.RuntimeVerificationExecution

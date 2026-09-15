@@ -1,0 +1,151 @@
+{
+  "schema_version": "2.0.0",
+  "target_id": "panns-cnn14-16k-map-0438-runtime-target",
+  "workflow_id": "panns-audioset-three-tuple",
+  "integrated_variant_id": "panns-cnn14-16k",
+  "adapter_id": "panns-cnn14-16k-map-0438",
+  "checkpoint": {
+    "schema_version": "2.0.0",
+    "checkpoint_id": "panns-cnn14-16k-map-0438",
+    "source_type": "https",
+    "url": null,
+    "repository_id": null,
+    "package": null,
+    "package_version": null,
+    "revision": null,
+    "release_tag": null,
+    "filename": "Cnn14_16k_mAP=0.438.pth",
+    "local_path": null,
+    "expected_sha256": null,
+    "observed_sha256": null,
+    "authority": {
+      "provider": "zenodo",
+      "record_id": "3987831",
+      "filename": "Cnn14_16k_mAP=0.438.pth",
+      "expected_size_bytes": 358668570,
+      "published_checksums": [
+        {
+          "algorithm": "md5",
+          "digest": "362fc5ff18f1d6ad2f6d464b45893f2c"
+        }
+      ],
+      "record_url": "https://zenodo.org/records/3987831",
+      "provenance_status": "authoritative_provider_declared"
+    },
+    "format": "PyTorch checkpoint mapping containing model state-dictionary",
+    "loader": "torch.load(path, map_location=device)['model'] followed by strict model.load_state_dict",
+    "license": {
+      "name": "CC-BY-4.0",
+      "url": "https://zenodo.org/records/3987831",
+      "status": "officially_reported"
+    }
+  },
+  "future_card_id": "panns-cnn14-16k-map-0438",
+  "public_model_entry_point": "torch_dae.models.panns:PannsCnn14_16kMap0438",
+  "registry_identity": "panns-cnn14-16k-map-0438",
+  "environment_id": "panns-cnn14-16k-map-0438",
+  "accepted_integration_handoff": {
+    "path": "onboarding_reports/panns-audioset-three-tuple/integrate/handoff.json",
+    "sha256": "ac39cb76a729970414bdc1ad8b3508760f5834d81dabb2da474d3e5efada1a59"
+  },
+  "environment_spec_sha256": "6048cbf0376c895be98e1264b5b0f36d8b27ab628cbd1cb4f44120503916909f",
+  "source_manifest": {
+    "path": "environments/panns-cnn14-16k-map-0438/sources.json",
+    "sha256": "f29ea6262f3bcb2f241e00b157991dce7a602bdef9fc3dbe98a5292a5e4d6729"
+  },
+  "checkpoint_acquisition_policy": {
+    "allow_network": false,
+    "allow_authentication": false,
+    "maximum_bytes": 536870912,
+    "require_expected_sha256": false,
+    "require_authority": true,
+    "require_exact_size": true,
+    "require_published_checksums": true,
+    "require_observed_sha256": true
+  },
+  "required_sample_rate_hz": 16000,
+  "input_contract": {
+    "shape": "B,C,T",
+    "valid_lengths_shape": "B",
+    "dtype": "float32",
+    "channels": "strict mono"
+  },
+  "expected_outputs": [
+    {
+      "name": "logits",
+      "rank": 2,
+      "dimensions": [
+        "B",
+        "527"
+      ]
+    },
+    {
+      "name": "probabilities",
+      "rank": 2,
+      "dimensions": [
+        "B",
+        "527"
+      ]
+    },
+    {
+      "name": "embedding",
+      "rank": 2,
+      "dimensions": [
+        "B",
+        "2048"
+      ]
+    }
+  ],
+  "probability_semantics": "sigmoid",
+  "default_embedding": {
+    "embedding_id": "panns-official-post-fc1-embedding",
+    "dimension": 2048
+  },
+  "permitted_devices": [
+    "cpu",
+    "mps"
+  ],
+  "required_check_ids": [
+    "random-initialization",
+    "checkpoint-authority-metadata",
+    "checkpoint-acquisition-integrity",
+    "checkpoint-offline-cache-reuse",
+    "checkpoint-deserialization",
+    "checkpoint-strict-state-dictionary-load",
+    "invalid-checkpoint-rejected",
+    "integrated-variant-agreement",
+    "canonical-waveform-input",
+    "batch-behavior",
+    "zero-input-behavior",
+    "duration-constraints",
+    "equal-valid-lengths",
+    "invalid-input-rejection",
+    "checkpoint-loaded-cpu-forward",
+    "checkpoint-output-contract",
+    "checkpoint-probability-contract",
+    "checkpoint-native-output-parity",
+    "checkpoint-default-embedding",
+    "audioset-label-contract",
+    "checkpoint-deterministic-evaluation",
+    "cpu-device-placement",
+    "checkpoint-differentiability"
+  ],
+  "optional_check_ids": [
+    "automatic-resampling",
+    "padded-variable-valid-lengths",
+    "mps-native-execution"
+  ],
+  "verification_limits": {
+    "timeout_seconds": 3600,
+    "maximum_batch_size": 2,
+    "maximum_samples_per_item": 32000,
+    "repeated_calls": 2,
+    "profiling_permitted": false
+  },
+  "known_unresolved_items": [
+    "Exact checkpoint-to-source historical equivalence remains unresolved.",
+    "The paper Hamming versus selected-source Hann window discrepancy remains unresolved.",
+    "Automatic resampling and arbitrary padded variable-length batches are not supported by the accepted integration.",
+    "CUDA and non-macOS platforms are outside this local verification scope."
+  ]
+}

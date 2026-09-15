@@ -1,0 +1,207 @@
+{
+  "allowed_next_modes": [
+    "card"
+  ],
+  "artifact_supersessions": [],
+  "canonical_skill_fingerprint": "9e58c3d7030802e423c8a79db3d1ceab791f8f6300c2e6d7def2d0d32604b314",
+  "handoff_status": "accepted",
+  "input_artifacts": [
+    {
+      "canonical_role": "integrate-handoff",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/handoff.json",
+      "sha256": "9800ca8d0f6c4da6a3289e442783131f197d82b171ec6c2fa75690b6b8924b1f"
+    }
+  ],
+  "lifecycle_promotion": null,
+  "output_artifacts": [
+    {
+      "canonical_role": "runtime-verification-target",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "verify",
+      "path": "onboarding_reports/panns-audioset-three-tuple/verify/runtime-targets/panns-cnn14-16k-map-0438-runtime-target.json",
+      "sha256": "d58c020f82bc29e891eff621e052cc2f6365dd36fdc234e0e4f2446ca1e0edd4"
+    },
+    {
+      "canonical_role": "runtime-verification-target",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "verify",
+      "path": "onboarding_reports/panns-audioset-three-tuple/verify/runtime-targets/panns-resnet38-map-0434-runtime-target.json",
+      "sha256": "5ee50e1e47e79e106c02046a5c7e1f6544e2c5b94673521f6751f5009c07daf9"
+    },
+    {
+      "canonical_role": "runtime-verification-target",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "verify",
+      "path": "onboarding_reports/panns-audioset-three-tuple/verify/runtime-targets/panns-wavegram-logmel-cnn14-map-0439-runtime-target.json",
+      "sha256": "f8c120eab46e58ee363762b71b8fa942b716cfb621bf820885ddca65975fd87f"
+    },
+    {
+      "canonical_role": "environment-verification-result",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "verify",
+      "path": "onboarding_reports/panns-audioset-three-tuple/verify/environment-results/panns-cnn14-16k-map-0438.json",
+      "sha256": "9f611dfcadca21f791b6de5538e4a1e27b212c4033897a893505938d6fac3b03"
+    },
+    {
+      "canonical_role": "environment-verification-result",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "verify",
+      "path": "onboarding_reports/panns-audioset-three-tuple/verify/environment-results/panns-resnet38-map-0434.json",
+      "sha256": "16f89db7fc468542f9cdf43f79adea468b7db67ecfe18938a2ca3c83b3bc3cd6"
+    },
+    {
+      "canonical_role": "environment-verification-result",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "verify",
+      "path": "onboarding_reports/panns-audioset-three-tuple/verify/environment-results/panns-wavegram-logmel-cnn14-map-0439.json",
+      "sha256": "e04d71ade63f109b6828d1bdd6466c7fee2f3625ac088d8821c80b0a57dd1e4c"
+    },
+    {
+      "canonical_role": "checkpoint-materialization",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "verify",
+      "path": "onboarding_reports/panns-audioset-three-tuple/verify/checkpoint-materializations/panns-cnn14-16k-map-0438.json",
+      "sha256": "5f590daf1d9b86f7da70d1c817d52512df9e7ab839fe41fe9e92e73d0dc0230b"
+    },
+    {
+      "canonical_role": "checkpoint-materialization",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "verify",
+      "path": "onboarding_reports/panns-audioset-three-tuple/verify/checkpoint-materializations/panns-resnet38-map-0434.json",
+      "sha256": "ea2db98dabcca2126ba0aa3dc58931a1d1461dc47068f852765994606f14c141"
+    },
+    {
+      "canonical_role": "checkpoint-materialization",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "verify",
+      "path": "onboarding_reports/panns-audioset-three-tuple/verify/checkpoint-materializations/panns-wavegram-logmel-cnn14-map-0439.json",
+      "sha256": "f5406ed2db8de57271c6e275e39e44cc23bcb0e65e40678f2da727c8e849b7e1"
+    },
+    {
+      "canonical_role": "verification-summary",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "verify",
+      "path": "onboarding_reports/panns-audioset-three-tuple/verify/verification-summary.json",
+      "sha256": "dfa03aee122fb8af49e5015b94829af84691508d807cb7e07e95196c78cf55fe"
+    },
+    {
+      "canonical_role": "normalized-verification-audit",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "verify",
+      "path": "onboarding_reports/panns-audioset-three-tuple/verify/normalized-verification-audit.json",
+      "sha256": "479447c5022d6622830f3dce3fc2090aed6871f5f7b6fd490ef9aaa5f025f41b"
+    },
+    {
+      "canonical_role": "checkpoint-specific-verification-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "verify",
+      "path": "verification_reports/panns-cnn14-16k-map-0438/runtime-verification.json",
+      "sha256": "4bc00fdd89888ffb72e55449d641c2631505603a3f281b699442520967991e45"
+    },
+    {
+      "canonical_role": "checkpoint-specific-verification-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "verify",
+      "path": "verification_reports/panns-resnet38-map-0434/runtime-verification.json",
+      "sha256": "6a0e4d8f0fda03be136354156f223bf1acbf3ce24675c19a7d5e20d0e5eb0216"
+    },
+    {
+      "canonical_role": "checkpoint-specific-verification-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "verify",
+      "path": "verification_reports/panns-wavegram-logmel-cnn14-map-0439/runtime-verification.json",
+      "sha256": "69de9f894165ef9ea7832642c3563b7cfbf384a6db1d58baf0f710e307eaa23e"
+    }
+  ],
+  "phase": "verify",
+  "project_spec_sha256": "6e44a34b9da8ed347c0184680e6acfd6deb803968607c7c060642f898ef02c96",
+  "repository_commit": "38a6e5ad7f6d77df7995e68f7e5e31163b4e7a4a",
+  "schema_version": "1.0.0",
+  "superseded_handoff_sha256": null,
+  "target_card_ids": [
+    "panns-cnn14-16k-map-0438",
+    "panns-resnet38-map-0434",
+    "panns-wavegram-logmel-cnn14-map-0439"
+  ],
+  "target_checkpoint_ids": [
+    "panns-cnn14-16k-map-0438",
+    "panns-resnet38-map-0434",
+    "panns-wavegram-logmel-cnn14-map-0439"
+  ],
+  "target_variant_ids": [
+    "panns-cnn14-16k",
+    "panns-resnet38",
+    "panns-wavegram-logmel-cnn14"
+  ],
+  "unresolved_items_carried_forward": [
+    {
+      "description": "Exact checkpoint-to-source historical equivalence remains unresolved for all three tuples.",
+      "item_id": "risk-checkpoint-source-equivalence",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    },
+    {
+      "description": "The paper Hamming versus selected-source Hann window discrepancy remains unresolved.",
+      "item_id": "risk-window-function",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    },
+    {
+      "description": "Padded unequal valid-length batch semantics remain unsupported.",
+      "item_id": "risk-padded-batch-semantics",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/verify/normalized-verification-audit.json"
+    },
+    {
+      "description": "Automatic resampling remains unsupported; callers must provide each tuple's native sample rate.",
+      "item_id": "risk-automatic-resampling",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/verify/normalized-verification-audit.json"
+    },
+    {
+      "description": "Wavegram temporal branch embeddings are not exposed; only the accepted clipwise post-fc1 embedding is declared.",
+      "item_id": "risk-temporal-embedding",
+      "source_artifact_path": "verification_reports/panns-wavegram-logmel-cnn14-map-0439/runtime-verification.json"
+    },
+    {
+      "description": "CUDA and non-macOS platforms remain outside this local verification scope.",
+      "item_id": "risk-platform-coverage",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/verify/verification-summary.json"
+    }
+  ],
+  "user_decisions_consumed": [
+    {
+      "decision": "Continue the existing three-tuple work through canonical runtime verification.",
+      "decision_id": "d-integrate-recovery-authorized",
+      "selected_option": "verify-all-three-final-tuples"
+    }
+  ],
+  "validation_summary": {
+    "checks": [
+      "all three public checkpoint loaders completed strict state-dictionary loading",
+      "all three retained authoritative checkpoints were revalidated and reused offline",
+      "all three final environments retained passed environment verification evidence",
+      "all three targets passed 23 of 23 required runtime checks",
+      "all three targets passed native MPS execution",
+      "automatic resampling and padded unequal valid lengths remain declared optional unsupported capabilities",
+      "classifier and backbone differentiability observations passed for every tuple",
+      "all runtime reports bind the same accepted integrate handoff and final executor, worker, provider implementation"
+    ],
+    "errors": [],
+    "passed": true
+  },
+  "workflow_id": "panns-audioset-three-tuple"
+}

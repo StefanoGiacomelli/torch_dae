@@ -904,7 +904,7 @@
       "media_type": "text/x-python",
       "originating_phase": "integrate",
       "path": "tests/onboarding/test_handoff_management.py",
-      "sha256": "dc2e9e15a2de3322645844c577ebdfa949bbc77456c0df7142525d70932ab021"
+      "sha256": "8e3f6d1358c555a1c444c32200e0e3ee5f7e900b681d2a711f58ac7f6508c405"
     },
     {
       "canonical_role": "regression-test",
@@ -1007,7 +1007,7 @@
   "project_spec_sha256": "6e44a34b9da8ed347c0184680e6acfd6deb803968607c7c060642f898ef02c96",
   "repository_commit": "38a6e5ad7f6d77df7995e68f7e5e31163b4e7a4a",
   "schema_version": "1.0.0",
-  "superseded_handoff_sha256": "9800ca8d0f6c4da6a3289e442783131f197d82b171ec6c2fa75690b6b8924b1f",
+  "superseded_handoff_sha256": "6d1f5e51b7a71a4b974f14392377e639d650c44f7cee5f9988cf29d45f93edd2",
   "target_card_ids": [
     "panns-cnn14-16k-map-0438",
     "panns-resnet38-map-0434",

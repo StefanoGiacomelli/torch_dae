@@ -3,6 +3,7 @@
   "report_id": "panns-three-tuple-production-integration-recovery",
   "workflow_id": "panns-audioset-three-tuple",
   "created_at": "2026-07-31T14:21:15Z",
+  "refreshed_at": "2026-09-15T17:28:04Z",
   "repository_commit": "56258501cdc334cdfb511058bc362a45dd81c27c",
   "source_revision": "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0",
   "recovery": {
@@ -71,6 +72,7 @@
     "dependency_free_identity_module": "src/torch_dae/models/panns/identities.py",
     "lazy_package_module": "src/torch_dae/models/panns/__init__.py",
     "label_loader": "src/torch_dae/models/panns/labels.py",
+    "runtime_verification_provider": "src/torch_dae/models/panns/verification.py",
     "vendor_root": "src/torch_dae/models/panns/_vendor",
     "root_import_requires_model_dependencies": false
   },
@@ -103,7 +105,7 @@
     "root_dependency_graph_changed": false
   },
   "artifact_supersession": {
-    "count": 6,
+    "count": 12,
     "prior_phase": "resolve-environment",
     "superseding_phase": "integrate",
     "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
@@ -126,19 +128,25 @@
     "result_artifact": "synthetic-integration-result.json"
   },
   "environment_lifecycle": {
-    "outcome": "A",
-    "environment_materialization_succeeded": false,
-    "environment_verification_succeeded": false,
-    "environment_fingerprint": null,
+    "outcome": "environment_verified_without_model_card_promotion",
+    "environment_materialization_succeeded": true,
+    "environment_verification_succeeded": true,
+    "local_package_identity": "content-sha256:9123000a875d88806d83c6e57e2977a703ff47ca452cfa1d1d25ae775c30fcc6",
+    "local_package_wheel_sha256": "ccd51952538e5b18e4ba1c09aefbf77026bff4ed1588bb7b42427663b20a4d9f",
+    "environment_fingerprints": {
+      "panns-cnn14-16k-map-0438": "db47eb04412793e51daf7905b4c2d4d012046a9e8d267cc6f1ad0e1487b6e6c3",
+      "panns-resnet38-map-0434": "d66ce6f1081759c455ca4923bafac2648bf34e49bf423b1d621c3beb93009ef9",
+      "panns-wavegram-logmel-cnn14-map-0439": "9c2cf158bc69fed87690a237b66fff9501f789e4b1db72c57b80983877330f36"
+    },
     "lifecycle_promotion": null,
-    "reason": "model card prerequisite is absent and model-card creation is prohibited in integrate mode"
+    "reason": "environment verification is infrastructure evidence; no model-card lifecycle state is promoted in integrate mode"
   },
   "checkpoint_boundary": {
-    "checkpoint_requests": 0,
-    "checkpoint_downloads": 0,
-    "checkpoint_loads": 0,
-    "checkpoint_inspections": 0,
-    "pretrained_inference_runs": 0
+    "initial_integrate_checkpoint_requests": 0,
+    "verify_refresh_checkpoint_redownloads": 0,
+    "verify_refresh_checkpoint_loader_observation": "The retained authoritative Cnn14 checkpoint strictly loaded through the public weights-only path with four explicit NumPy safe globals.",
+    "runtime_verification_claim": false,
+    "refresh_report": "runtime-loader-refresh.json"
   },
   "validation_completed_before_promotion": [
     "exact repository and accepted-handoff baseline",
@@ -147,6 +155,7 @@
     "strict mypy for supersession implementation",
     "PANNs metadata tests: 5 passed",
     "isolated PANNs runtime and duration tests: 13 passed",
+    "focused PANNs legacy loader and differentiability regressions: 4 passed",
     "three isolated committed environment verification scripts",
     "immutable upstream cache revision, cleanliness, full hashes, selected range hashes, and AST hashes",
     "deterministic source-reduction diff byte reproduction"
@@ -155,11 +164,11 @@
     "Exact checkpoint-to-source equivalence remains unresolved for all three tuples.",
     "Cnn14_16k source semantics differ from the retained chronological comparison revision.",
     "The paper Hamming versus source Hann discrepancy remains unresolved.",
-    "No checkpoint payload was acquired, loaded, hashed locally, or inspected.",
+    "Final three-tuple runtime verification remains pending until verify promotion.",
     "Padded variable-length batch semantics remain unsupported.",
     "Temporal embedding timing and branch embedding contracts remain unresolved.",
     "CUDA, MPS, Linux, and other Python/platform combinations remain unverified.",
-    "Checkpoint compatibility and pretrained numerical behavior remain unverified."
+    "Published mAP reproduction remains outside verification scope."
   ],
   "canonical_handoff": {
     "path": "onboarding_reports/panns-audioset-three-tuple/integrate/handoff.json",

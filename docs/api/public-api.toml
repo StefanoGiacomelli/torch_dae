@@ -102,6 +102,9 @@ symbols = [
 
 [runtime_verification]
 symbols = [
+  { path = "torch_dae.runtime_executor.execute_runtime_verification", display_name = "execute_runtime_verification", category = "runtime verification", audience = "developer", methods = [], page = "api/runtime-verification.rst" },
+  { path = "torch_dae.runtime_executor.validate_runtime_report", display_name = "validate_runtime_report", category = "runtime verification", audience = "developer", methods = [], page = "api/runtime-verification.rst" },
+  { path = "torch_dae.runtime_executor.RuntimeVerificationExecution", display_name = "RuntimeVerificationExecution", category = "runtime verification", audience = "developer", methods = [], page = "api/runtime-verification.rst" },
   { path = "torch_dae.runtime_verification.RuntimeVerificationTarget", display_name = "RuntimeVerificationTarget", category = "runtime verification", audience = "integrator", methods = [], page = "api/runtime-verification.rst" },
   { path = "torch_dae.environment.verification.VerificationCheck", display_name = "VerificationCheck", category = "runtime verification", audience = "integrator", methods = [], page = "api/runtime-verification.rst" },
   { path = "torch_dae.environment.verification.TensorDimension", display_name = "TensorDimension", category = "runtime verification", audience = "integrator", methods = [], page = "api/runtime-verification.rst" },

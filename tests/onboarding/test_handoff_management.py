@@ -1757,6 +1757,7 @@ def test_panns_migration_is_valid_and_preserves_accepted_artifacts(repo_root: Pa
         "analyze",
         "resolve-environment",
         "integrate",
+        "verify",
     ]
     assert result["validated_supersession_count"] == 12
     assert result["superseded_artifact_paths"] == [
@@ -1807,14 +1808,21 @@ def test_panns_migration_is_valid_and_preserves_accepted_artifacts(repo_root: Pa
     }
     assert {path: sha256_file(root / path) for path in expected_hashes} == expected_hashes
     workflow = json.loads((root / "workflow.json").read_text())
-    assert workflow["current_accepted_phase"] == "integrate"
+    assert workflow["current_accepted_phase"] == "verify"
     assert workflow["accepted_phase_paths"][-1] == {
-        "phase": "integrate",
-        "handoff_path": "onboarding_reports/panns-audioset-three-tuple/integrate/handoff.json",
+        "phase": "verify",
+        "handoff_path": "onboarding_reports/panns-audioset-three-tuple/verify/handoff.json",
     }
-    assert not (root / "verify").exists()
+    assert (root / "verify/handoff.json").is_file()
     assert not list((repo_root / "model_cards").rglob("*panns*"))
-    assert not list((repo_root / "verification_reports").rglob("*panns*"))
+    assert sorted(
+        path.relative_to(repo_root).as_posix()
+        for path in (repo_root / "verification_reports").glob("panns-*/runtime-verification.json")
+    ) == [
+        "verification_reports/panns-cnn14-16k-map-0438/runtime-verification.json",
+        "verification_reports/panns-resnet38-map-0434/runtime-verification.json",
+        "verification_reports/panns-wavegram-logmel-cnn14-map-0439/runtime-verification.json",
+    ]
     integrate = PhaseHandoffManifest.model_validate_json(
         (root / "integrate/handoff.json").read_text()
     )
