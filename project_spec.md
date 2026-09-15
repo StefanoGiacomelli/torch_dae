@@ -1553,7 +1553,7 @@ Usage MUST reference the committed environment specification:
   },
   "installation_commands": [],
   "checkpoint_loading": [],
-  "smoke_test_command": "torch-dae model verify panns-cnn14-audioset"
+  "smoke_test_command": "torch-dae model verify --target <runtime-target.json> --offline"
 }
 ```
 
@@ -2024,7 +2024,7 @@ torch-dae checkpoint ensure-spec --spec <checkpoint-spec.json>
 torch-dae checkpoint info-spec --spec <checkpoint-spec.json>
 
 torch-dae model inspect <card-id>
-torch-dae model verify <card-id>
+torch-dae model verify --target <runtime-target.json> [--offline] [--json]
 ```
 
 The control-plane CLI MUST remain usable without installing PyTorch in the root environment.
@@ -2136,41 +2136,26 @@ Every integration MUST have:
 
 ---
 
-# 26. MVP pilot models
+# 26. MVP pilot model family
 
-The initial implementation SHOULD be validated using three heterogeneous integrations.
+The MVP pilot is completed using the PANNs family only. The pilot covers three fixed
+checkpoint-specific integrations so that the full onboarding lifecycle can be exercised without
+expanding scope to additional model families.
 
-## 26.1 PANNs Cnn14
+## 26.1 PANNs checkpoints
 
-Purpose:
+The pilot comprises:
 
-* classification;
-* multilabel probabilities;
-* wrapper/package analysis;
-* clipwise embedding;
-* AudioSet checkpoint.
+* `panns-cnn14-16k-map-0438`;
+* `panns-resnet38-map-0434`;
+* `panns-wavegram-logmel-cnn14-map-0439`.
 
-## 26.2 BYOL-A
+Together they exercise classification, multilabel probabilities, checkpoint authority and strict
+loading, clipwise embeddings, environment isolation, runtime verification, and checkpoint-specific
+model-card generation. BYOL-A, EnCodec, and other model families remain optional future expansion
+targets and are not required to complete the MVP pilot.
 
-Purpose:
-
-* representation-learning model;
-* explicit preprocessing;
-* multiple internal representations;
-* custom repository reconstruction.
-
-## 26.3 EnCodec 48 kHz
-
-Purpose:
-
-* neural codec;
-* non-classification forward output;
-* continuous encoder latent;
-* quantized latent;
-* discrete codes;
-* optional probability capability unsupported.
-
-The three pilots MUST be integrated sequentially. Lessons from each SHOULD update the core API and skill before bulk onboarding.
+The three PANNs checkpoint integrations complete the MVP pilot. Lessons from this pilot MAY update the core API and skill before optional future model-family expansion.
 
 ---
 
@@ -2244,15 +2229,17 @@ Deliver:
 
 ## Phase 03 — PANNs pilot
 
-Deliver complete onboarding from repository analysis through runtime verification.
+Complete the three checkpoint-specific PANNs integrations through runtime-verified model cards.
 
-## Phase 04 — BYOL-A pilot
+## Phase 04 — Model-card presentation
 
-Stress representation learning, preprocessing, and embedding alternatives.
+Publish a GitHub Pages view that renders the validated model cards in a concise, inspectable,
+nice-looking rotation/browsing interface without changing their evidence semantics.
 
-## Phase 05 — EnCodec pilot
+## Phase 05 — Profiling subsystem and card enrichment
 
-Stress non-classification outputs and multiple latent forms.
+Implement generic architectural, inference, memory, and energy profiling, then enrich the PANNs
+model cards with profiling evidence while preserving the runtime-verified claims already established.
 
 ## Phase 06 — Core stabilization
 
@@ -2264,13 +2251,10 @@ Freeze:
 * skill workflow;
 * onboarding conventions.
 
-## Phase 07 — Model-family expansion
+## Phase 07 — Optional model-family expansion
 
-Reanalyze and integrate additional models directly from their original repositories.
-
-## Phase 08 — Profiling subsystem
-
-Implement architectural, inference, memory, and energy profiling.
+Additional model families may be analyzed and integrated later as independent expansion work; they
+are not part of the MVP pilot acceptance criteria.
 
 ---
 

@@ -132,7 +132,7 @@
     },
     "installation_commands": [],
     "checkpoint_loading": [],
-    "smoke_test_command": "torch-dae model verify synthetic-family-variant-checkpoint"
+    "smoke_test_command": "torch-dae model verify --target <runtime-target.json> --offline"
   },
   "input": {
     "shape": "B,C,T",

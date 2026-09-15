@@ -9,9 +9,11 @@ uv run torch-dae env --help
 uv run torch-dae checkpoint --help
 ```
 
-The public registry is empty in this release. Environment and checkpoint operations require a
-committed checkpoint-specific card and its environment specification. To create those artifacts,
-use the canonical workflow described in {doc}`../tutorials/audio-model-onboarding`.
+The public registry remains empty until checkpoint-specific cards are authored. Card-oriented
+environment and checkpoint conveniences require such a card, while the canonical onboarding
+workflow can operate card-independently from accepted environment definitions, checkpoint
+specifications, and runtime-verification targets. See
+{doc}`../tutorials/audio-model-onboarding`.
 
-The `model inspect` and `model verify` commands are explicit unavailable-feature placeholders; they
-do not execute onboarding or inference.
+`model inspect` remains an unavailable-feature placeholder. Runtime verification is available
+card-independently through `torch-dae model verify --target <runtime-target.json> [--offline]`.
