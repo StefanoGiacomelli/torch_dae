@@ -14,8 +14,10 @@ from torch_dae.onboarding.handoff import (
     HandoffManagementError,
     bundle_workflow,
     cleanup_workflow,
+    create_run_manifest,
     discover_handoff,
     discover_repository_root,
+    finalize_workflow,
     promote_phase,
     validate_workflow,
 )
@@ -71,6 +73,28 @@ def build_parser() -> argparse.ArgumentParser:
     cleanup.add_argument("--include-environments", action="store_true")
     cleanup.add_argument("--include-checkpoints", action="store_true")
     cleanup.add_argument("--json", action="store_true")
+
+    finalize = subparsers.add_parser(
+        "finalize", help="canonical end-of-task validation, review bundle, and cleanup"
+    )
+    finalize.add_argument("--workflow-id", required=True)
+    finalize.add_argument("--phase", type=_phase, required=True)
+    finalize.add_argument("--review-root", type=Path)
+    finalize.add_argument("--no-working-tree", action="store_true")
+    finalize.add_argument("--cleanup-execute", action="store_true")
+    finalize.add_argument("--json", action="store_true")
+
+    run_manifest = subparsers.add_parser(
+        "run-manifest", help="register a managed workspace run for later cleanup"
+    )
+    run_manifest_sub = run_manifest.add_subparsers(dest="run_manifest_command", required=True)
+    run_manifest_create = run_manifest_sub.add_parser("create")
+    run_manifest_create.add_argument("--workflow-id", required=True)
+    run_manifest_create.add_argument("--phase", type=_phase, required=True)
+    run_manifest_create.add_argument("--created-path", action="append", default=[])
+    run_manifest_create.add_argument("--reused-path", action="append", default=[])
+    run_manifest_create.add_argument("--external-path", action="append", default=[])
+    run_manifest_create.add_argument("--json", action="store_true")
     return parser
 
 
@@ -117,6 +141,24 @@ def command_payload(args: argparse.Namespace, repository_root: Path) -> dict[str
             include_environments=args.include_environments,
             include_checkpoints=args.include_checkpoints,
         )
+    if args.command == "finalize":
+        return finalize_workflow(
+            repository_root,
+            workflow_id=args.workflow_id,
+            phase=args.phase,
+            review_root=args.review_root,
+            include_working_tree=not args.no_working_tree,
+            cleanup_execute=args.cleanup_execute,
+        )
+    if args.command == "run-manifest" and args.run_manifest_command == "create":
+        return create_run_manifest(
+            repository_root,
+            workflow_id=args.workflow_id,
+            phase=args.phase,
+            created_paths=args.created_path,
+            reused_paths=args.reused_path,
+            external_paths=args.external_path,
+        )
     raise HandoffManagementError(f"unsupported command: {args.command}")
 
 
@@ -139,6 +181,10 @@ def main() -> int:
         print(json.dumps(payload, indent=2, sort_keys=True))
     if args.command == "cleanup" and payload.get("errors"):
         return 2
+    if args.command == "finalize":
+        cleanup_payload = payload.get("cleanup")
+        if isinstance(cleanup_payload, dict) and cleanup_payload.get("errors"):
+            return 2
     return 0
 
 

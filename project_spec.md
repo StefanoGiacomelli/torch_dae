@@ -662,8 +662,9 @@ runtime state. External attachments MAY be retained as digest-only evidence, but
 required future local paths. Handoffs from different workflows MUST NOT be combined silently. A
 handoff MUST NOT claim a model-card lifecycle promotion that its underlying report does not claim.
 
-The root control plane MUST provide deterministic `discover`, `validate`, `promote`, `bundle`, and
-`cleanup` operations through `scripts/onboarding_handoff.py`. Discovery MUST search only the
+The root control plane MUST provide deterministic `discover`, `validate`, `promote`, `bundle`,
+`cleanup`, `finalize`, and `run-manifest create` operations through
+`scripts/onboarding_handoff.py`. Discovery MUST search only the
 committed `onboarding_reports/` root. Promotion MUST validate before mutation, use an atomic
 temporary sibling and rename, reject partial or arbitrary runtime content, and require explicit
 supersession before replacing an accepted handoff.
@@ -691,6 +692,49 @@ audit outputs. Default cleanup MAY remove only the first two categories for the 
 and completed run. All deletion targets MUST be recorded by a managed run manifest. Reusable caches,
 materialized environments, checkpoints, and external audit outputs require explicit flags or
 external user action and MUST NOT be removed implicitly.
+
+Cleanup and finalize MUST distinguish a genuinely legacy workflow from unmanaged workspace content
+using existing lifecycle/control-plane evidence, never a hard-coded workflow identity. A workflow
+whose `.torch-dae/workspaces/<workflow-id>/` scope contains no phase/run directories at all — the
+legacy case, for example a workflow completed before run manifests were adopted — MUST NOT raise a
+hard failure; cleanup MUST return a structured, successful non-action result reporting
+`status: "not_applicable"` and `reason: "no_managed_run_manifests"` with an empty removal set, and
+exit successfully. A run directory that is present under that scope but carries no manifest of its
+own is unmanaged content, not the legacy case: it MUST be reported and MUST block cleanup and
+finalize from succeeding, rather than being silently classified as `not_applicable` or deleted.
+Ownership MUST NOT be guessed from unrecorded paths.
+
+The root control plane MUST provide one canonical `run-manifest create` entry point that is the
+allocator for a managed workspace run: it atomically creates the run's own workspace directory and
+writes its manifest in the same call and returns the absolute run-root and manifest paths. Every
+lifecycle mode that needs a managed workspace MUST call it before performing any managed workspace
+work and MUST perform that work inside the returned run root, rather than creating an independent
+workspace directory first and registering it afterward.
+
+The root control plane MUST also provide one canonical `finalize` operation composing `validate`,
+the bounded required repository gates, `cleanup`, and `bundle` for a completed lifecycle phase — it
+MUST NOT duplicate any validator's logic. It MUST, in order: re-validate every accepted phase's
+declared artifacts against the current repository; run the bounded required repository-level gates
+(at minimum repository validation, canonical skill validation, staged-equivalent worktree
+validation, and `git diff --check`); run a cleanup preflight, which blocks the entire call when it
+reports unmanaged workspace content or any other blocking condition; generate the deterministic
+review bundle through the requested phase, embedding the required-gate results, lifecycle state,
+evidence-invariance summary, and cleanup preflight as archive metadata so the archive is
+self-sufficient for independent review; and, only after that immutable archive exists, optionally
+perform real cleanup execution, whose result and durable receipt are recorded — by absolute path and
+hash — in one machine-readable `finalize-result.json` alongside every other generated artifact's
+absolute path. Any required-gate failure, unaccepted phase, evidence drift, or unmanaged workspace
+content MUST make the whole call fail rather than produce a successful finalization result. The full
+test suite is a separate development/CI gate and MUST NOT be required by normal per-phase
+finalization.
+
+Because full-workflow validation already recomputes and compares the recorded SHA-256 of every
+accepted handoff's declared artifacts, validates every declared `artifact_supersessions` transition,
+and matches every latest external-artifact declaration, `finalize` MUST fail outright — not merely
+warn — when any undeclared mutation is present. Evidence-invariance reporting MUST distinguish
+unchanged phase-local accepted evidence, validated current external evidence, and validated declared
+historical supersessions from each other; it MUST NOT describe a legally superseded shared artifact
+as if every historical byte were unchanged.
 
 Review bundles MUST be deterministic, produced exclusively with Python `tarfile`, and normalize
 ownership, names, timestamps, modes, gzip metadata, and extended archive metadata. They MUST contain
@@ -1616,7 +1660,9 @@ handoffs locally before requesting attachments. Without a workflow ID, automatic
 permitted only when exactly one compatible active workflow exists. Recorded decisions and unresolved
 items MUST be consumed and carried forward. A duplicate attachment MUST match the canonical digest;
 a mismatch MUST stop the phase rather than select one silently. An accepted phase MUST be promoted
-before it is declared complete, followed by deterministic bundle generation and scoped cleanup.
+before it is declared complete, after which the canonical `finalize` operation MUST perform the
+required repository gates, evidence-invariance checks, cleanup preflight, deterministic review
+packaging, and any explicitly requested scoped cleanup.
 
 ## 19.2 Skill modes
 

@@ -45,11 +45,18 @@ rewriting those prerequisites, so a legal phase transition also exposes any cont
 Hash provenance alone does not reconstruct historical bytes, and a handoff prepared with uncommitted
 control-plane changes must not be falsely mapped to its recorded repository commit.
 
-Phase runs use `.torch-dae/workspaces/<workflow-id>/<phase>/<run-id>/` with a managed run manifest.
-Validate there, promote accepted pre-runtime outputs under `onboarding_reports/`, build the
-deterministic external review bundle, then run scoped cleanup. Reusable repository/package caches,
-materialized model environments, and checkpoint caches are managed runtime state, not accidental
-contamination, and are not removed by default.
+Phase runs use `.torch-dae/workspaces/<workflow-id>/<phase>/<run-id>/`, allocated only through
+`scripts/onboarding_handoff.py run-manifest create` — call it before performing any managed
+workspace work and use the returned `run_root`, not an independently created directory registered
+afterward. A run directory under a workflow's workspace scope that lacks its own registered manifest
+is unmanaged content: it blocks cleanup and finalize rather than being silently treated as legacy or
+guessed at. Validate in the workspace, promote accepted pre-runtime outputs under
+`onboarding_reports/`, then run the canonical
+`scripts/onboarding_handoff.py finalize --workflow-id <id> --phase <phase>`, which re-validates
+accepted evidence, runs the required repository gates, runs cleanup, and builds the deterministic
+external review bundle in one call — do not hand assemble the bundle, hashes, or cleanup separately.
+Reusable repository/package caches, materialized model environments, and checkpoint caches are
+managed runtime state, not accidental contamination, and are not removed by default.
 
 `retained_paths` is only for bounded diagnostics already copied under the permitted workflow
 onboarding-report root. Categorized environments and caches are retained by category and are not

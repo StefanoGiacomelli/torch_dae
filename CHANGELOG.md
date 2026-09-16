@@ -4,6 +4,33 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Canonical lifecycle finalization and cross-agent review packaging
+
+- Added `scripts/onboarding_handoff.py finalize`, the single canonical end-of-task path. It
+  composes existing `validate`, `bundle`, and `cleanup` primitives with the bounded set of required
+  repository gates (`validate_repository.py`, `validate_skill_artifacts.py`, `check_worktree_patch.py
+  --json`, `git diff --check`), reused via subprocess rather than duplicated. Ordering: evidence
+  validation, required gates, cleanup preflight (dry-run; blocks on unmanaged workspace content),
+  the deterministic review bundle (embedding the gates, lifecycle state, evidence-invariance summary,
+  and cleanup preflight as archive metadata), then optional real cleanup execution, then one
+  `finalize-result.json` exposing every absolute artifact path, the workflow/lifecycle state,
+  evidence-invariance status, and cleanup status/receipt. Any required-gate failure, unaccepted
+  phase, evidence drift, or unmanaged workspace content fails the call outright.
+- Added `scripts/onboarding_handoff.py run-manifest create`, the single canonical *allocator* for a
+  managed workspace run: it atomically creates `run_root` and its manifest together and returns the
+  absolute path, rather than registering a workspace created independently beforehand.
+- Hardened `cleanup`/`finalize` to distinguish a genuinely legacy workflow (no workspace content at
+  all, returning a structured, successful `not_applicable` result) from unmanaged workspace content
+  (a run directory present without its own manifest), which now blocks cleanup and finalize instead
+  of being silently guessed at or deleted.
+- Corrected evidence-invariance reporting to distinguish unchanged phase-local evidence from validly
+  superseded shared artifacts, instead of describing both as simply "unchanged".
+- Updated the canonical `audio-model-onboarding` skill, its request/response templates, and related
+  docs with an explicit agent completion contract: every successfully completed lifecycle mode must
+  allocate workspaces only through `run-manifest create`, run `finalize`, and report lifecycle state,
+  validation-gate status, evidence invariance, cleanup status, limitations, and absolute artifact
+  paths, supporting independent cross-agent/cross-LLM review.
+
 ### Stable local-package identity and concurrent wheel caching
 
 - Made local package identity content-addressed over wheel build inputs so Git commits, HEAD-only

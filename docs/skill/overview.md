@@ -19,9 +19,10 @@ execution, network acquisition, environment creation, and integration occur only
 authorize them.
 
 Every mode accepts `WORKFLOW_ID`. Accepted prerequisites are discovered and hash-validated from
-`onboarding_reports/` before attachments are requested. Phase runs use recorded managed workspaces,
-promote accepted canonical outputs, generate a deterministic external review bundle, and finish with
-scoped cleanup.
+`onboarding_reports/` before attachments are requested. Phase runs use managed workspaces allocated
+through `run-manifest create`, promote accepted canonical outputs, and finish with the canonical
+`finalize` command, which validates evidence invariance, runs the required repository gates, runs
+cleanup, and generates the deterministic external review bundle.
 
 When a shared repository output legitimately changes in a later phase, the later handoff records a
 strict artifact-supersession edge. Historical handoffs and their hashes remain evidence; workflow

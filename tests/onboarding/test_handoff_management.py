@@ -27,8 +27,11 @@ from torch_dae.onboarding.handoff import (
     bundle_workflow,
     canonical_json_text,
     cleanup_workflow,
+    create_run_manifest,
     discover_handoff,
+    finalize_workflow,
     promote_phase,
+    run_required_finalization_gates,
     sha256_file,
     skill_fingerprint,
     validate_workflow,
@@ -1751,6 +1754,333 @@ def test_cleanup_refuses_an_unrecorded_run_root(
         cleanup_workflow(root, workflow_id="workflow-one", dry_run=True)
 
 
+def test_cleanup_of_legacy_workflow_without_run_manifests_is_not_applicable(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    dry_run = cleanup_workflow(root, workflow_id="never-seen-workflow", dry_run=True)
+    assert dry_run == {
+        "status": "not_applicable",
+        "reason": "no_managed_run_manifests",
+        "workflow_id": "never-seen-workflow",
+        "mode": "dry-run",
+        "removed": [],
+        "removed_paths": [],
+        "planned_paths": [],
+        "errors": [],
+        "dry_run": True,
+        "cleanup_succeeded": True,
+    }
+    executed = cleanup_workflow(root, workflow_id="never-seen-workflow", dry_run=False)
+    assert executed["status"] == "not_applicable"
+    assert executed["mode"] == "execute"
+    assert executed["cleanup_succeeded"] is True
+    assert executed["errors"] == []
+
+
+def test_create_run_manifest_registers_workspace_for_cleanup(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    created = create_run_manifest(
+        root,
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+    )
+    assert created["created"] is True
+    manifest_path = Path(created["manifest_path"])
+    assert manifest_path.is_file()
+    run_root = Path(created["run_root"])
+    payload = json.loads(manifest_path.read_text())
+    assert payload["workflow_id"] == "workflow-one"
+    assert payload["phase"] == "analyze"
+    assert run_root.relative_to(root).as_posix() in payload["created_paths"]
+
+    dry_run = cleanup_workflow(root, workflow_id="workflow-one", dry_run=True)
+    assert dry_run["planned_paths"] == [str(run_root)]
+    assert dry_run["errors"] == []
+
+
+def test_finalize_validates_bundles_and_reports_not_applicable_cleanup(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    promote_phase(
+        root,
+        source_dir=_source(root, "workflow-one", OnboardingPhase.ANALYZE),
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+    )
+    shutil.rmtree(root / ".torch-dae/workspaces/workflow-one", ignore_errors=True)
+    review_root = tmp_path / "review-bundles"
+    result = finalize_workflow(
+        root,
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+        review_root=review_root,
+        required_gates=False,
+    )
+    assert result["workflow_id"] == "workflow-one"
+    assert result["workflow_status"] == "active"
+    assert result["current_accepted_phase"] == "analyze"
+    assert result["requested_finalized_phase"] == "analyze"
+    assert result["phase"] == "analyze"
+    assert result["validation_status"] == "valid"
+    assert result["evidence_invariance"]["phase_local_accepted_evidence"] == "unchanged"
+    assert result["evidence_invariance"]["current_external_evidence"] == "validated"
+    assert result["evidence_invariance"]["declared_historical_supersessions"] == "validated"
+    assert result["evidence_invariance"]["unexpected_mutation"] == "none"
+    assert result["evidence_invariance"]["checked_accepted_phases"] == ["analyze"]
+    assert result["cleanup"]["status"] == "not_applicable"
+    assert result["cleanup_status"] == "not_applicable"
+    assert result["cleanup_receipt_path"] is None
+    assert result["validation_gates"]["skipped"] is True
+
+    accepted_handoff_path = Path(result["accepted_handoff_path"])
+    assert accepted_handoff_path.is_absolute()
+    assert accepted_handoff_path.is_file()
+    assert accepted_handoff_path.name == "handoff.json"
+    canonical_paths = result["canonical_phase_artifact_paths"]
+    assert canonical_paths
+    assert all(Path(item).is_absolute() and Path(item).is_file() for item in canonical_paths)
+
+    result_path = Path(result["result_path"])
+    assert result_path.is_absolute()
+    assert result_path.is_file()
+    archive_path = Path(result["review_archive_path"])
+    assert archive_path.is_absolute()
+    assert archive_path.is_file()
+    assert Path(result["review_bundle"]["archive_path"]) == archive_path
+    checksum_sidecar = Path(result["checksum_sidecar_path"])
+    assert checksum_sidecar.is_file()
+    assert Path(result["review_bundle_result_path"]).is_file()
+    assert json.loads(result_path.read_text())["workflow_id"] == "workflow-one"
+
+    with tarfile.open(archive_path, "r:gz") as archive:
+        names = {member.name for member in archive.getmembers()}
+    assert "metadata/finalization-validation.json" in names
+    assert "metadata/lifecycle-state.json" in names
+    assert "metadata/evidence-invariance.json" in names
+    assert "metadata/cleanup-plan.json" in names
+
+
+def test_finalize_rejects_a_phase_that_is_not_yet_accepted(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    promote_phase(
+        root,
+        source_dir=_source(root, "workflow-one", OnboardingPhase.ANALYZE),
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+    )
+    with pytest.raises(HandoffManagementError, match="phase is not accepted"):
+        finalize_workflow(
+            root,
+            workflow_id="workflow-one",
+            phase=OnboardingPhase.RESOLVE_ENVIRONMENT,
+            review_root=tmp_path / "review-bundles",
+            required_gates=False,
+        )
+
+
+def test_finalize_fails_instead_of_warning_when_prior_evidence_changed(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    promote_phase(
+        root,
+        source_dir=_source(root, "workflow-one", OnboardingPhase.ANALYZE),
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+    )
+    accepted_artifact = root / "onboarding_reports/workflow-one/analyze/report.json"
+    accepted_artifact.write_text('{"result": "tampered"}\n')
+    with pytest.raises(HandoffManagementError, match="artifact hash mismatch"):
+        finalize_workflow(
+            root,
+            workflow_id="workflow-one",
+            phase=OnboardingPhase.ANALYZE,
+            review_root=tmp_path / "review-bundles",
+            required_gates=False,
+        )
+
+
+def test_finalize_with_a_valid_artifact_supersession_reports_it_as_validated_not_unchanged(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    promote_phase(
+        root,
+        source_dir=_source(root, "workflow-one", OnboardingPhase.ANALYZE),
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+    )
+    prior_handoff = root / "onboarding_reports/workflow-one/analyze/handoff.json"
+    prior_handoff_sha256 = sha256_file(prior_handoff)
+    promote_phase(
+        root,
+        source_dir=_source(
+            root,
+            "workflow-one",
+            OnboardingPhase.ANALYZE,
+            content='{"result": "replacement"}\n',
+            superseded_handoff_sha256=prior_handoff_sha256,
+        ),
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+        supersede=True,
+    )
+    shutil.rmtree(root / ".torch-dae/workspaces/workflow-one", ignore_errors=True)
+    result = finalize_workflow(
+        root,
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+        review_root=tmp_path / "review-bundles",
+        required_gates=False,
+    )
+    assert result["evidence_invariance"]["declared_historical_supersessions"] == "validated"
+    assert result["evidence_invariance"]["unexpected_mutation"] == "none"
+
+
+def test_run_required_finalization_gates_pass_on_the_real_repository(
+    repo_root: Path,
+) -> None:
+    result = run_required_finalization_gates(repo_root)
+    assert result["all_passed"] is True
+    check_ids = [gate["check_id"] for gate in result["gates"]]
+    assert check_ids == [
+        "validate_repository",
+        "validate_skill_artifacts",
+        "check_worktree_patch",
+        "git_diff_check",
+    ]
+    for gate in result["gates"]:
+        assert gate["success"] is True
+        assert gate["exit_status"] == 0
+        assert isinstance(gate["command"], list) and gate["command"]
+
+
+def test_finalize_fails_when_a_required_gate_fails(
+    tmp_path: Path,
+    repo_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    promote_phase(
+        root,
+        source_dir=_source(root, "workflow-one", OnboardingPhase.ANALYZE),
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+    )
+
+    def _failing_gates(_: Path) -> dict[str, object]:
+        return {
+            "schema_version": "1.0.0",
+            "gates": [
+                {
+                    "check_id": "validate_repository",
+                    "command": ["synthetic"],
+                    "exit_status": 1,
+                    "success": False,
+                    "stdout_tail": "",
+                    "stderr_tail": "synthetic failure",
+                    "result": None,
+                }
+            ],
+            "all_passed": False,
+        }
+
+    monkeypatch.setattr(handoff_module, "run_required_finalization_gates", _failing_gates)
+    with pytest.raises(HandoffManagementError, match="required finalization gates failed"):
+        finalize_workflow(
+            root,
+            workflow_id="workflow-one",
+            phase=OnboardingPhase.ANALYZE,
+            review_root=tmp_path / "review-bundles",
+        )
+
+
+def test_run_manifest_create_allocates_run_root_before_any_workspace_write(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    allocation = create_run_manifest(
+        root,
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+    )
+    run_root = Path(allocation["run_root"])
+    assert run_root.is_dir()
+    assert (run_root / "run-manifest.json").is_file()
+    managed, unmanaged = handoff_module._scan_managed_workspace(root, "workflow-one")
+    assert managed == [run_root]
+    assert unmanaged == []
+
+
+def test_unmanaged_workspace_content_blocks_cleanup_and_is_never_deleted(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    rogue_run = root / ".torch-dae/workspaces/workflow-one/analyze/rogue-run"
+    rogue_run.mkdir(parents=True)
+    marker = rogue_run / "trial-output.json"
+    marker.write_text("{}")
+
+    dry_run = cleanup_workflow(root, workflow_id="workflow-one", dry_run=True)
+    assert dry_run.get("status") != "not_applicable"
+    assert dry_run["errors"]
+    assert any("unmanaged" in error for error in dry_run["errors"])
+
+    executed = cleanup_workflow(root, workflow_id="workflow-one", dry_run=False)
+    assert executed["errors"]
+    assert rogue_run.is_dir()
+    assert marker.is_file()
+
+
+def test_unmanaged_workspace_content_blocks_finalize(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    promote_phase(
+        root,
+        source_dir=_source(root, "workflow-one", OnboardingPhase.ANALYZE),
+        workflow_id="workflow-one",
+        phase=OnboardingPhase.ANALYZE,
+    )
+    rogue_run = root / ".torch-dae/workspaces/workflow-one/analyze/rogue-run"
+    rogue_run.mkdir(parents=True)
+    with pytest.raises(HandoffManagementError, match="cleanup preflight blocked finalization"):
+        finalize_workflow(
+            root,
+            workflow_id="workflow-one",
+            phase=OnboardingPhase.ANALYZE,
+            review_root=tmp_path / "review-bundles",
+            required_gates=False,
+        )
+    assert rogue_run.is_dir()
+
+
+def test_genuinely_legacy_workspace_with_no_run_directories_remains_not_applicable(
+    tmp_path: Path,
+    repo_root: Path,
+) -> None:
+    root = _repository(tmp_path, repo_root)
+    (root / ".torch-dae/workspaces").mkdir(parents=True)
+    result = cleanup_workflow(root, workflow_id="never-managed-workflow", dry_run=True)
+    assert result["status"] == "not_applicable"
+    assert result["reason"] == "no_managed_run_manifests"
+
+
 def test_panns_migration_is_valid_and_preserves_accepted_artifacts(repo_root: Path) -> None:
     result = validate_workflow(repo_root, "panns-audioset-three-tuple")
     assert result["validated_phases"] == [
@@ -1758,6 +2088,7 @@ def test_panns_migration_is_valid_and_preserves_accepted_artifacts(repo_root: Pa
         "resolve-environment",
         "integrate",
         "verify",
+        "card",
     ]
     assert result["validated_supersession_count"] == 12
     assert result["superseded_artifact_paths"] == [
@@ -1808,13 +2139,18 @@ def test_panns_migration_is_valid_and_preserves_accepted_artifacts(repo_root: Pa
     }
     assert {path: sha256_file(root / path) for path in expected_hashes} == expected_hashes
     workflow = json.loads((root / "workflow.json").read_text())
-    assert workflow["current_accepted_phase"] == "verify"
+    assert workflow["current_accepted_phase"] == "card"
     assert workflow["accepted_phase_paths"][-1] == {
-        "phase": "verify",
-        "handoff_path": "onboarding_reports/panns-audioset-three-tuple/verify/handoff.json",
+        "phase": "card",
+        "handoff_path": "onboarding_reports/panns-audioset-three-tuple/card/handoff.json",
     }
     assert (root / "verify/handoff.json").is_file()
-    assert not list((repo_root / "model_cards").rglob("*panns*"))
+    assert (root / "card/handoff.json").is_file()
+    assert sorted(path.name for path in (repo_root / "model_cards/panns").glob("*.json")) == [
+        "panns-cnn14-16k-map-0438.json",
+        "panns-resnet38-map-0434.json",
+        "panns-wavegram-logmel-cnn14-map-0439.json",
+    ]
     assert sorted(
         path.relative_to(repo_root).as_posix()
         for path in (repo_root / "verification_reports").glob("panns-*/runtime-verification.json")

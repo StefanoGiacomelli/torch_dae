@@ -16,4 +16,4 @@ the card lifecycle.
 
 With `WORKFLOW_ID`, accepted prerequisite handoffs and their recorded decisions are discovered
 locally. The accepted card handoff is promoted under `onboarding_reports/<workflow-id>/card/`,
-bundled, and followed by scoped cleanup.
+followed by the canonical `finalize` command — review bundle generation plus scoped cleanup.

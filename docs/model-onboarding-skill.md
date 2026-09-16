@@ -65,13 +65,17 @@ phase can consume accepted prerequisites with older hashes, but records current 
 Historical hashes identify the declared control plane and do not, without retained files or audit
 evidence, reconstruct its bytes or establish a Git revision mapping.
 
-Phase execution uses a managed `.torch-dae/workspaces/<workflow-id>/<phase>/<run-id>/` manifest.
-Accepted pre-runtime output is atomically promoted under `onboarding_reports/`, followed by a
-deterministic external review bundle and scoped cleanup. Default cleanup removes recorded ephemeral
-workspaces and trial environments only; reusable caches, materialized environments, checkpoints,
-and external audit bundles remain. External audit outputs are never cleanup targets. Retained
-diagnostics must be moved under `.torch-dae/reports/onboarding/<workflow-id>/`; cleanup writes a
-durable receipt there before deleting an eligible workspace.
+Phase execution uses a managed `.torch-dae/workspaces/<workflow-id>/<phase>/<run-id>/`, allocated
+only through `scripts/onboarding_handoff.py run-manifest create` before any managed workspace work
+begins; a run directory left unregistered is unmanaged content that blocks cleanup rather than being
+guessed at. Accepted pre-runtime output is atomically promoted under `onboarding_reports/`, followed
+by the canonical `scripts/onboarding_handoff.py finalize` command, which re-validates accepted
+evidence, runs the required repository gates, runs cleanup, and generates the deterministic external
+review bundle in one call. Default cleanup removes recorded ephemeral workspaces and trial
+environments only; reusable caches, materialized environments, checkpoints, and external audit
+bundles remain. External audit outputs are never cleanup targets. Retained diagnostics must be moved
+under `.torch-dae/reports/onboarding/<workflow-id>/`; cleanup writes a durable receipt there before
+deleting an eligible workspace.
 `retained_paths` is reserved for those copied bounded diagnostics; categorized environments and
 caches are retained by category instead. Before the Python 3.11 validation suite, run
 `uv sync --all-groups --frozen --python 3.11`. Final Git inventory may use read-only status/cached

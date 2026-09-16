@@ -11,10 +11,11 @@ import posixpath
 import shutil
 import stat
 import subprocess
+import sys
 import tarfile
 import tempfile
 import uuid
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal, cast
@@ -843,8 +844,16 @@ def bundle_workflow(
     through_phase: OnboardingPhase,
     output_dir: Path,
     include_working_tree: bool,
+    extra_metadata: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
-    """Build a normalized deterministic review bundle exclusively with Python tarfile."""
+    """Build a normalized deterministic review bundle exclusively with Python tarfile.
+
+    ``extra_metadata`` lets a caller such as ``finalize_workflow`` embed additional
+    pre-computed structured records (for example required-gate results or a cleanup
+    preflight) into ``metadata/<name>`` so the archive is self-sufficient for
+    independent review. It is optional and does not change standalone ``bundle``
+    behavior when omitted.
+    """
 
     validation = validate_workflow(repository_root, workflow_id)
     workflow_root = repository_root / ONBOARDING_REPORTS / workflow_id
@@ -924,6 +933,8 @@ def bundle_workflow(
         )
         _write_json(metadata / "current-control-plane.json", current_control_plane)
         _write_json(metadata / "control-plane-drift.json", control_plane_drift)
+        for name, content in (extra_metadata or {}).items():
+            _write_json(metadata / name, content)
 
         artifact_paths = _bundle_artifact_paths(
             repository_root,
@@ -1237,6 +1248,405 @@ def _gzip_metadata_normalized(path: Path) -> bool:
     return flags & 0x1E == 0 and mtime == 0
 
 
+def create_run_manifest(
+    repository_root: Path,
+    *,
+    workflow_id: str,
+    phase: OnboardingPhase,
+    created_paths: Sequence[str] = (),
+    reused_paths: Sequence[str] = (),
+    external_paths: Sequence[str] = (),
+) -> dict[str, object]:
+    """Atomically allocate one managed workspace run and register its manifest.
+
+    This is the single canonical *allocator* for managed workspace runs, not an
+    after-the-fact registration step. It creates ``run_root`` under
+    ``.torch-dae/workspaces/<workflow-id>/<phase>/<run-id>/`` and writes
+    ``run-manifest.json`` inside it in the same call, then returns the absolute
+    ``run_root``/``manifest_path``. A lifecycle mode that needs a managed
+    workspace MUST call this function (directly, via the skill scripts, or via
+    the CLI ``run-manifest create`` command) *before* performing any managed
+    workspace work, and MUST perform that work inside the returned ``run_root`` —
+    never create an independent workspace directory first and register it
+    afterward. ``cleanup`` and ``finalize`` both treat any run directory under a
+    workflow's workspace scope that lacks its own ``run-manifest.json`` as
+    unmanaged content that blocks cleanup rather than silently guessing
+    ownership; see ``_scan_managed_workspace``.
+    """
+
+    run_id = uuid.uuid4().hex
+    run_root = repository_root / WORKSPACE_ROOT / workflow_id / phase.value / run_id
+    run_root.mkdir(parents=True, exist_ok=False)
+    head = _git(repository_root, "rev-parse", "HEAD").strip()
+    run_root_relative = run_root.relative_to(repository_root).as_posix()
+    manifest = ManagedRunManifest(
+        schema_version="1.0.0",
+        run_id=run_id,
+        workflow_id=workflow_id,
+        phase=phase,
+        started_at=datetime.now(UTC),
+        repository_commit=head,
+        created_paths=tuple(dict.fromkeys((run_root_relative, *created_paths))),
+        reused_paths=tuple(reused_paths),
+        external_paths=tuple(external_paths),
+    )
+    manifest_path = run_root / "run-manifest.json"
+    manifest_path.write_text(
+        canonical_json_text(manifest.model_dump(mode="json")),
+        encoding="utf-8",
+    )
+    return {
+        "created": True,
+        "run_id": run_id,
+        "workflow_id": workflow_id,
+        "phase": phase.value,
+        "run_root": str(run_root),
+        "manifest_path": str(manifest_path),
+    }
+
+
+REQUIRED_FINALIZATION_GATES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("validate_repository", ("scripts/validate_repository.py",)),
+    (
+        "validate_skill_artifacts",
+        (
+            "skills/audio-model-onboarding/scripts/validate_skill_artifacts.py",
+            ".",
+            "--json",
+        ),
+    ),
+    ("check_worktree_patch", ("scripts/check_worktree_patch.py", "--json")),
+)
+
+
+def _run_required_gate(
+    repository_root: Path,
+    check_id: str,
+    command: Sequence[str],
+) -> dict[str, object]:
+    """Run one existing validator script as a subprocess and capture its result.
+
+    Reuses the exact subprocess-reuse pattern ``scripts/validate_repository.py``
+    already uses for ``check_worktree_patch.py``; it does not reimplement any
+    validator's logic.
+    """
+
+    completed = subprocess.run(
+        list(command),
+        cwd=repository_root,
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    parsed: object | None = None
+    try:
+        parsed = json.loads(completed.stdout)
+    except (json.JSONDecodeError, ValueError):
+        parsed = None
+    return {
+        "check_id": check_id,
+        "command": list(command),
+        "exit_status": completed.returncode,
+        "success": completed.returncode == 0,
+        "stdout_tail": completed.stdout[-4000:],
+        "stderr_tail": completed.stderr[-4000:],
+        "result": parsed,
+    }
+
+
+def run_required_finalization_gates(repository_root: Path) -> dict[str, object]:
+    """Run the bounded set of repository-level gates required before finalize succeeds.
+
+    This is intentionally bounded to fast, deterministic, already-existing
+    validators (repository validation, canonical skill validation, staged-
+    equivalent worktree validation, and ``git diff --check``). The full pytest
+    suite remains a separate development/CI gate and is not part of normal
+    per-phase finalization.
+    """
+
+    gates = [
+        _run_required_gate(
+            repository_root,
+            check_id,
+            (sys.executable, *command),
+        )
+        for check_id, command in REQUIRED_FINALIZATION_GATES
+    ]
+    diff_check = subprocess.run(
+        ["git", "diff", "--check"],
+        cwd=repository_root,
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    gates.append(
+        {
+            "check_id": "git_diff_check",
+            "command": ["git", "diff", "--check"],
+            "exit_status": diff_check.returncode,
+            "success": diff_check.returncode == 0,
+            "stdout_tail": diff_check.stdout[-4000:],
+            "stderr_tail": diff_check.stderr[-4000:],
+            "result": None,
+        }
+    )
+    return {
+        "schema_version": "1.0.0",
+        "gates": gates,
+        "all_passed": all(cast(bool, gate["success"]) for gate in gates),
+    }
+
+
+def _evidence_invariance_summary(
+    validation: dict[str, object],
+    accepted_phases: Sequence[OnboardingPhase],
+) -> dict[str, object]:
+    """Report truthful evidence-invariance status, distinguishing it from supersession.
+
+    Reaching this point means ``validate_workflow`` already recomputed and matched the
+    recorded SHA-256 of every accepted handoff's phase-local declared artifacts,
+    validated every declared ``artifact_supersessions`` transition's prior/new hashes,
+    and matched every latest external-artifact declaration against the current
+    repository; any undeclared mutation would have raised ``HandoffManagementError``
+    before reaching this point. A later phase legally changing a shared artifact via a
+    declared supersession is not evidence corruption and must not be reported as if
+    every historical byte were unchanged.
+    """
+
+    return {
+        "phase_local_accepted_evidence": "unchanged",
+        "current_external_evidence": "validated",
+        "declared_historical_supersessions": "validated",
+        "unexpected_mutation": "none",
+        "checked_accepted_phases": [item.value for item in accepted_phases],
+        "validated_supersession_count": validation["validated_supersession_count"],
+        "superseded_artifact_paths": validation["superseded_artifact_paths"],
+    }
+
+
+def finalize_workflow(
+    repository_root: Path,
+    *,
+    workflow_id: str,
+    phase: OnboardingPhase,
+    review_root: Path | None = None,
+    include_working_tree: bool = True,
+    cleanup_execute: bool = False,
+    required_gates: bool = True,
+) -> dict[str, object]:
+    """Run the one canonical end-of-task path for a completed lifecycle phase.
+
+    This composes the existing ``validate``, required repository gates,
+    ``cleanup`` (preflight, then optionally execution), and ``bundle``
+    primitives; it introduces no parallel validation or packaging logic. Any
+    required-gate failure, unaccepted phase, evidence drift, or unmanaged
+    workspace content makes the whole call fail with ``HandoffManagementError``
+    rather than produce a successful finalization result. Ordering:
+
+    1. Validate every accepted phase's declared artifacts against the current
+       repository (see :func:`_evidence_invariance_summary`).
+    2. Run the bounded required repository gates
+       (:func:`run_required_finalization_gates`).
+    3. Run a cleanup preflight (always dry-run). Unmanaged workspace content or
+       any other blocking condition aborts finalize before any archive exists.
+    4. Generate the deterministic review bundle, embedding the validation
+       gates, lifecycle state, evidence-invariance summary, and cleanup
+       preflight as archive metadata so the bundle is self-sufficient for
+       independent review.
+    5. Optionally perform the real cleanup execution *after* the immutable
+       archive exists (``cleanup_execute=True``); its result and receipt are
+       recorded only in ``finalize-result.json``, referenced by absolute path
+       and hash.
+    6. Write one machine-readable ``finalize-result.json`` with absolute paths
+       to every generated artifact.
+
+    ``required_gates`` defaults to ``True`` and MUST stay enabled for real
+    repository closeouts; the root repository always carries the validator
+    scripts the gates invoke. It exists only so tests can exercise the
+    validate/cleanup/bundle composition against a minimal synthetic repository
+    fixture that does not carry the full `scripts/`/`skills/` tree.
+    """
+
+    validation = validate_workflow(repository_root, workflow_id)
+    accepted_phases = [
+        OnboardingPhase(item) for item in cast(list[str], validation["validated_phases"])
+    ]
+    if phase not in accepted_phases:
+        raise HandoffManagementError(
+            f"phase is not accepted for workflow {workflow_id}: {phase.value}"
+        )
+
+    gates = (
+        run_required_finalization_gates(repository_root)
+        if required_gates
+        else {"schema_version": "1.0.0", "gates": [], "all_passed": True, "skipped": True}
+    )
+    if not gates["all_passed"]:
+        failing = [
+            cast(str, gate["check_id"])
+            for gate in cast(list[dict[str, object]], gates["gates"])
+            if not gate["success"]
+        ]
+        raise HandoffManagementError(
+            f"required finalization gates failed for workflow {workflow_id}: {failing}"
+        )
+
+    evidence_invariance = _evidence_invariance_summary(validation, accepted_phases)
+
+    cleanup_preflight = cleanup_workflow(repository_root, workflow_id=workflow_id, dry_run=True)
+    if cleanup_preflight.get("errors"):
+        raise HandoffManagementError(
+            "cleanup preflight blocked finalization for workflow "
+            f"{workflow_id}: {cleanup_preflight['errors']}"
+        )
+
+    workflow_root = repository_root / ONBOARDING_REPORTS / workflow_id
+    workflow = load_workflow(workflow_root / "workflow.json")
+    current_accepted_phase_value = (
+        workflow.current_accepted_phase.value
+        if workflow.current_accepted_phase is not None
+        else None
+    )
+    accepted_reference = next(
+        item for item in workflow.accepted_phase_paths if item.phase == phase
+    )
+    accepted_handoff_path = _resolve_artifact_path(
+        repository_root,
+        workflow_id,
+        accepted_reference.handoff_path,
+        workflow_root,
+    ).resolve()
+    accepted_handoff = load_handoff(accepted_handoff_path)
+    canonical_phase_artifact_paths = sorted(
+        {
+            str(
+                _resolve_artifact_path(
+                    repository_root,
+                    workflow_id,
+                    artifact.path,
+                    workflow_root,
+                ).resolve()
+            )
+            for artifact in (
+                *accepted_handoff.input_artifacts,
+                *accepted_handoff.output_artifacts,
+            )
+            if artifact.path is not None
+        }
+    )
+
+    lifecycle_state = {
+        "workflow_id": workflow_id,
+        "workflow_status": validation["workflow_status"],
+        "current_accepted_phase": current_accepted_phase_value,
+        "requested_finalized_phase": phase.value,
+        "accepted_handoff_path": str(accepted_handoff_path),
+    }
+
+    output_dir = (
+        review_root
+        if review_root is not None
+        else repository_root.parent / "torch-dae-review-bundles" / workflow_id / phase.value
+    )
+    bundle_result = bundle_workflow(
+        repository_root,
+        workflow_id=workflow_id,
+        through_phase=phase,
+        output_dir=output_dir,
+        include_working_tree=include_working_tree,
+        extra_metadata={
+            "finalization-validation.json": gates,
+            "lifecycle-state.json": lifecycle_state,
+            "evidence-invariance.json": evidence_invariance,
+            "cleanup-plan.json": cleanup_preflight,
+        },
+    )
+
+    cleanup_result = cleanup_preflight
+    if cleanup_execute:
+        cleanup_result = cleanup_workflow(repository_root, workflow_id=workflow_id, dry_run=False)
+    cleanup_status = _finalize_cleanup_status(cleanup_result)
+
+    result_path = Path(cast(str, bundle_result["archive_path"])).with_name(
+        f"{workflow_id}-through-{phase.value}.finalize-result.json"
+    )
+    result: dict[str, object] = {
+        "schema_version": "1.0.0",
+        "workflow_id": workflow_id,
+        "workflow_status": validation["workflow_status"],
+        "current_accepted_phase": current_accepted_phase_value,
+        "requested_finalized_phase": phase.value,
+        "accepted_handoff_path": str(accepted_handoff_path),
+        "canonical_phase_artifact_paths": canonical_phase_artifact_paths,
+        "review_archive_path": bundle_result["archive_path"],
+        "review_archive_sha256": bundle_result["sha256"],
+        "checksum_sidecar_path": bundle_result["checksum_sidecar_path"],
+        "review_bundle_result_path": bundle_result["result_path"],
+        "result_path": str(result_path),
+        "validation_gates": gates,
+        "evidence_invariance": evidence_invariance,
+        "cleanup_preflight": cleanup_preflight,
+        "cleanup": cleanup_result,
+        "cleanup_status": cleanup_status,
+        "cleanup_receipt_path": cleanup_result.get("receipt_path"),
+        "cleanup_receipt_sha256": cleanup_result.get("receipt_sha256"),
+        # Backward-compatible aliases retained for existing callers/tests.
+        "phase": phase.value,
+        "lifecycle_state": validation["workflow_status"],
+        "validation_status": "valid",
+        "review_bundle": bundle_result,
+    }
+    write_json_atomic(result_path, result)
+    result["result_path"] = str(result_path)
+    return result
+
+
+def _finalize_cleanup_status(cleanup_result: dict[str, object]) -> str:
+    """Derive one concise cleanup status label from a cleanup/preflight result."""
+
+    status = cleanup_result.get("status")
+    if isinstance(status, str):
+        return status
+    if cleanup_result.get("errors"):
+        return "blocked"
+    if cleanup_result.get("mode") == "dry-run":
+        return "dry-run"
+    if cleanup_result.get("verified_removed"):
+        return "complete"
+    return "failed"
+
+
+def _scan_managed_workspace(
+    repository_root: Path,
+    workflow_id: str,
+) -> tuple[list[Path], list[Path]]:
+    """Return ``(managed_run_dirs, unmanaged_run_dirs)`` for one workflow's workspace scope.
+
+    A run directory is managed when it carries its own ``run-manifest.json``, written by
+    the canonical ``run-manifest create`` allocator before any other managed-workspace
+    path is created. An empty or absent workspace root (no phase/run directories at all)
+    is the genuinely legacy case — a workflow completed before run manifests were
+    adopted — and is distinct from a *present* run directory that was never registered.
+    """
+
+    workflow_workspace = repository_root / WORKSPACE_ROOT / workflow_id
+    managed: list[Path] = []
+    unmanaged: list[Path] = []
+    if not workflow_workspace.is_dir():
+        return managed, unmanaged
+    for phase_dir in sorted(item for item in workflow_workspace.iterdir() if item.is_dir()):
+        for run_dir in sorted(item for item in phase_dir.iterdir() if item.is_dir()):
+            if (run_dir / "run-manifest.json").is_file():
+                managed.append(run_dir)
+            else:
+                unmanaged.append(run_dir)
+    return managed, unmanaged
+
+
 def cleanup_workflow(
     repository_root: Path,
     *,
@@ -1249,10 +1659,58 @@ def cleanup_workflow(
 ) -> dict[str, object]:
     """Plan or execute safe cleanup using only paths recorded by managed run manifests."""
 
-    workflow_workspace = repository_root / WORKSPACE_ROOT / workflow_id
-    manifests = sorted(workflow_workspace.glob("*/*/run-manifest.json"))
+    managed_run_dirs, unmanaged_run_dirs = _scan_managed_workspace(repository_root, workflow_id)
+    mode: Literal["dry-run", "execute"] = "dry-run" if dry_run else "execute"
+    if unmanaged_run_dirs:
+        operation_id = f"cleanup-{uuid.uuid4().hex}"
+        operation_time = datetime.now(UTC)
+        unmanaged_errors = tuple(
+            "unmanaged workspace content is not registered by any run manifest and cannot be "
+            f"safely classified as legacy or cleaned: {path}"
+            for path in unmanaged_run_dirs
+        )
+        diagnostics_root = (
+            repository_root / ".torch-dae/reports/onboarding" / workflow_id
+        ).resolve()
+        receipt_path = diagnostics_root / "cleanup" / f"{operation_id}.json"
+        receipt = _cleanup_receipt(
+            repository_root=repository_root,
+            workflow_id=workflow_id,
+            operation_id=operation_id,
+            operation_time=operation_time,
+            mode=mode,
+            records=(),
+            manifest_status="blocked",
+            receipt_path=receipt_path,
+            planned_paths=(),
+            removed_paths=(),
+            conflicts=(),
+            external_conflicts=(),
+            retained_managed=(),
+            retained_external=(),
+            repository_caches=(),
+            package_caches=(),
+            materialized_environments=(),
+            checkpoint_caches=(),
+            verified_removed=False,
+            errors=unmanaged_errors,
+        )
+        write_json_atomic(receipt_path, receipt)
+        return _cleanup_response(receipt_path, receipt)
+    manifests = sorted(run_dir / "run-manifest.json" for run_dir in managed_run_dirs)
     if not manifests:
-        raise HandoffManagementError(f"no managed run manifests found for {workflow_id}")
+        return {
+            "status": "not_applicable",
+            "reason": "no_managed_run_manifests",
+            "workflow_id": workflow_id,
+            "mode": mode,
+            "removed": [],
+            "removed_paths": [],
+            "planned_paths": [],
+            "errors": [],
+            "dry_run": dry_run,
+            "cleanup_succeeded": True,
+        }
     records: list[tuple[Path, ManagedRunManifest]] = []
     recorded_paths: set[Path] = set()
     explicitly_retained: dict[Path, tuple[str, str]] = {}
@@ -1434,7 +1892,6 @@ def cleanup_workflow(
 
     operation_id = f"cleanup-{uuid.uuid4().hex}"
     operation_time = datetime.now(UTC)
-    mode: Literal["dry-run", "execute"] = "dry-run" if dry_run else "execute"
     receipt_path = diagnostics_root / "cleanup" / f"{operation_id}.json"
     planned_paths = tuple(str(path) for path in actions)
     retained_before = {path: path.exists() or path.is_symlink() for path in explicitly_retained}

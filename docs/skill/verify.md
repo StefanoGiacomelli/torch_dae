@@ -25,4 +25,5 @@ and its matching fingerprint. Only checkpoint-specific runtime observations are 
 `verification_reports/`, and new target-aware reports declare explicit overall status plus the
 target's exact required and optional check contract. Passed reports cannot be empty. Failed
 environment or runtime evidence remains diagnostic and cannot close or promote lifecycle. The
-accepted verify handoff, review bundle, and scoped cleanup close the run.
+accepted verify handoff is promoted, and the canonical `finalize` command — review bundle plus
+scoped cleanup — closes the run.

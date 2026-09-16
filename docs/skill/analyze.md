@@ -23,5 +23,6 @@ preceding commit are inference only. Current default-branch HEAD is current-sour
 not automatically checkpoint-equivalent.
 
 With `WORKFLOW_ID`, accepted output is promoted to
-`onboarding_reports/<workflow-id>/analyze/` before completion. The response reports the handoff,
-bundle digest, cleanup result, and retained managed caches.
+`onboarding_reports/<workflow-id>/analyze/` before completion, followed by the canonical `finalize`
+command. The response reports the handoff, review bundle digest, cleanup result, and retained
+managed caches.

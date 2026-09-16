@@ -12,11 +12,17 @@ def test_root_and_group_help() -> None:
     assert runner.invoke(app, ["env", "--help"]).exit_code == 0
 
 
-def test_card_list_empty(repo_root: object) -> None:
+def test_card_list_reflects_committed_cards(repo_root: object) -> None:
     runner = CliRunner()
     result = runner.invoke(app, ["card", "list"])
     assert result.exit_code == 0
-    assert result.output == ""
+    listed = [line for line in result.output.splitlines() if line]
+    assert listed == [
+        "panns-cnn14-16k-map-0438",
+        "panns-resnet38-map-0434",
+        "panns-wavegram-logmel-cnn14-map-0439",
+    ]
+    assert listed == sorted(listed)
 
 
 def test_model_verification_requires_an_explicit_target() -> None:

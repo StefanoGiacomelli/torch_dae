@@ -67,22 +67,80 @@ rewrite the prerequisites. Historical hashes identify declared provenance but do
 reconstruct historical bytes; preserve existing bundle or audit references where available and do
 not infer a Git mapping for uncommitted control-plane content.
 
-Perform phase work in `.torch-dae/workspaces/<workflow-id>/<phase>/<run-id>/` or a context-managed
-system temporary directory. Record a managed run manifest, validate outputs in the workspace, and
-promote only accepted canonical artifacts. For `analyze`, `resolve-environment`, `integrate`,
-`verify`, and `card`, promote the accepted handoff under `onboarding_reports/<workflow-id>/` before
-declaring the phase complete. Verify stores its strict targets and accepted environment evidence in
-its phase-local handoff tree and stores only checkpoint-specific runtime observations under
-`verification_reports/`.
+When a lifecycle mode requires managed workspace storage, allocate it before performing any
+managed workspace work with the canonical run-manifest entry point:
 
-Generate the deterministic external review bundle after promotion, then run scoped cleanup. Default
-cleanup removes only recorded ephemeral workspaces and completed/failed trial environments for the
-selected workflow. Report reusable repository/package caches, materialized model environments,
-checkpoint caches, and external audit outputs that remain. Never delete an unrecorded path.
-Use `retained_paths` only for bounded diagnostics already copied under the workflow onboarding-report
-root; categorized environments and caches are retained by category. Final Git inventory uses
-read-only cached-diff/status checks or the staged-equivalent validator and does not require
-`git write-tree` when Git metadata is intentionally non-writable.
+```bash
+uv run python scripts/onboarding_handoff.py run-manifest create \
+  --workflow-id <workflow-id> \
+  --phase <phase> \
+  --json
+```
+
+The allocator atomically creates the managed run root and its `run-manifest.json` and returns their
+absolute paths. Perform subsequent managed phase work inside the returned run root; do not create an
+independent `.torch-dae/workspaces/<workflow-id>/<phase>/<run-id>/` directory first and register it
+afterward. A context-managed system temporary directory may be used only when the phase does not
+require a managed repository workspace. Validate outputs in the workspace and promote only accepted
+canonical artifacts. For `analyze`, `resolve-environment`, `integrate`, `verify`, and `card`, promote
+the accepted handoff under `onboarding_reports/<workflow-id>/` before declaring the phase complete.
+Verify stores its strict targets and accepted environment evidence in its phase-local handoff tree
+and stores only checkpoint-specific runtime observations under `verification_reports/`.
+
+After promoting the accepted handoff, run the single canonical end-of-task path instead of hand
+assembling bundles, hashes, or cleanup scripts:
+
+```bash
+uv run python scripts/onboarding_handoff.py finalize \
+  --workflow-id <workflow-id> \
+  --phase <phase> \
+  --json
+```
+
+`finalize` composes the existing lifecycle validation, bounded repository gates, bundle, and
+cleanup primitives; it introduces no parallel packaging system. It revalidates accepted lifecycle
+evidence against the current repository, runs the required repository-level gates, performs cleanup
+preflight, and generates the deterministic review bundle through the requested phase under
+`../torch-dae-review-bundles/<workflow-id>/<phase>/` with its SHA-256 sidecar. Evidence-invariance
+reporting distinguishes unchanged phase-local accepted evidence, validated current external
+evidence, and validated declared historical supersessions; any unexpected undeclared mutation is a
+hard failure.
+
+Cleanup preflight never guesses ownership. A genuinely historical/legacy workflow with no managed
+run manifests and no unmanaged managed-workspace content may return a structured `not_applicable`
+result. Unmanaged content under the workflow's managed workspace scope is blocking rather than being
+silently classified as legacy or deleted. Real scoped cleanup is performed only when explicitly
+requested by the supported cleanup-execution option; otherwise `finalize` records the preflight
+result without deleting reusable state. Cleanup preserves accepted lifecycle evidence,
+repository/package caches, canonical materialized model environments, checkpoint caches, review
+bundles, and other retained categories unless an explicit destructive option authorizes otherwise.
+
+`finalize` writes one machine-readable `finalize-result.json` exposing the absolute paths of the
+generated review archive, SHA-256 sidecar, accepted lifecycle artifacts, bundle/finalization
+metadata, and any cleanup receipt that exists. Final Git inventory uses read-only
+cached-diff/status checks or the staged-equivalent validator and does not require `git write-tree`
+when Git metadata is intentionally non-writable.
+
+## Agent Completion Contract
+
+An onboarding mode is not complete on prose alone (for example, replying "done"). Before reporting a
+lifecycle mode as finished, an agent MUST:
+
+1. Run the canonical `finalize` path above for the completed workflow and phase.
+2. Generate the canonical review package (produced by `finalize`, or by `bundle` directly when a
+   full `finalize` pass does not apply).
+3. Report the lifecycle state (`workflow_status` / `current_accepted_phase`).
+4. Report validation status (pass/fail, and any control-plane drift).
+5. Report cleanup status (`complete`, `dry-run`, `blocked`, or `not_applicable`).
+6. Report remaining limitations or open issues carried forward.
+7. Provide the absolute paths of: the canonical lifecycle artifacts (accepted handoff, phase
+   reports); the review bundle archive; its SHA-256 sidecar; the machine-readable finalize/bundle
+   result JSON; and the cleanup receipt, when cleanup produced one.
+
+The review package exists to support independent cross-agent/cross-LLM review: another agent or a
+human reviewer must be able to inspect exactly what changed without access to this conversation's
+history. It is evidence for that independent audit, not a substitute for the lifecycle evidence
+itself (the accepted handoffs, reports, and cards remain the authoritative record).
 
 Package identity is content-addressed over deterministic local wheel build inputs. Record Git HEAD
 and cleanliness separately as informational provenance; they never affect package identity,
@@ -178,7 +236,7 @@ upstream code in the root environment, execute `setup.py`, or select an ambiguou
 
 Completion criteria: strict report validation passes, Markdown report is consistent with the JSON,
 all unresolved items are explicit, the user has seen decision gates, the accepted handoff is
-promoted, its review bundle is generated, and scoped cleanup is verified.
+promoted, and the canonical `finalize` path succeeds.
 
 Next allowed lifecycle transition: `analyzed` after report review and card authoring; otherwise
 continue in `analyze` or `resolve-environment`.
@@ -229,8 +287,9 @@ imported dependency, or duplicating the environment subsystem.
 Completion criteria: either (a) draft resolution is complete—an evidence-supported candidate,
 isolated import/constructor trial, coherent environment drafts, synchronized locks, no fingerprint,
 and no lifecycle promotion—or (b) canonical materialization and verification satisfy the strict
-`environment_resolved` lifecycle contract. In both cases artifact references agree, the accepted
-handoff is promoted, its review bundle is generated, and scoped cleanup is verified.
+`environment_resolved` lifecycle contract. In both cases artifact references agree; whenever an
+accepted lifecycle handoff is promoted, the canonical `finalize` path must succeed before the phase
+is declared complete.
 
 Next allowed lifecycle transition: `environment_resolved` only for completion state (b). Draft
 resolution may recommend `integrate` without lifecycle promotion.
@@ -283,12 +342,11 @@ silently beginning verification or another workflow mode, creating a Git commit,
 reimplementation without provenance, or presenting logits/task decisions as embeddings.
 
 Completion criteria: integration plan is reviewable, evidence-backed, declares verification
-requirements, carries unresolved items forward, passes
-`uv run python scripts/check_worktree_patch.py --json` against a temporary index, is promoted with
-an accepted handoff, records a passed dependency-closure preflight before any materialized
-environment it creates or reuses, is bundled, and has completed scoped cleanup. `git diff --check` remains useful
-for tracked unstaged changes, but it is not the complete phase gate when untracked outputs exist.
-The real Git index must remain unchanged.
+requirements, carries unresolved items forward, records a passed dependency-closure preflight
+before any materialized environment it creates or reuses, is promoted with an accepted handoff, and
+the canonical `finalize` path succeeds. The required staged-equivalent validation and
+`git diff --check` checks are owned by that finalization path rather than repeated as an ad-hoc
+manual closeout sequence. The real Git index must remain unchanged.
 
 Next allowed lifecycle transition: none. `integrate` is a workflow mode, not a lifecycle state.
 Existing committed lifecycle states remain authoritative.
@@ -356,8 +414,8 @@ promotion from failed evidence, profiling, or fabricated runtime observations.
 
 Completion criteria: every target-required check passes, every target-declared output and embedding
 is observed, environment and runtime evidence validate independently, the runtime report validates
-under `verification_reports/`, the accepted verify handoff is promoted, a review bundle is
-generated, and scoped cleanup is verified.
+under `verification_reports/`, the accepted verify handoff is promoted, and the canonical
+`finalize` path succeeds.
 No target or generic environment result is stored in `verification_reports/`.
 
 Next allowed lifecycle transition: `runtime_verified` only after `checkpoint_verified` and runtime
@@ -409,8 +467,7 @@ family-level cards for incompatible checkpoints, hidden lifecycle promotion, or 
 from license metadata.
 
 Completion criteria: Pydantic and JSON Schema validation both pass, lifecycle gates are truthful,
-the accepted card handoff is promoted, its review bundle is generated, and scoped cleanup is
-verified.
+the accepted card handoff is promoted, and the canonical `finalize` path succeeds.
 
 Next allowed lifecycle transition: the next legal committed lifecycle state only; do not invent
 states beyond `project_spec.md`.

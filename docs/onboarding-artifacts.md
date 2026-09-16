@@ -95,6 +95,41 @@ The final receipt embeds finalized source manifests, planned and removed paths, 
 external paths, external protection conflicts, cache retention classes, verification, errors, and
 applicable SHA-256 values. External audit paths preserve the manifest spelling, are never selected by
 cleanup flags, and report existing files, directories, symlinks, and missing outputs distinctly.
+A workflow whose `.torch-dae/workspaces/<workflow-id>/` scope has no phase/run directories at all —
+most notably a historical workflow completed before this workflow adopted run manifests — is the
+genuinely legacy case and is not treated as an error: `cleanup` returns
+`{"status": "not_applicable", "reason": "no_managed_run_manifests", "removed": []}` and exits
+successfully. A run directory that is present under that scope but carries no `run-manifest.json` of
+its own is unmanaged content, not the legacy case: it is reported in `errors` and blocks the whole
+cleanup (nothing is deleted) rather than being guessed at or silently reported `not_applicable`. The
+legacy/current distinction comes only from what is actually present on disk, never from a
+hard-coded workflow identity.
+
+`run-manifest create` is the single canonical *allocator* for a managed workspace run — not an
+after-the-fact registration step. It atomically creates
+`.torch-dae/workspaces/<workflow-id>/<phase>/<run-id>/run-manifest.json` together with the run's own
+directory and returns the absolute run-root and manifest paths. Call it *before* performing any
+managed workspace work and perform that work inside the returned run root, so `cleanup` always has
+ownership evidence and never has to guess.
+
+`finalize` is the one canonical end-of-task path. It composes `validate`, the bounded required
+repository gates (`validate_repository.py`, `validate_skill_artifacts.py`, `check_worktree_patch.py
+--json`, `git diff --check` — reused via subprocess, never reimplemented), `cleanup`, and `bundle`
+rather than duplicating any of their logic. Ordering: it re-validates every accepted phase's declared
+artifacts against the current repository (which is also how it proves prior accepted evidence for
+earlier phases stayed unchanged, failing outright rather than warning on any undeclared drift — see
+`evidence_invariance`, which reports unchanged phase-local evidence, validated current external
+evidence, and validated declared historical supersessions as distinct states, never collapsing a
+legal supersession into "unchanged"); runs the required gates; runs a cleanup preflight (dry-run)
+that aborts the whole call on unmanaged workspace content before any archive exists; generates the
+deterministic review bundle through the requested phase under
+`../torch-dae-review-bundles/<workflow-id>/<phase>/` by default, embedding the required-gate results,
+lifecycle state, evidence-invariance summary, and cleanup preflight as archive metadata so it is
+self-sufficient for independent review; optionally performs real cleanup execution only after that
+archive is immutable; and writes one `finalize-result.json` with the absolute paths of every
+generated artifact — accepted handoff, canonical phase artifacts, review bundle archive, its
+`.sha256` sidecar, the bundle result JSON, the finalize result itself, and the cleanup receipt
+path/hash when one exists.
 
 Analysis claims and embedding candidates may carry optional `variant_ids` and `checkpoint_ids`.
 Empty tuples mean report-wide applicability; nonempty IDs must resolve to candidates declared in the

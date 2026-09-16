@@ -10,7 +10,8 @@ inference. The root package must stay importable without those dependencies.
 
 With `WORKFLOW_ID`, the mode discovers and validates accepted analyze and resolve-environment
 handoffs rather than requesting them again. Accepted integration artifacts are promoted under the
-workflow, bundled, and followed by scoped cleanup.
+workflow, followed by the canonical `finalize` command, which validates evidence invariance, runs
+the required repository gates, runs cleanup, and generates the deterministic review bundle.
 
 Before any integrate-mode environment materialization or reuse, the card-independent dependency
 preflight must prove that the accepted lock can satisfy the current local wheel's active runtime

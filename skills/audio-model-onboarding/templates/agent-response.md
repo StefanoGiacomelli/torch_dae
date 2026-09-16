@@ -22,11 +22,19 @@ separate drift flags, and any phase transition. State that hashes alone do not r
 ## Artifact supersessions
 [Validated count and affected repository-relative paths, or None.]
 
-## Review bundle
-[External bundle path, SHA-256, byte size, and member count.]
+## Finalize result
+[Absolute paths for the review archive, its SHA-256 sidecar, the bundle result JSON, and the
+`finalize-result.json` produced by
+`uv run python scripts/onboarding_handoff.py finalize --workflow-id <id> --phase <phase> --json`.
+Required-gate pass/fail summary and overall status.]
+
+## Evidence invariance
+[Phase-local accepted evidence, current external evidence, declared historical supersessions, and
+unexpected-mutation status, as reported by `finalize`.]
 
 ## Workspace cleanup
-[Removed recorded ephemeral paths, verification result, and retained managed runtime paths.]
+[Cleanup status (`complete`, `dry-run`, `blocked`, or `not_applicable`), removed recorded ephemeral
+paths, and retained managed runtime paths. Absolute cleanup receipt path and SHA-256 when one exists.]
 
 ## Problems and resolutions
 - [Problem]&#58; [Resolution or safe workaround]
@@ -44,6 +52,7 @@ None.
 
 ## Validation
 - [Validation command or check]&#58; [Result]
-- Staged-equivalent working-tree whitespace validation&#58; [Result and real-index preservation]
+- Required finalization gates (repository validation, skill validation, staged-equivalent worktree
+  validation, `git diff --check`)&#58; [Result]
 
 Only files actually generated, modified, or added for the requested model may be listed.
