@@ -51,10 +51,28 @@ One model card always describes exactly one model family, variant, and checkpoin
 
 ## Not available yet
 
-- No pretrained checkpoint payload or checkpoint-specific model card is included.
-- The `model inspect` and `model verify` CLI placeholders do not execute model workflows yet.
-- Profiling is reserved until a model is runtime-verified and a profiling workflow is explicitly
-  implemented and invoked.
+- No pretrained checkpoint payload or checkpoint-specific model card is redistributed by the
+  repository; supported checkpoint payloads are acquired through the checkpoint-management subsystem.
+- `model inspect` remains an explicit unavailable-feature placeholder.
+- Profiling v1 and Technical Cards are normatively specified but not implemented yet. Profiling is
+  optional and begins only from an accepted `runtime_verified` Model Card.
+
+## Profiling and Technical Cards
+
+`torch-dae` defines an optional profiling evidence layer independent from model onboarding. An
+accepted checkpoint-specific Model Card remains the immutable scientific/runtime identity of the
+supported model. Profiling campaigns will emit one immutable **Technical Card** per successfully
+profiled device/backend plus compact, lossless raw measurements; profiling never rewrites the Model
+Card.
+
+Profiling v1 is dataset-independent and uses deterministic seeded white noise only. It is specified
+to measure architecture, cold/steady-state latency, throughput, host RAM, accelerator memory where
+available, and CodeCarbon-backed energy measurement or estimation when supported. Multiple users
+may append Technical Cards for the same Model Card so later analytics can compare compatible
+hardware/software execution contexts without changing onboarding evidence.
+
+The planned CLI and normative protocol are documented under
+[`docs/profiling/`](docs/profiling/overview.md).
 
 ## Architecture
 
@@ -206,8 +224,10 @@ workflows:
 - `verify`: controlled acquisition and runtime verification for one selected model/checkpoint.
 - `card`: checkpoint-specific model-card generation from validated evidence and artifacts.
 
-`profile` is documented separately as reserved functionality. Agent workflows are not one-shot CLI
-commands and must not be confused with the control-plane commands above. See the
+`profile` remains a reserved compatibility entry point inside the onboarding skill. Profiling v1 is
+specified as an independent, repeatable Technical Card workflow and is not implemented yet. Agent
+workflows are not one-shot CLI commands and must not be confused with the control-plane commands
+above. See the
 [skill guide](docs/model-onboarding-skill.md), [artifact guide](docs/onboarding-artifacts.md), and
 [canonical templates](skills/audio-model-onboarding/templates/README.md).
 
@@ -327,9 +347,19 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution and pull-request expecta
 
 ## Roadmap
 
-Model support is added through the canonical onboarding workflow after its evidence, isolation, and
-runtime prerequisites are satisfied. Profiling remains unavailable until a model integration is
-runtime-verified and a dedicated profiling workflow is implemented.
+The completed PANNs onboarding work terminates at immutable `runtime_verified` Model Cards.
+
+The next development sequence is:
+
+1. implement the profiling and Technical Card contracts defined in `project_spec.md`;
+2. profile the accepted PANNs Model Cards on locally supported CPU/accelerator backends;
+3. validate and contribute the first canonical Technical Cards;
+4. build the local-first Model Card + Technical Card presentation/analytics site;
+5. publish the coordinated repository/documentation/package update through the protected GitHub
+   pull-request workflow.
+
+Profiling is optional for model acceptance and may be repeated indefinitely by different
+contributors and execution contexts.
 
 ## Funding
 

@@ -27,9 +27,10 @@ available text layer, preserves page boundaries, and provides no OCR. Extracted 
 aid, not automatically verified evidence, and is not stored in the repository unless explicitly
 requested.
 
-The allowed modes are `analyze`, `resolve-environment`, `integrate`, `verify`, `card`, and
-`profile`. `profile` is reserved until a runtime-verified model and an explicitly implemented
-profiling workflow exist.
+The onboarding modes are `analyze`, `resolve-environment`, `integrate`, `verify`, `card`, and a
+reserved compatibility `profile` entry point. New onboarding terminates at `runtime_verified`.
+Profiling v1 is specified as an independent repeatable Technical Card workflow and is not executed by
+this onboarding skill until its separate implementation exists.
 
 Every mode accepts `WORKFLOW_ID`. Use `scripts/onboarding_handoff.py discover` before requesting a
 prerequisite attachment. The command searches only `onboarding_reports/`, validates the accepted
@@ -53,8 +54,9 @@ is unmanaged content: it blocks cleanup and finalize rather than being silently 
 guessed at. Validate in the workspace, promote accepted pre-runtime outputs under
 `onboarding_reports/`, then run the canonical
 `scripts/onboarding_handoff.py finalize --workflow-id <id> --phase <phase>`, which re-validates
-accepted evidence, runs the required repository gates, runs cleanup, and builds the deterministic
-external review bundle in one call — do not hand assemble the bundle, hashes, or cleanup separately.
+accepted evidence, runs the required repository gates, performs cleanup preflight, optionally
+executes explicitly requested cleanup, and builds the deterministic external review bundle in one
+call — do not hand assemble the bundle, hashes, or cleanup separately.
 Reusable repository/package caches, materialized model environments, and checkpoint caches are
 managed runtime state, not accidental contamination, and are not removed by default.
 

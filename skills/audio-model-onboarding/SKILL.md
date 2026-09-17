@@ -474,37 +474,38 @@ states beyond `project_spec.md`.
 
 ## `profile` Mode
 
-Purpose: reserved future mode that may inspect eligibility for profiling.
+Purpose: reserved compatibility mode in the onboarding skill. Profiling v1 is normatively specified
+as an independent, repeatable Technical Card workflow but that workflow and its dedicated CLI/skill
+are not implemented yet.
 
-Required inputs: `WORKFLOW_ID`, runtime-verified card, and verification report.
+Required inputs: `WORKFLOW_ID` and an accepted `runtime_verified` Model Card may be inspected only
+to report eligibility.
 
-Optional inputs: future profiling target platform and protocol.
-
-Prerequisites: none because no profiling workflow has been implemented.
+Prerequisites: no executable profiling workflow exists in this skill.
 
 Ordered procedure:
 
 1. Refuse profiling execution.
-2. List missing prerequisites when asked.
-3. Explain expected future inputs without producing profiling evidence.
+2. Confirm runtime-verification eligibility when asked.
+3. Direct implementation work to `project_spec.md` and `docs/profiling/`.
+4. Do not mutate Model Card profiling placeholders.
+5. Do not promote the Model Card to `profiled`.
 
-Evidence requirements: runtime verification status may be inspected; no profiling measurement is
-created.
+Evidence requirements: runtime-verification status may be inspected; no profiling measurement or
+Technical Card is created by this skill.
 
 Generated outputs: eligibility notes only.
 
-User-decision gates: future profiling protocol selection remains unresolved.
+Failure conditions: any attempt to fabricate profiling evidence before the independent profiler is
+implemented.
 
-Failure conditions: any attempt to measure latency, memory, energy, MACs, FLOPs, or benchmark
-performance.
-
-Prohibited behavior: latency measurement, memory profiling, energy measurement, MAC/FLOP
-calculation, computational characterization, benchmark reports, or lifecycle promotion to
+Prohibited behavior: latency measurement, RAM/device-memory profiling, energy measurement,
+MAC/FLOP measurement, Technical Card generation, Model Card rewriting, or lifecycle promotion to
 `profiled`.
 
 Completion criteria: profiling remains reserved and no fabricated profiling evidence exists.
 
-Next allowed lifecycle transition: none.
+Next allowed lifecycle transition: none. `runtime_verified` is terminal for new onboarding.
 
 Profiling remains unavailable until a model is runtime_verified and a profiling workflow is
 explicitly implemented and invoked.

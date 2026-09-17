@@ -100,3 +100,11 @@ Follow the [release guide](docs/development/releasing.md) for validation, GitHub
 Trusted Publishing, service setup, and the release workflow. Production publication is initiated
 only by publishing a GitHub Release whose tag exactly matches the project version. TestPyPI
 publication is manual. Both workflows use OIDC Trusted Publishing and reuse a single validated build.
+
+## Profiling evidence
+
+Accepted Model Cards are immutable. Once profiling v1 is implemented, performance evidence is
+contributed only as paired `technical_cards/<model-id>/<technical-card-id>.json` and `.npz` assets.
+
+Do not hand-author Technical Cards before the generator/validator exists, and never modify the
+referenced Model Card in a profiling contribution.

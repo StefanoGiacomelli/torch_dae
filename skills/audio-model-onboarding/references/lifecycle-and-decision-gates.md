@@ -1,7 +1,9 @@
 # Lifecycle And Decision Gates
 
-Use the committed lifecycle states from `project_spec.md`: `draft`, `analyzed`,
-`environment_resolved`, `checkpoint_verified`, `runtime_verified`, and `profiled`.
+Use the normative new-workflow lifecycle states from `project_spec.md`: `draft`, `analyzed`,
+`environment_resolved`, `checkpoint_verified`, and terminal `runtime_verified`. Schema-1 `profiled`
+remains readable legacy/reserved compatibility only; Technical Card profiling does not promote Model
+Card lifecycle.
 
 Separately track environment states `draft`, `materialized`, and `environment_verified`. These
 belong to the environment and cannot promote a model/checkpoint tuple. Runtime verification belongs

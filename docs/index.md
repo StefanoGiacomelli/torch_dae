@@ -7,9 +7,9 @@ evidence-grounded onboarding and integration of audio embedding models. It recor
 provenance, checkpoint identity, isolated environment resolution, wrapper behavior, embeddings,
 and runtime observations as explicit, validated artifacts.
 
-The source tree includes an integrate-phase PANNs production package for three fixed AudioSet
-identities. Checkpoint acquisition, pretrained verification, and model-card authoring remain
-separate later workflow phases.
+The source tree includes three completed PANNs AudioSet integrations with accepted
+runtime-verification evidence and immutable checkpoint-specific Model Cards. Profiling is specified
+as a separate optional Technical Card evidence layer and is not part of Model Card onboarding.
 
 ## Installation
 
@@ -60,6 +60,16 @@ user-guide/checkpoints
 user-guide/embeddings
 user-guide/model-cards
 models/panns
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: Profiling
+
+profiling/overview
+profiling/protocol
+profiling/technical-cards
+profiling/contributing
 ```
 
 ```{toctree}

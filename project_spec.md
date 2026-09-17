@@ -1,7 +1,7 @@
 # `torch-dae` Project Specification
 
 **Document status:** Proposed normative baseline
-**Specification version:** `0.1.0`
+**Specification version:** `0.2.0`
 **Project type:** PyTorch audio-model onboarding, reproducibility, integration, and profiling framework
 **Repository root:** `torch-dae/`
 **Python package:** `torch_dae`
@@ -24,7 +24,7 @@ A requirement marked **MUST** is part of the acceptance criteria for the corresp
 4. a unified PyTorch wrapper;
 5. verified checkpoint loading and inference;
 6. explicit access to all meaningful embedding representations;
-7. later architectural, runtime, memory, and energy profiling.
+7. optional repeatable architectural, runtime, memory, and energy profiling through immutable Technical Cards.
 
 The framework targets audio-related models including, but not limited to:
 
@@ -136,11 +136,15 @@ A model integration consists of:
 * one runtime-verification report;
 * zero or more embedding specifications.
 
+Profiling evidence is not part of model integration identity. An accepted integration MAY have zero
+or more independent Technical Cards. Technical Cards reference the accepted Model Card and
+checkpoint but MUST NOT mutate, enrich, or lifecycle-promote that Model Card.
+
 ---
 
 # 5. Model-card lifecycle
 
-Every model card MUST have exactly one lifecycle status:
+For all new onboarding workflows, the normative Model Card lifecycle is:
 
 ```text
 draft
@@ -148,80 +152,52 @@ analyzed
 environment_resolved
 checkpoint_verified
 runtime_verified
-profiled
 ```
+
+`runtime_verified` is the terminal onboarding state. Profiling is optional evidence collected
+outside Model Card lifecycle progression.
+
+The current Model Card schema `1.0.0` and Python enum still accept `profiled` and embedded profiling
+placeholders for backward compatibility with the original bootstrap contract. Those fields are
+**legacy/reserved compatibility surface**. New profiling workflows MUST NOT promote a Model Card to
+`profiled`, MUST NOT rewrite accepted Model Card profiling placeholders, and MUST store profiling
+evidence only in independent Technical Cards.
 
 ## 5.1 `draft`
 
-The card exists, but its repository and scientific metadata have not been fully analyzed.
+The card exists, but repository/scientific metadata analysis is incomplete.
 
 ## 5.2 `analyzed`
 
-The following have been inspected:
-
-* official repository;
-* architecture implementation;
-* scientific publication;
-* checkpoint source;
-* preprocessing;
-* forward path;
-* candidate embeddings;
-* package and environment evidence.
-
-Unresolved information MAY remain explicit.
+Official repository, architecture implementation, scientific publication, checkpoint source,
+preprocessing, forward path, candidate embeddings, package/environment evidence, and unresolved
+facts have been inspected.
 
 ## 5.3 `environment_resolved`
 
-A referenced environment has been successfully constructed, verified, and frozen before the card
-claims this status.
-
-The committed environment specification MUST include:
-
-* resolved Python version;
-* resolved direct dependencies;
-* lock file;
-* source-installation strategy;
-* supported platform evidence;
-* environment-verification command.
-
-The card MUST reference the matching environment fingerprint and hash-addressed
-`EnvironmentVerificationResult`. Environment lifecycle state exists independently of this card
-status.
+A referenced model environment has been successfully constructed, verified, and frozen before the
+card claims this status. The card references the matching environment fingerprint and passed
+environment-verification evidence.
 
 ## 5.4 `checkpoint_verified`
 
-The specified checkpoint has been:
-
-* acquired;
-* hashed;
-* loaded into the intended architecture;
-* checked for state-dictionary or serialization compatibility.
+The selected checkpoint has been acquired, hashed, loaded into the intended architecture, and
+checked for serialization/state compatibility.
 
 ## 5.5 `runtime_verified`
 
-The wrapper has passed runtime verification for:
+The public wrapper has passed strict target-aware runtime verification for canonical waveform input,
+construction, checkpoint loading, forward inference, declared outputs/embeddings, declared device
+behavior, and gradient behavior where required.
 
-* canonical waveform input;
-* model construction;
-* checkpoint loading;
-* forward inference;
-* probability output where supported;
-* all declared embeddings;
-* declared device behavior;
-* gradient behavior where applicable.
+The card references its strict runtime-verification target and matching checkpoint-specific report
+by repository path and SHA-256.
 
-The card MUST reference a strict `RuntimeVerificationTarget` and its matching checkpoint-specific
-`VerificationReport`, both by repository path and SHA-256. Repository validation MUST reject any
-model, variant, checkpoint, environment, source-manifest, public-entry-point, integration-handoff,
-or future-card association mismatch. It MUST also reject a legacy target/report pair, an empty
-target-aware report, any missing, duplicate, undeclared, failed, or unsupported required check, and
-any target/report required- or optional-check contract mismatch.
+## 5.6 Legacy/reserved `profiled` compatibility
 
-## 5.6 `profiled`
-
-The runtime-verified integration has completed the defined profiling protocol.
-
-Profiling details remain outside the initial MVP specification.
+`profiled` remains readable in Model Card schema `1.0.0` only for backward compatibility. It is not
+a legal target state for new onboarding or Technical Card profiling. A future major Model Card
+schema revision MAY remove that compatibility surface through an explicit migration.
 
 ## 5.7 Issues
 
@@ -418,6 +394,11 @@ torch-dae/
 ├── verification_reports/
 │   └── <family>/
 │       └── <card-id>.json
+│
+├── technical_cards/
+│   └── <model-id>/
+│       ├── <technical-card-id>.json
+│       └── <technical-card-id>.npz
 │
 ├── tests/
 │   ├── core/
@@ -1610,19 +1591,22 @@ observation MUST have passed, and observation names MUST be nonempty and unique 
 collections. A hash-correct failed or incomplete result is diagnostic evidence and MUST NOT satisfy
 a verified model-card claim.
 
-## 18.9 Profiling sections
+## 18.9 Legacy profiling placeholders
 
-Before profiling, each section MUST remain valid with:
+Model Card schema `1.0.0` retains `architectural_profiling`, `inference_profiling`, and
+`energy_profiling` for compatibility with the original bootstrap contract.
 
-```json
-{
-  "status": "not_profiled"
-}
-```
+New accepted Model Cards MUST leave those placeholders at `not_profiled`. Profiling completion MUST
+NOT mutate them and MUST NOT change `card_status` away from `runtime_verified`. The independent
+Technical Card contract defined in Section 27 is the normative representation for new profiling
+evidence.
 
-Model-card creation and runtime verification MUST NOT depend on profiling completion.
+Model-card creation, runtime verification, release acceptance, and model contribution MUST NOT
+depend on profiling completion.
 
 ---
+
+# 19. Repository-analysis skill---
 
 # 19. Repository-analysis skill
 
@@ -1707,7 +1691,9 @@ an evidence consumer and publication surface, never a bootstrap prerequisite.
 
 ### `profile`
 
-Reserved for the later profiling subsystem.
+Reserved compatibility entry point inside the onboarding skill. The onboarding skill MUST NOT
+execute profiling or mutate Model Cards. The independent profiling workflow defined in Section 27
+will consume accepted `runtime_verified` Model Cards and emit Technical Cards after its implementation.
 
 ## 19.3 Chat report
 
@@ -2205,104 +2191,553 @@ The three PANNs checkpoint integrations complete the MVP pilot. Lessons from thi
 
 ---
 
-# 27. Profiling boundary
+# 27. Profiling and Technical Card specification
 
-Profiling is explicitly deferred until the pilot wrappers are runtime-verified.
+## 27.1 Evidence boundary
 
-The future profiling subsystem will distinguish:
+Profiling is optional empirical evidence collected only after a checkpoint-specific Model Card has
+reached `runtime_verified`. It is not required for onboarding acceptance, release inclusion, or
+model support.
 
-* architecture-only analysis;
-* model-forward profiling;
-* preprocessing profiling;
-* end-to-end profiling;
-* CPU;
-* CUDA;
-* MPS;
-* RAM;
-* accelerator memory;
-* latency;
+One accepted immutable Model Card MAY have zero or more independent Technical Cards:
+
+```text
+accepted Model Card
+  +-- Technical Card: CPU
+  +-- Technical Card: MPS
+  +-- Technical Card: CUDA
+  +-- ...
+```
+
+A Model Card states what the model/checkpoint is and what torch-dae verified. A Technical Card states
+how that exact public wrapper behaved under one profiling protocol, device/backend, and execution
+context. Profiling MUST NOT mutate or enrich the Model Card.
+
+The future website/analytics layer is derived presentation only. It MUST reconstruct claims from
+Model Cards, Technical Cards, and hash-addressed raw assets.
+
+## 27.2 Terminology
+
+**Profiling Campaign**: one user invocation of the profiling CLI.
+
+**Profiling Run**: one device/backend-specific attempt inside a campaign.
+
+**Technical Card**: immutable evidence produced by exactly one successful Profiling Run.
+
+**Profiling Protocol**: versioned normative measurement methodology.
+
+**Profiling Plan**: locally resolved execution plan derived from Model Card, protocol, requested
+devices, and detected hardware.
+
+**Raw Measurement Asset**: losslessly compressed `.npz` containing bounded supporting observations.
+
+**Execution Context**: privacy-safe hardware/software/runtime configuration for one Profiling Run.
+
+**Profile Finalization**: validation and review packaging of a profiling campaign; it never advances
+Model Card onboarding.
+
+## 27.3 Immutability and granularity
+
+Accepted Model Card bytes MUST remain unchanged by profiling.
+
+A contributed Technical Card and its raw `.npz` asset are immutable. Corrections require a new card
+that MAY declare `supersedes` references.
+
+One Technical Card represents exactly:
+
+```text
+one exact Model Card/checkpoint
+x one profiling protocol version
+x one device/backend
+x one execution environment/context
+x one complete profiling session
+```
+
+A campaign using automatic device discovery MAY therefore generate separate CPU, MPS, and CUDA
+Technical Cards.
+
+## 27.4 Devices and CLI contract
+
+Profiling v1 SHALL support:
+
+```text
+auto
+cpu
+mps
+cuda
+cuda:<index>
+```
+
+`--device` SHOULD be repeatable.
+
+Planned public CLI:
+
+```text
+torch-dae model profile \
+  --model <model-id> \
+  --device <auto|cpu|mps|cuda|cuda:index> \
+  --protocol <protocol-id> \
+  --energy <auto|off> \
+  --output-dir <path>
+```
+
+Recommended defaults:
+
+```text
+--device auto
+--protocol audio-inference-v1
+--energy auto
+--output-dir ./technical_cards
+```
+
+`auto` includes CPU, discovers locally available supported accelerators, performs a bounded
+public-wrapper smoke inference on each, and profiles each successful device/backend. Failed
+accelerator attempts are campaign diagnostics and do not generate Technical Cards.
+
+Explicit device requests MUST NOT be silently replaced with CPU unless CPU was also requested.
+
+Planned utilities:
+
+```text
+torch-dae technical-card validate <card>
+torch-dae technical-card inspect <card>
+torch-dae technical-card list
+```
+
+These commands remain specification-only until implementation lands.
+
+## 27.5 Precision
+
+Protocol v1 uses only the accepted wrapper's verified/native precision. It does not automatically
+enable FP16, BF16, AMP, quantization, or `torch.compile`.
+
+Technical Cards record observed parameter dtype, execution dtype, autocast state, and quantization
+state.
+
+## 27.6 Canonical profiling input
+
+Profiling v1 is dataset-independent and uses only deterministic seeded synthetic white noise.
+
+The canonical waveform generator produces `float32` IID uniform samples:
+
+```text
+x[n] ~ U(-1, 1)
+```
+
+The protocol records PRNG implementation/algorithm, seed, sample rate, sample count, batch size,
+channel count, and generated tensor/waveform SHA-256 where practical.
+
+No speech, music, soundscape, benchmark dataset, or external audio file participates in protocol v1.
+Input generation/allocation occur outside canonical timed inference.
+
+## 27.7 Canonical duration and minimum supported input
+
+Every Profiling Run resolves a canonical benchmark duration from the accepted model/runtime
+contract. When the wrapper is variable-length and no fixed duration exists, protocol v1 uses
+`10.0` seconds as the reference duration.
+
+For `batch=1`, the profiler SHALL empirically determine the minimum supported waveform length in
+integer sample-count space:
+
+1. initial probe at 10 seconds;
+2. on success, repeatedly halve until a failing/lower boundary is found;
+3. on failure, repeatedly double until success or 120 seconds;
+4. binary-search the failing/passing bracket;
+5. recheck the candidate minimum and immediately smaller sample count where valid.
+
+Non-monotonic behavior MUST be reported as `non_monotonic`; no minimum may be fabricated.
+
+The observed minimum is device/backend profiling evidence and never rewrites the Model Card input
+contract.
+
+## 27.8 Benchmark matrix and repetitions
+
+At canonical duration:
+
+```text
+batch_size = [1, 2, 4, 8]
+```
+
+The empirical minimum duration is additionally profiled at `batch=1` when distinct from canonical
+duration.
+
+Every steady-state condition uses:
+
+```text
+warmup_inferences = 10
+measured_inferences = 50
+```
+
+There is no outer repetition loop in protocol v1.
+
+Tested resource/input failures are explicit `unsupported` observations rather than silently omitted
+conditions.
+
+## 27.9 Timing scope and statistics
+
+Canonical latency measures:
+
+```text
+prepared waveform tensor
+-> public torch-dae wrapper
+-> requested public output
+```
+
+Internal wrapper DSP is included. Waveform generation, filesystem I/O, serialization, campaign
+orchestration, and report generation are excluded.
+
+Timing uses a monotonic high-resolution clock plus appropriate device synchronization around the
+public-wrapper call.
+
+Required summaries:
+
+* mean;
+* standard deviation;
+* minimum;
+* maximum;
+* p50/median;
+* p90;
+* p95;
+* p99;
+* coefficient of variation;
 * throughput;
 * real-time factor;
-* energy.
+* speed factor.
 
-The initial schemas MUST reserve profiling sections, but no profiling implementation is required in the bootstrap or skill MVP.
+The 50 raw latency observations MUST be stored losslessly, preferably as integer nanoseconds.
 
----
+## 27.10 Cold-start evidence
+
+Cold evidence is separate from steady-state inference. Where separable, record wrapper/model
+initialization, checkpoint/model loading, device placement/readiness, and first-inference latency.
+The first inference is never part of the 50 steady-state observations.
+
+## 27.11 Instrumentation separation
+
+Canonical latency uses minimal instrumentation.
+
+Memory and energy measurement occur in a separate bounded resource pass so process sampling,
+allocator inspection, CodeCarbon, or other instrumentation cannot contaminate canonical latency.
+
+## 27.12 CPU thread regimes
+
+One CPU Technical Card contains two thread regimes:
+
+```text
+single_thread
+native_default
+```
+
+`single_thread` sets torch intra-op threads to 1. `native_default` observes the original/default
+runtime configuration. Thread-sensitive regimes SHOULD execute in isolated subprocesses.
+
+Record torch intra-op/inter-op observations and relevant BLAS/OpenMP settings where available.
+
+## 27.13 Architecture evidence
+
+Mandatory:
+
+* total parameters;
+* trainable parameters;
+* non-trainable parameters;
+* parameter bytes;
+* buffer bytes;
+* state-dict tensor bytes;
+* dtype distribution;
+* module count.
+
+Optional capability-dependent evidence:
+
+* FLOPs;
+* MACs;
+* operator/module census.
+
+FLOP/MAC results MUST record backend, backend version, counting convention, unsupported-operation
+coverage, and `complete`/`partial`/`unavailable` status. Partial counts MUST NOT be presented as
+complete totals.
+
+## 27.14 Host RAM and accelerator memory
+
+Host RAM is a first-class profiling domain.
+
+Where available, record:
+
+* total host RAM capacity;
+* process RSS before model load;
+* process RSS after model load;
+* process RSS immediately before resource measurement;
+* sampled peak process RSS;
+* process RSS after the resource pass.
+
+USS/PSS MAY be recorded with explicit semantics.
+
+CUDA cards SHOULD record native allocator current/peak allocated and reserved memory where
+available.
+
+MPS cards SHOULD record the exact exposed tensor-allocation and Metal-driver-allocation surfaces.
+On unified-memory systems, host RSS and accelerator/driver allocation MUST NOT be added into a
+fabricated independent-memory total.
+
+Cross-backend memory surfaces retain their backend-specific semantics.
+
+## 27.15 Energy and CodeCarbon
+
+Energy is optional capability-dependent evidence and is not required for Technical Card validity.
+
+Protocol v1 integrates CodeCarbon as the first energy backend when available.
+
+Public selection:
+
+```text
+--energy auto|off
+```
+
+Energy evidence MUST distinguish:
+
+```text
+hardware_measured
+software_estimated
+unavailable
+failed
+```
+
+Record backend/version, measurement kind, scope, duration, sampling interval, privilege usage,
+CPU energy, accelerator/GPU energy, RAM energy, total energy, and average power where produced.
+
+When privileged hardware counters can improve measurement quality, an interactive CLI MAY request
+explicit user consent. It MUST NOT edit sudoers, store credentials, or silently elevate. Declined or
+non-interactive elevation falls back to the best non-privileged measurement/estimation path or
+reports `unavailable`.
+
+Carbon/geolocation functionality is not required for Technical Cards and MUST NOT silently
+geolocate contributors.
+
+## 27.16 Profiling tooling versus accepted model environments
+
+Profiling MUST NOT silently mutate accepted onboarding environment definitions or historical
+environment evidence.
+
+Additional instrumentation dependencies such as CodeCarbon MUST preserve accepted model-runtime
+dependency versions and be recorded separately as profiling-tooling provenance. Model environment
+fingerprint, torch-dae package identity, profiler implementation version, and profiling-tooling
+identity remain distinct provenance fields.
+
+## 27.17 Identity, privacy, and contributor fields
+
+Technical Card IDs are globally unique and hash-derived. The canonical digest binds at least:
+
+* Technical Card schema version;
+* Model Card ID and SHA-256;
+* checkpoint SHA-256;
+* profiling protocol ID/version;
+* torch-dae package identity;
+* source revision/dirty state when available;
+* hardware-configuration fingerprint;
+* execution-context fingerprint;
+* device/backend;
+* random run nonce.
+
+Measurement values are not part of ID construction. Human IDs SHOULD use
+`tc-<truncated-identity-sha256>` while retaining the full SHA-256.
+
+Hardware-configuration fingerprints MAY include CPU model/architecture/core counts, RAM capacity,
+accelerator vendor/model, and accelerator memory where meaningful. They MUST NOT include hostname,
+username, IP address, serial number, MAC address, machine UUID, credentials, tokens, or home paths.
+
+Execution-context fingerprints extend hardware class with OS/version, Python, PyTorch, torch-dae
+package identity, device/backend, native precision, and CPU thread regime. They represent equivalent
+technical contexts, not unique physical machines.
+
+Contributor display name and GitHub handle are optional explicit fields and never affect technical
+validity, identity, or comparability.
+
+## 27.18 Runtime classification and versioning
+
+Technical Cards MAY be:
+
+```text
+canonical
+modified_runtime
+unknown_runtime
+```
+
+Modified/local torch-dae runs are accepted when internally valid and fully identified, but default
+reference analytics SHOULD restrict to `canonical` unless explicitly broadened.
+
+Profiling distinguishes:
+
+```text
+technical_card_schema_version
+profiling_protocol_version
+profiler_implementation_version
+```
+
+These versions MUST NOT be conflated.
+
+## 27.19 Raw evidence storage
+
+Committed profiling evidence uses:
+
+```text
+technical_cards/
+  <model-id>/
+    <technical-card-id>.json
+    <technical-card-id>.npz
+```
+
+The JSON stores identity, provenance, summaries, limitations, and the raw-array manifest. The `.npz`
+stores bounded, lossless observations and MUST be loadable with pickle disabled.
+
+Raw evidence MAY contain the 50 latency observations per successful condition, bounded host-memory
+samples, bounded accelerator-memory samples, and bounded energy/power samples when exposed.
+
+Large profiler traces, Chrome traces, checkpoint payloads, system dumps, and unbounded logs MUST NOT
+be committed as Technical Card evidence. Protocol v1 uses normal Git for compact assets.
+
+## 27.20 Technical Card top-level contract
+
+Technical Card schema v1 is conceptually:
+
+```text
+schema_version
+technical_card_id
+identity_sha256
+created_at_utc
+
+model_reference
+protocol
+profiler
+run
+contributor
+
+hardware
+software
+device
+execution_context
+
+precision
+input_provenance
+
+architecture
+cold_start
+conditions
+memory
+energy
+
+raw_measurements
+measurement_coverage
+comparability
+limitations
+supersedes
+```
+
+## 27.21 Technical Card validity
+
+A Technical Card is valid only when:
+
+* the referenced Model Card exists and validates;
+* Model Card SHA-256 matches;
+* checkpoint identity/hash matches the Model Card;
+* the profiling protocol is recognized;
+* the public wrapper succeeds on the declared device/backend baseline;
+* raw timing evidence validates against summaries;
+* required hardware/software provenance is present;
+* Technical Card identity recomputes;
+* raw `.npz` SHA-256 and array manifest validate;
+* privacy validation finds no prohibited identifiers.
+
+Energy, FLOP/MAC evidence, accelerator-specific memory details, or optional scaling conditions MAY be
+unavailable. Measurement coverage distinguishes missing evidence from tested unsupported
+conditions.
+
+## 27.22 Campaign result and profile finalization
+
+A Campaign Result is orchestration metadata, not a contributed Technical Card. It records requested,
+detected, attempted, failed, and successful devices plus generated Technical Cards, validation
+outcomes, and finalization/review artifacts.
+
+Profiling is repeatable and MUST NOT reuse or mutate the model-onboarding workflow ID as a new
+lifecycle phase.
+
+The profiler SHALL create an independent managed campaign/run identity and reuse the repository's
+hardened run-manifest, validation, deterministic review-bundle, evidence-invariance, and cleanup
+principles where applicable.
+
+Profile finalization proves the referenced Model Card remained unchanged while validating Technical
+Cards and raw assets. It never promotes Model Card lifecycle.
+
+## 27.23 GitHub contribution and future analytics
+
+Profiling v1 contribution is a normal pull request containing only:
+
+```text
+technical_cards/<model-id>/<technical-card-id>.json
+technical_cards/<model-id>/<technical-card-id>.npz
+```
+
+CI SHALL verify schema, identity digest, raw hash/array manifest, Model Card association, checkpoint,
+protocol, raw/summary consistency, provenance, privacy, duplicate IDs, and supersession references.
+
+Contributors MUST NOT modify the referenced Model Card when adding Technical Cards.
+
+Future strict analytics groups MUST distinguish at least model/checkpoint, protocol compatibility,
+benchmark condition, duration/sample count, batch, precision, device/backend, CPU thread regime, and
+runtime classification.
+
+Default summaries SHOULD emphasize median, IQR, min/max, Technical Card count, and unique
+execution-context count. Repeated cards from one execution context SHOULD first be aggregated within
+that context so one contributor/context cannot dominate cross-platform summaries.
 
 # 28. Implementation sequence
 
-The new project SHOULD be implemented through the following bounded phases.
+Development SHOULD proceed through the following bounded phases.
 
 ## Phase 00 — Repository bootstrap and normative contracts
 
-Deliver:
+Completed repository scaffold, strict schemas, typed contracts, CLI skeleton, environment/checkpoint
+interfaces, tests, CI, and documentation.
 
-* fresh repository scaffold;
-* root control-plane package;
-* project instructions;
-* strict schemas;
-* typed domain models;
-* CLI skeleton;
-* test and quality configuration;
-* canonical skill links;
-* ignored runtime layout.
+## Phase 01 — Runtime infrastructure
 
-No real model integration.
-
-## Phase 01 — Environment and checkpoint core
-
-Deliver:
-
-* environment specifications;
-* fingerprinting;
-* environment manager;
-* root environment CLI;
-* source-installation hierarchy;
-* checkpoint manager;
-* fixture-based integration tests.
+Completed environments, source hierarchy, checkpoint manager, and integration-test foundations.
 
 ## Phase 02 — Skill MVP
 
-Deliver:
-
-* canonical `SKILL.md`;
-* focused reference workflows;
-* report template;
-* model-card template;
-* repository-inspection utilities;
-* environment-resolution protocol;
-* skill evaluations for both agents.
+Completed canonical onboarding skill, evidence workflows, templates, and agent-neutral handoff
+contracts.
 
 ## Phase 03 — PANNs pilot
 
-Complete the three checkpoint-specific PANNs integrations through runtime-verified model cards.
+Completed three checkpoint-specific PANNs integrations through immutable `runtime_verified` Model
+Cards.
 
-## Phase 04 — Model-card presentation
+## Phase 04 — Profiling and Technical Card normative specification
 
-Publish a GitHub Pages view that renders the validated model cards in a concise, inspectable,
-nice-looking rotation/browsing interface without changing their evidence semantics.
+Freeze the v1 evidence model, protocol, storage, privacy/provenance, CLI, contribution, and analytics
+contracts before implementation.
 
-## Phase 05 — Profiling subsystem and card enrichment
+## Phase 05 — Profiling subsystem implementation
 
-Implement generic architectural, inference, memory, and energy profiling, then enrich the PANNs
-model cards with profiling evidence while preserving the runtime-verified claims already established.
+Implement generic Technical Card schemas, deterministic synthetic-input profiling,
+architecture/timing/RAM/device-memory profilers, CodeCarbon integration, compact raw `.npz` evidence,
+campaign orchestration, validation, CLI, and profile finalization.
 
-## Phase 06 — Core stabilization
+## Phase 06 — PANNs profiling campaign
 
-Freeze:
+Exercise the generic profiler on the three accepted PANNs Model Cards across locally available CPU
+and accelerator backends. Validate and contribute the first canonical Technical Cards without
+modifying the Model Cards.
 
-* public API;
-* schemas;
-* environment workflow;
-* skill workflow;
-* onboarding conventions.
+## Phase 07 — Model + Technical Card presentation and analytics
 
-## Phase 07 — Optional model-family expansion
+Build the site locally from validated Model Cards and Technical Cards, including strict
+protocol-aware filtering, robust statistics, and cross-platform comparison. Deploy GitHub Pages only
+after local validation.
 
-Additional model families may be analyzed and integrated later as independent expansion work; they
-are not part of the MVP pilot acceptance criteria.
+## Phase 08 — Core stabilization and optional model-family expansion
 
----
+Stabilize public profiling contracts after the PANNs profiling campaign, then onboard additional
+model families independently.
 
 # 29. Phase 00 acceptance criteria
 
@@ -2326,7 +2761,7 @@ The repository-bootstrap phase is accepted only if:
 16. `.torch-dae/` is fully ignored;
 17. tests, Ruff, mypy, build, and schema validation pass;
 18. documentation reflects this specification;
-19. profiling remains a declared future capability;
+19. profiling v1 is normatively specified as an optional Technical Card capability even while implementation remains pending;
 20. no pilot model implementation has started.
 
 ---
@@ -2335,7 +2770,7 @@ The repository-bootstrap phase is accepted only if:
 
 The following invariants apply throughout development:
 
-1. one model card represents one model–variant–checkpoint tuple;
+1. one Model Card represents one model-variant-checkpoint tuple;
 2. all public audio inputs use `[B,C,T]` plus sample rate;
 3. wrappers own model-specific preprocessing;
 4. `forward()` returns raw differentiable output;
@@ -2349,43 +2784,58 @@ The following invariants apply throughout development:
 12. official package is preferred, then pinned repository, then minimal vendoring;
 13. repository analysis uses primary upstream evidence;
 14. legacy backbone JSON files are not project inputs;
-15. profiling begins only after runtime verification;
-16. unresolved information is represented explicitly rather than rhetorically strengthened.
-17. accepted pre-runtime phase handoffs are committed under `onboarding_reports/`;
-18. `verification_reports/` remains checkpoint-specific runtime evidence only;
-19. temporary onboarding work uses recorded managed workspaces and scoped cleanup;
-20. draft environment resolution is distinct from lifecycle promotion.
-21. accepted environment definitions, not model cards, authorize materialization;
-22. environment verification and checkpoint-runtime verification remain separate evidence;
-23. runtime-verification targets preserve explicit model/checkpoint/environment identity;
-24. final cards may claim verification only by referencing matching hash-addressed evidence.
-25. only passed environment and runtime evidence can promote model-card lifecycle state;
-26. failed environment or runtime evidence remains diagnostic and never authorizes promotion.
-
----
+15. profiling begins only from an accepted `runtime_verified` Model Card;
+16. profiling is optional for model onboarding, acceptance, and release inclusion;
+17. accepted Model Cards are immutable profiling references and are never enriched in place;
+18. one Technical Card represents one model/checkpoint, protocol, device/backend, execution context,
+    and profiling session;
+19. Technical Cards are immutable append-only empirical evidence;
+20. profiling v1 uses deterministic seeded synthetic white noise only;
+21. canonical steady-state conditions use 10 warmups and 50 measured inferences;
+22. raw profiling observations are stored as bounded lossless `.npz` assets plus strict JSON
+    Technical Cards;
+23. host RAM and accelerator-memory evidence retain backend-specific semantics;
+24. energy evidence distinguishes hardware measurement from software estimation and MAY be
+    unavailable without invalidating the Technical Card;
+25. unresolved information is represented explicitly rather than rhetorically strengthened;
+26. accepted pre-runtime phase handoffs are committed under `onboarding_reports/`;
+27. `verification_reports/` remains checkpoint-specific runtime evidence only;
+28. temporary onboarding work uses recorded managed workspaces and scoped cleanup;
+29. draft environment resolution is distinct from lifecycle promotion;
+30. accepted environment definitions, not model cards, authorize materialization;
+31. environment verification and checkpoint-runtime verification remain separate evidence;
+32. runtime-verification targets preserve explicit model/checkpoint/environment identity;
+33. final Model Cards may claim verification only by referencing matching hash-addressed evidence;
+34. only passed environment and runtime evidence can promote Model Card lifecycle state;
+35. failed environment or runtime evidence remains diagnostic and never authorizes promotion;
+36. profiling campaigns use independent managed identities and never advance onboarding lifecycle;
+37. Technical Card contributions never modify their referenced Model Card;
+38. contributor identity is optional and prohibited personal/machine identifiers are never inferred;
+39. analytics aggregate only explicitly compatible profiling conditions by default.
 
 # 31. Specification freeze
 
-The following interfaces are considered frozen for the first implementation cycle:
+The following interfaces are frozen for the profiling implementation cycle:
 
-* checkpoint-specific model cards;
-* model-card lifecycle states;
-* `[B,C,T]` waveform input;
+* checkpoint-specific Model Cards as immutable onboarding evidence;
+* `runtime_verified` as terminal for new Model Card onboarding;
+* schema-1 `profiled`/embedded profiling fields as legacy compatibility until a future major schema
+  migration;
+* `[B,C,T]` waveform input and explicit sample rate;
 * optional `valid_lengths`;
 * automatic resampling with strict opt-out;
-* `from_random()`;
-* `from_pretrained()`;
-* `load_checkpoint()`;
-* `forward()`;
-* `predict_probability()`;
-* `available_embeddings()`;
-* `compute_embedding()`;
-* `CheckpointSpec`;
-* model-specific environments;
-* `EnvironmentManager`;
-* root environment CLI;
-* source-installation priority;
-* licenses as informational metadata;
-* one canonical onboarding skill for Codex and Claude;
-* no legacy backbone dependency;
-* profiling postponed until verified pilot integrations.
+* `from_random()`, `from_pretrained()`, and `load_checkpoint()`;
+* `forward()`, `predict_probability()`, `available_embeddings()`, and `compute_embedding()`;
+* model-specific environments and checkpoint management;
+* Technical Cards as independent immutable profiling evidence;
+* one Technical Card per device/backend profiling session;
+* deterministic seeded white-noise protocol v1 input;
+* canonical batch matrix `[1,2,4,8]`;
+* 10 warmups and 50 measured steady-state inferences per condition;
+* host-RAM profiling and backend-specific accelerator-memory semantics;
+* CodeCarbon as the initial optional energy backend with measured/estimated provenance;
+* compact JSON + lossless `.npz` Technical Card storage;
+* strict compatible-group aggregation for future analytics.
+
+Implementation details not fixed by this specification MAY evolve without changing these evidence
+semantics.

@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Profiling and Technical Card normative specification
+
+- Defined profiling as an optional repeatable evidence workflow outside Model Card onboarding.
+- Defined immutable device-specific Technical Cards plus compact lossless `.npz` raw evidence.
+- Defined seeded white-noise profiling, 10 warmups/50 measurements, batch scaling,
+  minimum-input discovery, host RAM/device-memory observations, optional FLOP/MAC evidence, and
+  CodeCarbon measured/estimated energy provenance.
+- Marked schema-1 `profiled`/embedded Model Card profiling fields as legacy compatibility only.
+
+
 ### Canonical lifecycle finalization and cross-agent review packaging
 
 - Added `scripts/onboarding_handoff.py finalize`, the single canonical end-of-task path. It

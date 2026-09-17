@@ -22,10 +22,10 @@ For a supplied local paper, use
 This extracts only a machine-readable text layer under file, page, and character limits. It does not
 retrieve documents, provide OCR, or turn extracted prose into verified evidence.
 
-Supported modes are `analyze`, `resolve-environment`, `integrate`, `verify`, `card`, and `profile`.
-`integrate` is a workflow mode, not a lifecycle state. The committed lifecycle states remain
-`draft`, `analyzed`, `environment_resolved`, `checkpoint_verified`, `runtime_verified`, and
-`profiled`.
+Supported onboarding modes are `analyze`, `resolve-environment`, `integrate`, `verify`, `card`,
+and a reserved compatibility `profile` entry point. `integrate` is a workflow mode, not a lifecycle
+state. New onboarding terminates at `runtime_verified`; schema-1 `profiled` remains legacy/reserved
+compatibility only.
 
 ## Workflow boundaries
 
@@ -43,8 +43,9 @@ Supported modes are `analyze`, `resolve-environment`, `integrate`, `verify`, `ca
   through the existing environment and checkpoint infrastructure.
 - `card` creates or updates one checkpoint-specific card only from validated evidence and completed
   workflow artifacts.
-- `profile` is reserved. Profiling remains unavailable until a model is `runtime_verified` and a
-  profiling workflow is explicitly implemented and invoked.
+- `profile` is reserved inside the onboarding skill. Profiling v1 is specified as a separate,
+  repeatable Technical Card workflow that starts from an accepted `runtime_verified` Model Card and
+  never mutates that card. The executable profiling workflow is not implemented yet.
 
 Every mode executes only its own scope. No mode adds model dependencies to the root project, commits
 checkpoint binaries, silently begins another mode, or creates a Git commit.
@@ -70,8 +71,8 @@ only through `scripts/onboarding_handoff.py run-manifest create` before any mana
 begins; a run directory left unregistered is unmanaged content that blocks cleanup rather than being
 guessed at. Accepted pre-runtime output is atomically promoted under `onboarding_reports/`, followed
 by the canonical `scripts/onboarding_handoff.py finalize` command, which re-validates accepted
-evidence, runs the required repository gates, runs cleanup, and generates the deterministic external
-review bundle in one call. Default cleanup removes recorded ephemeral workspaces and trial
+evidence, runs the required repository gates, performs cleanup preflight, optionally executes
+explicitly requested cleanup, and generates the deterministic external review bundle in one call. Default cleanup removes recorded ephemeral workspaces and trial
 environments only; reusable caches, materialized environments, checkpoints, and external audit
 bundles remain. External audit outputs are never cleanup targets. Retained diagnostics must be moved
 under `.torch-dae/reports/onboarding/<workflow-id>/`; cleanup writes a durable receipt there before

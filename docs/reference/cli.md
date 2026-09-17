@@ -122,3 +122,22 @@ status, current/requested phase, and cleanup status.
 `torch-dae model verify --target <runtime-target.json> --json [--offline]` executes
 a schema-2 target in its verified model environment before a model card exists.
 See [runtime execution](../runtime-execution.md) for provider and evidence details.
+
+## Planned profiling CLI
+
+Profiling v1 is normatively specified but not implemented in the current CLI.
+
+Planned public surface:
+
+```text
+torch-dae model profile   --model <model-id>   --device <auto|cpu|mps|cuda|cuda:index>   --protocol <protocol-id>   --energy <auto|off>   --output-dir <path>
+
+torch-dae technical-card validate <card>
+torch-dae technical-card inspect <card>
+torch-dae technical-card list
+```
+
+`--device` is planned to be repeatable. Recommended defaults are `--device auto`,
+`--protocol audio-inference-v1`, `--energy auto`, and `--output-dir ./technical_cards`.
+
+These commands must not be presented as executable until implementation lands.

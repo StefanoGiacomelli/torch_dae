@@ -182,3 +182,16 @@ Environment-resolution reports may reference committed verification reports as
 `verification_reports/<card-id>/<report>.json` or environment diagnostics relative to `.torch-dae` as
 `reports/environments/<environment-id>/<fingerprint>/<report>.json`; checkpoint and source report
 paths are not valid environment-promotion references.
+
+## Profiling artifacts are independent
+
+Accepted Model Cards under `model_cards/` are immutable onboarding artifacts. Profiling v1 is
+specified to contribute separate paired assets under:
+
+```text
+technical_cards/<model-id>/<technical-card-id>.json
+technical_cards/<model-id>/<technical-card-id>.npz
+```
+
+Technical Cards reference the accepted Model Card/checkpoint plus protocol, execution context, and
+raw measurement hash. Profiling is optional and does not alter onboarding acceptance.

@@ -21,3 +21,11 @@ The curated surface is recorded in {doc}`../api/index` and
 implementation-module paths remain documented where they make provenance clearer. The registry is
 the only root-level service export. Import tests ensure these namespaces do not load prohibited
 model-runtime packages.
+
+## Profiling evidence boundary
+
+Profiling is an optional subsystem outside Model Card lifecycle. The planned profiling layer will
+consume accepted Model Cards, execute the public wrapper in the appropriate isolated runtime, and
+emit immutable Technical Cards plus compact `.npz` raw observations. Additional profiler
+dependencies such as CodeCarbon must not silently mutate accepted onboarding environment
+definitions.
