@@ -14,11 +14,12 @@ implementation prompt's prohibition on silent geolocation).
 from __future__ import annotations
 
 import abc
+import math
 import platform
 import tempfile
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Generic, TypeVar
+from typing import Generic, SupportsFloat, SupportsIndex, TypeVar
 
 from torch_dae.profiling.contracts import DeviceBackend, EnergyEvidence, EnergyMeasurementKind
 
@@ -30,6 +31,27 @@ T = TypeVar("T")
 # requiring network access. Technical Cards never report CO2 emissions or location.
 _PLACEHOLDER_COUNTRY_ISO_CODE = "USA"
 _DEFAULT_MEASUREMENT_INTERVAL_SECONDS = 1.0
+
+
+def _finite_float_or_none(
+    value: str | SupportsFloat | SupportsIndex | None,
+) -> float | None:
+    """Normalize optional upstream numeric evidence to a finite float.
+
+    CodeCarbon may expose NaN when a hardware counter has no usable samples.
+    Non-finite values must be treated as unavailable evidence rather than
+    allowed to survive until JSON serialization.
+    """
+
+    if value is None:
+        return None
+
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return None
+
+    return numeric if math.isfinite(numeric) else None
 
 
 class EnergyBackend(abc.ABC, Generic[T]):
@@ -171,16 +193,26 @@ class CodeCarbonEnergyBackend(EnergyBackend[T]):
             if hardware_measured
             else EnergyMeasurementKind.SOFTWARE_ESTIMATED
         )
-        cpu_energy = float(data.cpu_energy) if data.cpu_energy else None
-        gpu_energy = float(data.gpu_energy) if data.gpu_energy else None
-        ram_energy = float(data.ram_energy) if data.ram_energy else None
-        total_energy = float(data.energy_consumed) if data.energy_consumed else None
-        duration = float(data.duration) if data.duration else None
+        accelerator_backend_observed = privilege_used or any(
+            token in repr_.lower()
+            for repr_ in hardware_reprs
+            for token in ("gpu", "cuda", "nvidia", "rocm")
+        )
+        cpu_energy = _finite_float_or_none(data.cpu_energy)
+        gpu_energy = _finite_float_or_none(data.gpu_energy)
+        ram_energy = _finite_float_or_none(data.ram_energy)
+        total_energy = _finite_float_or_none(data.energy_consumed)
+        duration = _finite_float_or_none(data.duration)
         average_power = (
-            (total_energy * 1000.0 / (duration / 3600.0)) if total_energy and duration else None
+            total_energy * 1000.0 / (duration / 3600.0)
+            if total_energy is not None and duration is not None and duration > 0.0
+            else None
         )
 
         accelerator_active = device_backend in _ACCELERATOR_BACKENDS
+        if accelerator_active and gpu_energy == 0.0 and not accelerator_backend_observed:
+            gpu_energy = None
+
         unaccounted: list[str] = []
         if accelerator_active and gpu_energy is None:
             unaccounted.append("accelerator")
@@ -209,6 +241,19 @@ class CodeCarbonEnergyBackend(EnergyBackend[T]):
                 f"{device_backend.value} accelerator energy could not be measured by CodeCarbon; "
                 "total_energy_kwh (when present) covers only the components listed as accounted "
                 "for and must not be read as complete run energy."
+            )
+        if cpu_energy is None:
+            limitations.append(
+                "CodeCarbon did not provide a finite CPU energy value for this resource pass."
+            )
+        if ram_energy is None:
+            limitations.append(
+                "CodeCarbon did not provide a finite RAM energy value for this resource pass."
+            )
+        if total_energy is None:
+            limitations.append(
+                "CodeCarbon did not provide a finite aggregate energy value; component-level "
+                "energy evidence is retained where available."
             )
 
         evidence = EnergyEvidence(

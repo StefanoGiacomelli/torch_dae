@@ -194,6 +194,25 @@ def test_codecarbon_powermetrics_marks_privilege_used() -> None:
     assert any("PowerMetrics" in note for note in evidence.limitations)
 
 
+def test_codecarbon_powermetrics_zero_gpu_energy_remains_finite_zero() -> None:
+    backend = CodeCarbonEnergyBackend(allow_privileged_energy=True)
+    tracker = MagicMock()
+    tracker.final_emissions_data = _fake_emissions_data(gpu_energy=0.0)
+    tracker._conf = {"hardware": ["Apple PowerMetrics"]}
+    tracker._hardware = [type("AppleSiliconChip", (), {})()]
+
+    patch_a, patch_b = _patched_codecarbon(tracker)
+    with patch_a, patch_b:
+        _, evidence = backend.measure_block(
+            lambda: "ok",
+            device_backend=DeviceBackend.MPS,
+        )
+
+    assert evidence.accelerator_energy_kwh == 0.0
+    assert evidence.coverage_complete is True
+    assert evidence.unaccounted_components == ()
+
+
 def test_codecarbon_uses_temporary_output_dir() -> None:
     backend = CodeCarbonEnergyBackend(allow_privileged_energy=True)
     tracker = MagicMock()
@@ -218,6 +237,57 @@ def test_codecarbon_uses_temporary_output_dir() -> None:
     _, kwargs = fake_module.OfflineEmissionsTracker.call_args
     assert kwargs["output_dir"]
     assert "torch-dae-codecarbon-" in kwargs["output_dir"]
+
+
+def test_codecarbon_non_finite_cpu_energy_is_unaccounted() -> None:
+    backend = CodeCarbonEnergyBackend(allow_privileged_energy=True)
+    tracker = MagicMock()
+    tracker.final_emissions_data = _fake_emissions_data(
+        cpu_energy=float("nan"),
+        gpu_energy=3e-6,
+        energy_consumed=float("nan"),
+    )
+    tracker._conf = {"hardware": ["Apple PowerMetrics"]}
+    tracker._hardware = [type("AppleSiliconChip", (), {})()]
+
+    patch_a, patch_b = _patched_codecarbon(tracker)
+    with patch_a, patch_b:
+        _, evidence = backend.measure_block(
+            lambda: "ok",
+            device_backend=DeviceBackend.MPS,
+        )
+
+    assert evidence.measurement_kind == EnergyMeasurementKind.HARDWARE_MEASURED
+    assert evidence.cpu_energy_kwh is None
+    assert evidence.total_energy_kwh is None
+    assert evidence.coverage_complete is False
+    assert "cpu" in evidence.unaccounted_components
+    assert any("finite CPU energy" in note for note in evidence.limitations)
+
+
+def test_codecarbon_zero_energy_remains_finite_zero() -> None:
+    backend = CodeCarbonEnergyBackend(allow_privileged_energy=True)
+    tracker = MagicMock()
+    tracker.final_emissions_data = _fake_emissions_data(
+        cpu_energy=0.0,
+        gpu_energy=0.0,
+        ram_energy=0.0,
+        energy_consumed=0.0,
+        duration=1.0,
+    )
+    tracker._conf = {"hardware": ["CPU(Intel RAPL)", "RAM()"]}
+
+    patch_a, patch_b = _patched_codecarbon(tracker)
+    with patch_a, patch_b:
+        _, evidence = backend.measure_block(
+            lambda: "ok",
+            device_backend=DeviceBackend.CPU,
+        )
+
+    assert evidence.cpu_energy_kwh == 0.0
+    assert evidence.ram_energy_kwh == 0.0
+    assert evidence.total_energy_kwh == 0.0
+    assert evidence.coverage_complete is True
 
 
 def test_codecarbon_start_failure_reported_as_failed() -> None:

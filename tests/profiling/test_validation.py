@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from tests.profiling.conftest import build_valid_card
 from torch_dae.profiling.validation import validate_technical_card, validate_technical_card_file
 
@@ -52,6 +54,23 @@ def test_model_card_hash_mismatch(
     result = validate_technical_card(bad, repository_root=repository_root, card_path=card_path)
     assert not result.valid
     assert any("SHA-256 mismatch" in e for e in result.errors)
+
+
+def test_energy_evidence_rejects_non_finite_numeric_values() -> None:
+    from pydantic import ValidationError
+
+    from torch_dae.profiling.contracts import (
+        EnergyEvidence,
+        EnergyMeasurementKind,
+    )
+
+    with pytest.raises(ValidationError, match="must be finite"):
+        EnergyEvidence(
+            measurement_kind=EnergyMeasurementKind.HARDWARE_MEASURED,
+            cpu_energy_kwh=float("nan"),
+            ram_energy_kwh=1e-6,
+            coverage_complete=True,
+        )
 
 
 def test_model_card_status_mismatch(

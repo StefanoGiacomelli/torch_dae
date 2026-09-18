@@ -67,6 +67,16 @@ def validate_technical_card(
     except PrivacyViolation as exc:
         errors.append(f"privacy violation: {exc}")
 
+    if (
+        card.energy.coverage_complete
+        and card.device.backend.value in {"mps", "cuda"}
+        and card.energy.accelerator_energy_kwh is None
+    ):
+        errors.append(
+            "energy coverage_complete=True on an accelerator run requires finite "
+            "accelerator_energy_kwh"
+        )
+
     model_card_path = root / card.model.model_card_path
     if not model_card_path.is_file():
         errors.append(f"referenced Model Card does not exist: {card.model.model_card_path}")

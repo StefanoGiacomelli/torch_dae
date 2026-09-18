@@ -8,6 +8,7 @@ enrich, or lifecycle-promote the referenced Model Card.
 
 from __future__ import annotations
 
+import math
 from enum import StrEnum
 from typing import Annotated, Literal
 
@@ -395,6 +396,21 @@ class EnergyEvidence(StrictBaseModel):
     limitations: tuple[str, ...] = ()
     failure_reason: str | None = None
 
+    @field_validator(
+        "cpu_energy_kwh",
+        "accelerator_energy_kwh",
+        "ram_energy_kwh",
+        "total_energy_kwh",
+        "average_power_watts",
+        "measurement_duration_seconds",
+        "measurement_interval_seconds",
+    )
+    @classmethod
+    def _finite_numeric_evidence(cls, value: float | None) -> float | None:
+        if value is not None and not math.isfinite(value):
+            raise ValueError("energy numeric evidence must be finite when present")
+        return value
+
     @model_validator(mode="after")
     def _kind_consistency(self) -> EnergyEvidence:
         if self.measurement_kind in (
@@ -416,6 +432,8 @@ class EnergyEvidence(StrictBaseModel):
             raise ValueError("failed energy evidence requires failure_reason")
         if self.coverage_complete and self.unaccounted_components:
             raise ValueError("coverage_complete=True must not list unaccounted_components")
+        if self.coverage_complete and (self.cpu_energy_kwh is None or self.ram_energy_kwh is None):
+            raise ValueError("coverage_complete=True requires finite CPU and RAM energy evidence")
         if (
             not self.coverage_complete
             and not self.unaccounted_components
