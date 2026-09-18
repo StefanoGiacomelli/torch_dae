@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -20,6 +21,7 @@ from typing import TYPE_CHECKING, Any, cast
 from uuid import uuid4
 
 from torch_dae.cards.models import ModelCard
+from torch_dae.contracts import REPO_RELATIVE_PATTERN
 from torch_dae.core.checkpoint import CheckpointManager, checkpoint_cache_path
 from torch_dae.environment.fingerprint import (
     LocalPackageProvenance,
@@ -290,6 +292,7 @@ def run_profiling_session(
     python_executable: Path,
     plan: ProfilingRunPlan,
     energy_mode: str,
+    allow_privileged_energy: bool,
     campaign_id: str,
     output_dir: Path,
     content_provenance: LocalPackageProvenance,
@@ -323,7 +326,13 @@ def run_profiling_session(
         "resource_pass_repeats": RESOURCE_PASS_REPEATS,
     }
 
-    energy_backend = cast("EnergyBackend[tuple[str, str, int]]", select_energy_backend(energy_mode))
+    energy_backend = cast(
+        "EnergyBackend[tuple[str, str, int]]",
+        select_energy_backend(
+            energy_mode,
+            allow_privileged_energy=allow_privileged_energy,
+        ),
+    )
     process, pid = _run_worker_subprocess(
         python_executable=python_executable,
         request=request,
@@ -586,6 +595,7 @@ def run_campaign(
     requested_devices: tuple[str, ...],
     energy_mode: str,
     output_dir: Path,
+    allow_privileged_energy: bool = False,
 ) -> tuple[ProfilingCampaignResult, list[DeviceRunOutcome]]:
     """Discover devices, profile every successful one, and assemble a campaign result.
 
@@ -598,17 +608,22 @@ def run_campaign(
 
     root = repository_root.resolve()
     resolved_output_dir = output_dir.resolve()
+    if resolved_output_dir == root:
+        raise ValueError(
+            "profiling output-dir must be a repository-local candidate/workspace directory, "
+            "not the repository root itself"
+        )
     try:
-        resolved_output_dir.relative_to(root)
+        relative_output_dir = resolved_output_dir.relative_to(root).as_posix()
     except ValueError as exc:
         raise ValueError(
             "profiling output-dir must resolve inside the repository root "
             f"{root} (got {resolved_output_dir})"
         ) from exc
-    if resolved_output_dir == root:
+    if re.fullmatch(REPO_RELATIVE_PATTERN, relative_output_dir) is None:
         raise ValueError(
-            "profiling output-dir must be a repository-local candidate/workspace directory, "
-            "not the repository root itself"
+            "profiling output-dir must be representable as a repository-relative evidence path "
+            f"matching {REPO_RELATIVE_PATTERN!r} (got {relative_output_dir!r})"
         )
     canonical_root = technical_cards_root(root).resolve()
     if resolved_output_dir == canonical_root or canonical_root in resolved_output_dir.parents:
@@ -691,6 +706,7 @@ def run_campaign(
             python_executable=resolved.python_executable,
             plan=plan,
             energy_mode=energy_mode,
+            allow_privileged_energy=allow_privileged_energy,
             campaign_id=campaign_id,
             output_dir=resolved_output_dir,
             content_provenance=content_provenance,

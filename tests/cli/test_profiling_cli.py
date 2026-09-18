@@ -35,6 +35,7 @@ def test_model_profile_help() -> None:
     assert "--device" in result.output
     assert "--protocol" in result.output
     assert "--energy" in result.output
+    assert "--allow-privileged-energy" in result.output
     assert "--output-dir" in result.output
 
 
@@ -116,6 +117,29 @@ def test_model_profile_default_output_dir_is_not_canonical() -> None:
     output_dir = mock_run.call_args.kwargs["output_dir"]
     assert output_dir == Path("./candidate_technical_cards")
     assert output_dir.name != "technical_cards"
+
+
+def test_model_profile_propagates_privileged_energy_consent() -> None:
+    runner = CliRunner()
+
+    with patch(
+        "torch_dae.profiling_executor.run_campaign",
+        return_value=(_empty_campaign(), []),
+    ) as mock_run:
+        result = runner.invoke(
+            app,
+            [
+                "model",
+                "profile",
+                "--model",
+                "panns-cnn14-16k-map-0438",
+                "--allow-privileged-energy",
+                "--json",
+            ],
+        )
+
+    assert result.exit_code == 0
+    assert mock_run.call_args.kwargs["allow_privileged_energy"] is True
 
 
 def test_technical_card_list_reports_no_official_cards_yet(repo_root: object) -> None:

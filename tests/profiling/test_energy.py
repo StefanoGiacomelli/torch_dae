@@ -45,12 +45,37 @@ def _fake_emissions_data(**overrides: object) -> MagicMock:
 
 
 def test_codecarbon_unavailable_when_not_installed() -> None:
-    backend = CodeCarbonEnergyBackend()
+    backend = CodeCarbonEnergyBackend(allow_privileged_energy=True)
     with patch("torch_dae.profiling.energy.codecarbon_available", return_value=(False, None)):
         result, evidence = backend.measure_block(lambda: "ok", device_backend=DeviceBackend.CPU)
     assert result == "ok"
     assert evidence.measurement_kind == EnergyMeasurementKind.UNAVAILABLE
     assert evidence.coverage_complete is False
+
+
+def test_codecarbon_apple_silicon_requires_explicit_privilege_consent() -> None:
+    backend = CodeCarbonEnergyBackend()
+    fake_module = MagicMock()
+
+    with (
+        patch(
+            "torch_dae.profiling.energy.codecarbon_available",
+            return_value=(True, "2.8.4"),
+        ),
+        patch("torch_dae.profiling.energy.platform.system", return_value="Darwin"),
+        patch("torch_dae.profiling.energy.platform.machine", return_value="arm64"),
+        patch.dict("sys.modules", {"codecarbon": fake_module}),
+    ):
+        result, evidence = backend.measure_block(
+            lambda: "ok",
+            device_backend=DeviceBackend.MPS,
+        )
+
+    assert result == "ok"
+    assert evidence.measurement_kind == EnergyMeasurementKind.UNAVAILABLE
+    assert evidence.privilege_used is False
+    assert any("not explicitly authorized" in note for note in evidence.limitations)
+    fake_module.OfflineEmissionsTracker.assert_not_called()
 
 
 def _patched_codecarbon(tracker: MagicMock):
@@ -66,7 +91,7 @@ def test_codecarbon_software_estimated_path_cpu_only_is_complete() -> None:
     """A CPU-only run (no accelerator in play) whose CPU/RAM are both estimated has complete
     coverage -- there is no unmeasured active component to flag."""
 
-    backend = CodeCarbonEnergyBackend()
+    backend = CodeCarbonEnergyBackend(allow_privileged_energy=True)
     tracker = MagicMock()
     tracker.final_emissions_data = _fake_emissions_data()
     tracker._conf = {"hardware": ["CPU(Apple M4 Pro > 85W [generic])", "RAM()"]}
@@ -85,7 +110,7 @@ def test_codecarbon_software_estimated_path_cpu_only_is_complete() -> None:
 
 
 def test_codecarbon_hardware_measured_path_cpu_only_is_complete() -> None:
-    backend = CodeCarbonEnergyBackend()
+    backend = CodeCarbonEnergyBackend(allow_privileged_energy=True)
     tracker = MagicMock()
     tracker.final_emissions_data = _fake_emissions_data()
     tracker._conf = {"hardware": ["CPU(Intel RAPL)", "RAM()"]}
@@ -103,7 +128,7 @@ def test_codecarbon_mps_run_has_incomplete_coverage() -> None:
     """CodeCarbon cannot measure Apple MPS accelerator energy: an MPS run must be marked
     incomplete and must not present its CPU+RAM total as if it were the full run's energy."""
 
-    backend = CodeCarbonEnergyBackend()
+    backend = CodeCarbonEnergyBackend(allow_privileged_energy=True)
     tracker = MagicMock()
     tracker.final_emissions_data = _fake_emissions_data(gpu_energy=0.0)
     tracker._conf = {"hardware": ["CPU(Apple M4 Pro > 85W [generic])", "RAM()"]}
@@ -119,7 +144,7 @@ def test_codecarbon_mps_run_has_incomplete_coverage() -> None:
 
 
 def test_codecarbon_cuda_run_with_measured_gpu_energy_is_complete() -> None:
-    backend = CodeCarbonEnergyBackend()
+    backend = CodeCarbonEnergyBackend(allow_privileged_energy=True)
     tracker = MagicMock()
     tracker.final_emissions_data = _fake_emissions_data(gpu_energy=3e-6)
     tracker._conf = {"hardware": ["CPU(Intel RAPL)", "GPU(NVIDIA)", "RAM()"]}
@@ -136,7 +161,7 @@ def test_codecarbon_cuda_run_without_measured_gpu_energy_is_incomplete() -> None
     """A mocked CUDA run where CodeCarbon reports no GPU energy (e.g. unsupported card) must
     also be flagged incomplete, exactly like the MPS case."""
 
-    backend = CodeCarbonEnergyBackend()
+    backend = CodeCarbonEnergyBackend(allow_privileged_energy=True)
     tracker = MagicMock()
     tracker.final_emissions_data = _fake_emissions_data(gpu_energy=0.0)
     tracker._conf = {"hardware": ["CPU(Intel RAPL)", "RAM()"]}
@@ -149,8 +174,54 @@ def test_codecarbon_cuda_run_without_measured_gpu_energy_is_incomplete() -> None
     assert "accelerator" in evidence.unaccounted_components
 
 
+def test_codecarbon_powermetrics_marks_privilege_used() -> None:
+    backend = CodeCarbonEnergyBackend(allow_privileged_energy=True)
+    tracker = MagicMock()
+    tracker.final_emissions_data = _fake_emissions_data(gpu_energy=3e-6)
+    tracker._conf = {"hardware": ["Apple PowerMetrics"]}
+    tracker._hardware = [type("AppleSiliconChip", (), {})()]
+
+    patch_a, patch_b = _patched_codecarbon(tracker)
+    with patch_a, patch_b:
+        _, evidence = backend.measure_block(
+            lambda: "ok",
+            device_backend=DeviceBackend.MPS,
+        )
+
+    assert evidence.measurement_kind == EnergyMeasurementKind.HARDWARE_MEASURED
+    assert evidence.privilege_used is True
+    assert evidence.accelerator_energy_kwh == pytest.approx(3e-6)
+    assert any("PowerMetrics" in note for note in evidence.limitations)
+
+
+def test_codecarbon_uses_temporary_output_dir() -> None:
+    backend = CodeCarbonEnergyBackend(allow_privileged_energy=True)
+    tracker = MagicMock()
+    tracker.final_emissions_data = _fake_emissions_data()
+    tracker._conf = {"hardware": ["CPU(Intel RAPL)", "RAM()"]}
+
+    fake_module = MagicMock()
+    fake_module.OfflineEmissionsTracker.return_value = tracker
+
+    with (
+        patch(
+            "torch_dae.profiling.energy.codecarbon_available",
+            return_value=(True, "2.8.4"),
+        ),
+        patch.dict("sys.modules", {"codecarbon": fake_module}),
+    ):
+        backend.measure_block(
+            lambda: "ok",
+            device_backend=DeviceBackend.CPU,
+        )
+
+    _, kwargs = fake_module.OfflineEmissionsTracker.call_args
+    assert kwargs["output_dir"]
+    assert "torch-dae-codecarbon-" in kwargs["output_dir"]
+
+
 def test_codecarbon_start_failure_reported_as_failed() -> None:
-    backend = CodeCarbonEnergyBackend()
+    backend = CodeCarbonEnergyBackend(allow_privileged_energy=True)
     tracker = MagicMock()
     tracker.start.side_effect = RuntimeError("boom")
     patch_a, patch_b = _patched_codecarbon(tracker)
@@ -166,7 +237,7 @@ def test_codecarbon_start_failure_reported_as_failed() -> None:
 def test_codecarbon_never_sets_geolocation_fields() -> None:
     # OfflineEmissionsTracker must be constructed with an explicit country code and never call
     # the network geo-lookup path; asserting the call kwargs is the unit-level proxy for that.
-    backend = CodeCarbonEnergyBackend()
+    backend = CodeCarbonEnergyBackend(allow_privileged_energy=True)
     tracker = MagicMock()
     tracker.final_emissions_data = _fake_emissions_data()
     tracker._conf = {"hardware": []}

@@ -17,6 +17,11 @@ always candidate evidence under a repository-local candidate/workspace path of y
 (`--output-dir`) until it is independently reviewed and promoted into
 `technical_cards/<model-id>/`; this implementation never performs that promotion itself.
 
+Privileged hardware counters are opt-in. In particular, Apple PowerMetrics may require local
+`sudo` authorization through CodeCarbon; the CLI permits that path only when
+`--allow-privileged-energy` is supplied. CodeCarbon working files are confined to a temporary
+directory and are not persisted in the repository.
+
 See:
 
 - {doc}`protocol` for measurement methodology;

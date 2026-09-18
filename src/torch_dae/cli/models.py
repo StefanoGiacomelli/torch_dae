@@ -19,6 +19,13 @@ def profile(
     device: Annotated[list[str] | None, typer.Option("--device")] = None,
     protocol: Annotated[str, typer.Option("--protocol")] = "audio-inference-v1",
     energy: Annotated[str, typer.Option("--energy")] = "auto",
+    allow_privileged_energy: Annotated[
+        bool,
+        typer.Option(
+            "--allow-privileged-energy",
+            help="Permit a platform energy backend to request local privileged hardware counters.",
+        ),
+    ] = False,
     output_dir: Annotated[Path, typer.Option("--output-dir")] = Path("./candidate_technical_cards"),
     json_output: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
@@ -28,7 +35,9 @@ def profile(
     to a repository-local candidate/workspace path (default: `./candidate_technical_cards`). The
     repository root, canonical `technical_cards/` tree, its descendants, and paths resolving
     outside the repository are rejected. Profiling never mutates the Model Card; promotion into
-    the canonical tree is a separate, human-reviewed operation.
+    the canonical tree is a separate, human-reviewed operation. On platforms where CodeCarbon
+    requires privileged hardware counters (for example Apple PowerMetrics), privilege is permitted
+    only when `--allow-privileged-energy` is explicitly supplied.
     """
 
     device = device or ["auto"]
@@ -49,6 +58,7 @@ def profile(
             requested_devices=tuple(device),
             energy_mode=energy,
             output_dir=output_dir,
+            allow_privileged_energy=allow_privileged_energy,
         )
     except Exception as exc:
         payload = {"status": "error", "error": str(exc)}

@@ -25,6 +25,11 @@ def test_run_campaign_accepts_default_candidate_directory(tmp_path: Path) -> Non
 
 def test_run_campaign_accepts_another_repository_local_directory(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError, match="model card not found"):
+        _invoke(repository_root=tmp_path, output_dir=tmp_path / "profiling_candidates")
+
+
+def test_run_campaign_rejects_hidden_leading_dot_output_directory(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="repository-relative evidence path"):
         _invoke(repository_root=tmp_path, output_dir=tmp_path / ".torch-dae/profiling-candidates")
 
 

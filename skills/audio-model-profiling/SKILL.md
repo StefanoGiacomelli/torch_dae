@@ -65,15 +65,15 @@ torch-dae model profile --model <card-id> --device auto --protocol audio-inferen
 `--output-dir` **must** resolve to a candidate/workspace path inside the repository and must never
 be the repository root or its official `technical_cards/` tree (including descendants). Use a
 dedicated candidate workspace (for example
-`.torch-dae/profiling/<campaign-id>/` or a clearly-named `candidate_technical_cards/` directory)
+`profiling_candidates/<campaign-id>/` or a clearly-named `candidate_technical_cards/` directory)
 so generated evidence is reviewable before any later, separate promotion decision. Promotion into
 `technical_cards/<model-id>/` is explicitly out of scope for this skill.
 
 If CodeCarbon can only use hardware-backed measurement through a privileged path (for example
 Apple `powermetrics` under `sudo`), do not invoke it silently. Ask the user for explicit consent
-first, describing exactly what will run; if declined or running non-interactively, proceed with
-the best non-privileged path and record the resulting `software_estimated` (or `unavailable`)
-energy classification honestly rather than blocking the rest of the campaign.
+first, describing exactly what will run. When consent is granted, add
+`--allow-privileged-energy`; otherwise omit that flag and record the resulting non-privileged
+`software_estimated` or `unavailable` classification honestly rather than blocking the campaign.
 
 Report, per attempted device: whether it passed its smoke test, which conditions succeeded,
 which were explicitly `unsupported` (with reason), and the empirical minimum-input search

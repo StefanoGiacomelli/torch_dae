@@ -24,7 +24,8 @@ torch-dae checkpoint info-spec --spec <checkpoint-spec.json> [--json]
 
 torch-dae model verify --target <runtime-target.json> [--offline] [--json]
 torch-dae model profile --model <card-id> [--device auto|cpu|mps|cuda|cuda:<index> ...] \
-  [--protocol audio-inference-v1] [--energy auto|off] [--output-dir ./candidate_technical_cards] [--json]
+  [--protocol audio-inference-v1] [--energy auto|off] [--allow-privileged-energy] \
+  [--output-dir ./candidate_technical_cards] [--json]
 
 torch-dae technical-card validate <technical-card.json> [--json]
 torch-dae technical-card inspect <technical-card.json>
@@ -48,6 +49,9 @@ paths are rejected before profiling side effects. Profiling never mutates the Mo
 candidate promotion is a separate, later step. `--energy auto` requires the root
 `profiling` optional dependency group (`uv sync --extra profiling`, adding CodeCarbon and
 `psutil`); without it, energy evidence is reported as `unavailable` rather than failing the run.
+On platforms where CodeCarbon requires privileged local hardware counters, such as Apple
+PowerMetrics, the privileged path is permitted only with explicit `--allow-privileged-energy`;
+otherwise profiling continues with non-privileged energy evidence.
 
 `env preflight` is card-independent and network-free. It validates active local-wheel
 `Requires-Dist` requirements against packages reachable from the accepted environment lock and

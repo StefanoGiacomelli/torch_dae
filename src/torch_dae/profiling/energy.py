@@ -14,6 +14,8 @@ implementation prompt's prohibition on silent geolocation).
 from __future__ import annotations
 
 import abc
+import platform
+import tempfile
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Generic, TypeVar
@@ -69,15 +71,19 @@ class CodeCarbonEnergyBackend(EnergyBackend[T]):
     """``--energy auto``: CodeCarbon-backed measurement/estimation without geolocation.
 
     Classifies evidence as ``hardware_measured`` when CodeCarbon's selected hardware backend is
-    not a generic constant-TDP fallback, otherwise ``software_estimated``. Never invokes
-    privileged measurement paths (e.g. Apple ``powermetrics``) on its own; privileged elevation is
-    handled only by an explicit, separately-gated interactive step (Section 24).
+    not a generic constant-TDP fallback, otherwise ``software_estimated``. On Apple Silicon,
+    CodeCarbon 2.x may use the privileged ``powermetrics`` backend; torch-dae permits that path
+    only when the caller has explicitly authorized privileged energy measurement (Section 24).
     """
 
     def __init__(
-        self, *, measurement_interval_seconds: float = _DEFAULT_MEASUREMENT_INTERVAL_SECONDS
+        self,
+        *,
+        measurement_interval_seconds: float = _DEFAULT_MEASUREMENT_INTERVAL_SECONDS,
+        allow_privileged_energy: bool = False,
     ) -> None:
         self._measurement_interval_seconds = measurement_interval_seconds
+        self._allow_privileged_energy = allow_privileged_energy
 
     def measure_block(
         self, block: Callable[[], T], *, device_backend: DeviceBackend
@@ -90,42 +96,75 @@ class CodeCarbonEnergyBackend(EnergyBackend[T]):
                 limitations=("CodeCarbon is not installed in the root profiling environment.",),
             )
 
-        from codecarbon import OfflineEmissionsTracker
-
-        tracker = OfflineEmissionsTracker(
-            country_iso_code=_PLACEHOLDER_COUNTRY_ISO_CODE,
-            measure_power_secs=self._measurement_interval_seconds,
-            save_to_file=False,
-            save_to_api=False,
-            save_to_logger=False,
-            log_level="error",
-            allow_multiple_runs=True,
-        )
-        try:
-            tracker.start()
-        except Exception as exc:  # pragma: no cover - defensive; codecarbon internals vary
+        apple_silicon = platform.system() == "Darwin" and platform.machine().lower() in {
+            "arm64",
+            "aarch64",
+        }
+        if apple_silicon and not self._allow_privileged_energy:
             result = block()
             return result, EnergyEvidence(
-                measurement_kind=EnergyMeasurementKind.FAILED,
+                measurement_kind=EnergyMeasurementKind.UNAVAILABLE,
                 codecarbon_version=version,
-                failure_reason=f"tracker.start() failed: {type(exc).__name__}: {exc}",
+                limitations=(
+                    "Apple Silicon hardware energy measurement through CodeCarbon may invoke "
+                    "privileged powermetrics; privileged energy measurement was not explicitly "
+                    "authorized for this run.",
+                ),
             )
 
-        result = block()
+        from codecarbon import OfflineEmissionsTracker
 
-        try:
-            tracker.stop()
-        except Exception as exc:  # pragma: no cover - defensive; codecarbon internals vary
-            return result, EnergyEvidence(
-                measurement_kind=EnergyMeasurementKind.FAILED,
-                codecarbon_version=version,
-                failure_reason=f"tracker.stop() failed: {type(exc).__name__}: {exc}",
+        with tempfile.TemporaryDirectory(prefix="torch-dae-codecarbon-") as tracker_output_dir:
+            tracker = OfflineEmissionsTracker(
+                country_iso_code=_PLACEHOLDER_COUNTRY_ISO_CODE,
+                measure_power_secs=self._measurement_interval_seconds,
+                save_to_file=False,
+                save_to_api=False,
+                save_to_logger=False,
+                log_level="error",
+                allow_multiple_runs=True,
+                output_dir=tracker_output_dir,
+            )
+            try:
+                tracker.start()
+            except Exception as exc:  # pragma: no cover - defensive; codecarbon internals vary
+                result = block()
+                return result, EnergyEvidence(
+                    measurement_kind=EnergyMeasurementKind.FAILED,
+                    codecarbon_version=version,
+                    failure_reason=f"tracker.start() failed: {type(exc).__name__}: {exc}",
+                )
+
+            result = block()
+
+            try:
+                tracker.stop()
+            except Exception as exc:  # pragma: no cover - defensive; codecarbon internals vary
+                return result, EnergyEvidence(
+                    measurement_kind=EnergyMeasurementKind.FAILED,
+                    codecarbon_version=version,
+                    failure_reason=f"tracker.stop() failed: {type(exc).__name__}: {exc}",
+                )
+
+            data = tracker.final_emissions_data
+            hardware_reprs = tuple(str(item) for item in tracker._conf.get("hardware", ()))
+            hardware_objects_raw = getattr(tracker, "_hardware", ())
+            hardware_objects = (
+                tuple(hardware_objects_raw)
+                if isinstance(hardware_objects_raw, (list, tuple))
+                else ()
             )
 
-        data = tracker.final_emissions_data
-        hardware_reprs = tuple(str(item) for item in tracker._conf.get("hardware", ()))
-        hardware_measured = bool(hardware_reprs) and not any(
-            "generic" in repr_ or repr_.startswith("CPU(Constant") for repr_ in hardware_reprs
+        privilege_used = any(
+            type(item).__name__ == "AppleSiliconChip" or "powermetrics" in str(item).lower()
+            for item in hardware_objects
+        ) or any("powermetrics" in repr_.lower() for repr_ in hardware_reprs)
+
+        hardware_measured = privilege_used or (
+            bool(hardware_reprs)
+            and not any(
+                "generic" in repr_ or repr_.startswith("CPU(Constant") for repr_ in hardware_reprs
+            )
         )
         kind = (
             EnergyMeasurementKind.HARDWARE_MEASURED
@@ -159,6 +198,12 @@ class CodeCarbonEnergyBackend(EnergyBackend[T]):
             if kind == EnergyMeasurementKind.SOFTWARE_ESTIMATED
             else ()
         )
+        if privilege_used:
+            limitations.append(
+                "CodeCarbon selected Apple PowerMetrics; local sudo privilege was used for "
+                "hardware-counter access. torch-dae does not read, store, or persist the sudo "
+                "credential."
+            )
         if accelerator_active and gpu_energy is None:
             limitations.append(
                 f"{device_backend.value} accelerator energy could not be measured by CodeCarbon; "
@@ -180,7 +225,7 @@ class CodeCarbonEnergyBackend(EnergyBackend[T]):
                 "wall-clock duration of the isolated resource-pass subprocess, including model "
                 "construction and checkpoint loading overhead; not scoped to individual inferences"
             ),
-            privilege_used=False,
+            privilege_used=privilege_used,
             coverage_complete=coverage_complete,
             unaccounted_components=tuple(unaccounted),
             limitations=tuple(limitations),
@@ -188,11 +233,13 @@ class CodeCarbonEnergyBackend(EnergyBackend[T]):
         return result, evidence
 
 
-def select_energy_backend(mode: str) -> EnergyBackend[object]:
+def select_energy_backend(
+    mode: str, *, allow_privileged_energy: bool = False
+) -> EnergyBackend[object]:
     """Return the backend for `--energy auto|off`."""
 
     if mode == "off":
         return OffEnergyBackend()
     if mode == "auto":
-        return CodeCarbonEnergyBackend()
+        return CodeCarbonEnergyBackend(allow_privileged_energy=allow_privileged_energy)
     raise ValueError(f"unknown energy mode {mode!r}; expected 'auto' or 'off'")
