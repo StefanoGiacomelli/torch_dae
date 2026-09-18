@@ -21,14 +21,33 @@ torch-dae checkpoint remove <card-id>
 torch-dae checkpoint resolve --spec <checkpoint-spec.json> [--offline] [--json]
 torch-dae checkpoint ensure-spec --spec <checkpoint-spec.json> [--offline] [--maximum-bytes N] [--json]
 torch-dae checkpoint info-spec --spec <checkpoint-spec.json> [--json]
+
+torch-dae model verify --target <runtime-target.json> [--offline] [--json]
+torch-dae model profile --model <card-id> [--device auto|cpu|mps|cuda|cuda:<index> ...] \
+  [--protocol audio-inference-v1] [--energy auto|off] [--output-dir ./candidate_technical_cards] [--json]
+
+torch-dae technical-card validate <technical-card.json> [--json]
+torch-dae technical-card inspect <technical-card.json>
+torch-dae technical-card list [--json]
 ```
 
 The `--spec` commands are card-independent. `resolve` is metadata-only, `ensure-spec` uses the same
 canonical manager primitive as card-based `ensure`, and `info-spec` inspects authority/cache state
 without network access.
 
-Run `uv run torch-dae <group> --help` for option details. Model inspection and verification CLI
-entries are unavailable-feature placeholders in this release.
+Run `uv run torch-dae <group> --help` for option details. `model inspect` remains an
+unavailable-feature placeholder in this release; `model verify` and `model profile` are
+implemented.
+
+`model profile` implements Profiling v1 (`docs/profiling/protocol.md`). It requires the target
+Model Card to be `runtime_verified`, materializes/verifies its accepted environment, smoke-tests
+every requested device, and writes candidate Technical Card JSON/`.npz` evidence under
+`--output-dir`. That path must resolve to a candidate/workspace directory inside the repository;
+the repository root, official `technical_cards/` tree, descendants of that tree, and external
+paths are rejected before profiling side effects. Profiling never mutates the Model Card;
+candidate promotion is a separate, later step. `--energy auto` requires the root
+`profiling` optional dependency group (`uv sync --extra profiling`, adding CodeCarbon and
+`psutil`); without it, energy evidence is reported as `unavailable` rather than failing the run.
 
 `env preflight` is card-independent and network-free. It validates active local-wheel
 `Requires-Dist` requirements against packages reachable from the accepted environment lock and
@@ -122,22 +141,3 @@ status, current/requested phase, and cleanup status.
 `torch-dae model verify --target <runtime-target.json> --json [--offline]` executes
 a schema-2 target in its verified model environment before a model card exists.
 See [runtime execution](../runtime-execution.md) for provider and evidence details.
-
-## Planned profiling CLI
-
-Profiling v1 is normatively specified but not implemented in the current CLI.
-
-Planned public surface:
-
-```text
-torch-dae model profile   --model <model-id>   --device <auto|cpu|mps|cuda|cuda:index>   --protocol <protocol-id>   --energy <auto|off>   --output-dir <path>
-
-torch-dae technical-card validate <card>
-torch-dae technical-card inspect <card>
-torch-dae technical-card list
-```
-
-`--device` is planned to be repeatable. Recommended defaults are `--device auto`,
-`--protocol audio-inference-v1`, `--energy auto`, and `--output-dir ./technical_cards`.
-
-These commands must not be presented as executable until implementation lands.

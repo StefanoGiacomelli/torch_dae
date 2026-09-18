@@ -114,11 +114,12 @@ def test_license_citation_and_contribution_files(repo_root: Path) -> None:
 
     contribution = (repo_root / "CONTRIBUTING.md").read_text()
     for value in (
-        "uv sync --all-groups",
+        "uv sync --python 3.11 --all-groups --extra profiling --frozen",
         "ruff format --check",
         "mypy src scripts",
         "pytest",
         "generate_schemas.py",
+        "generate_profiling_schema.py --check",
         "validate_repository.py",
         "validate_skill_artifacts.py",
         "model-specific runtime dependencies",

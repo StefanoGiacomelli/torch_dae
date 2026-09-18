@@ -5,11 +5,14 @@ checkpoint-specific identity, reproducibility, and the model-agnostic root contr
 
 ## Development setup
 
-Install [uv](https://docs.astral.sh/uv/) and synchronize all development groups:
+Install [uv](https://docs.astral.sh/uv/) and synchronize the canonical development environment:
 
 ```bash
-uv sync --all-groups
+uv sync --python 3.11 --all-groups --extra profiling --frozen
 ```
+
+The `profiling` extra is root control-plane tooling (`numpy`, `psutil`, and CodeCarbon), not a
+model-runtime dependency.
 
 Do not add PyTorch, TorchAudio, Transformers, TensorFlow, JAX, librosa, checkpoints, or other
 model-specific runtime dependencies to the root project. Declare real model dependencies only in a
@@ -21,21 +24,21 @@ environment subsystem.
 Run formatting, linting, and strict typing:
 
 ```bash
-uv run ruff format --check
-uv run ruff check
-uv run mypy src scripts
+uv run --python 3.11 --all-groups --extra profiling --frozen ruff format --check
+uv run --python 3.11 --all-groups --extra profiling --frozen ruff check
+uv run --python 3.11 --all-groups --extra profiling --frozen mypy src scripts
 ```
 
 Run tests and the local coverage gates:
 
 ```bash
 mkdir -p .torch-dae
-uv run pytest -q \
+uv run --python 3.11 --all-groups --extra profiling --frozen pytest -q \
   --cov=torch_dae \
   --cov-branch \
   --cov-report=term-missing \
   --cov-report=json:.torch-dae/coverage.json
-uv run python scripts/check_coverage.py \
+uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/check_coverage.py \
   .torch-dae/coverage.json \
   --min-line 85 \
   --min-branch 70
@@ -44,10 +47,10 @@ uv run python scripts/check_coverage.py \
 Generate and validate schemas, then run both repository validators:
 
 ```bash
-uv run python scripts/generate_schemas.py
-uv run python scripts/generate_schemas.py --check
-uv run python scripts/validate_repository.py
-uv run python skills/audio-model-onboarding/scripts/validate_skill_artifacts.py . --json
+uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/generate_schemas.py --check
+uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/generate_profiling_schema.py --check
+uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/validate_repository.py
+uv run --python 3.11 --all-groups --extra profiling --frozen python skills/audio-model-onboarding/scripts/validate_skill_artifacts.py . --json
 ```
 
 Build the documentation with warnings treated as errors:
@@ -103,8 +106,12 @@ publication is manual. Both workflows use OIDC Trusted Publishing and reuse a si
 
 ## Profiling evidence
 
-Accepted Model Cards are immutable. Once profiling v1 is implemented, performance evidence is
-contributed only as paired `technical_cards/<model-id>/<technical-card-id>.json` and `.npz` assets.
+Accepted Model Cards are immutable. Performance evidence (`torch-dae model profile`) is
+contributed only as paired `technical_cards/<model-id>/<technical-card-id>.json` and `.npz` assets,
+produced with `torch-dae model profile` and checked with
+`torch-dae technical-card validate`. A profiling run never writes to `technical_cards/` directly;
+candidate evidence lands under an explicit `--output-dir` and is promoted into the official tree
+only after independent review.
 
-Do not hand-author Technical Cards before the generator/validator exists, and never modify the
-referenced Model Card in a profiling contribution.
+Do not hand-author Technical Cards, and never modify the referenced Model Card in a profiling
+contribution.

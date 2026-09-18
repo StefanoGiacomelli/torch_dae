@@ -4,6 +4,42 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Profiling v1 implementation
+
+- Added CodeCarbon (`>=2.8.0,<3`) and `psutil` (`>=6,<7`) as an explicit, reproducible root `uv`
+  `profiling` optional-dependency group (`uv sync --extra profiling`); resolved
+  `codecarbon==2.8.4`, `psutil==6.1.1`. Neither dependency is installed into any accepted
+  model-runtime environment.
+- Implemented the Profiling v1 subsystem under `src/torch_dae/profiling/`: strict typed
+  contracts for Technical Cards, hash-derived identity (measurement-value-free), deterministic
+  seeded white-noise synthetic input, the timing/statistics engine (10 warmups / 50 measured
+  observations, recomputable summaries), the empirical minimum-input search (halving/doubling plus
+  bisection, with an explicit downward-sweep monotonicity check), privacy-safe hardware and
+  execution-context fingerprints, a real `EnergyBackend` abstraction with a geolocation-free
+  `CodeCarbonEnergyBackend`, host-RAM sampling, CUDA/MPS accelerator-memory evidence, raw
+  lossless `.npz` assets (no pickle), and strict Technical Card validation.
+- Added `src/torch_dae/profiling_worker.py` (executes inside the model's own materialized
+  environment) and `src/torch_dae/profiling_executor.py` (root-side campaign orchestration and
+  Technical Card assembly), mirroring the existing `runtime_worker`/`runtime_executor` isolation
+  pattern.
+- Added CLI: `torch-dae model profile` and `torch-dae technical-card validate|inspect|list`.
+- Added the `skills/audio-model-profiling` skill (plan/profile/validate) as the canonical,
+  non-onboarding entry point for profiling work.
+- Candidate Technical Card evidence is never written into the official `technical_cards/` tree by
+  this implementation; promotion remains a separate, later, human-reviewed step.
+- Discovered and fixed a checkpoint-cache interaction: `CheckpointManager.ensure_checkpoint`'s
+  strict specification-fingerprint cache check can force a network re-download of an
+  already-correct cached checkpoint payload whenever that fingerprint has legitimately drifted
+  since the checkpoint was first acquired, rewriting `checkpoint-materialization.json` with fresh
+  non-deterministic provenance (a new timestamp and command-log references) and invalidating the
+  byte-pinned local cross-check that already-accepted `verification_reports/*.json` perform
+  against it. `torch_dae.profiling_executor._resolve_checkpoint_read_only` now reuses an
+  already-hash-valid cached payload read-only, without going through that cache-mutating path, and
+  falls back to the manager only for a genuine first-time acquisition (regression test:
+  `tests/test_profiling_checkpoint_reuse.py`). No committed file was affected by the earlier
+  interaction; see the final review report for the residual local-only impact this caused before
+  the fix landed.
+
 ### Profiling and Technical Card normative specification
 
 - Defined profiling as an optional repeatable evidence workflow outside Model Card onboarding.

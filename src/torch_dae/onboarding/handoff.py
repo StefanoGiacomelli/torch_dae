@@ -1511,9 +1511,7 @@ def finalize_workflow(
         if workflow.current_accepted_phase is not None
         else None
     )
-    accepted_reference = next(
-        item for item in workflow.accepted_phase_paths if item.phase == phase
-    )
+    accepted_reference = next(item for item in workflow.accepted_phase_paths if item.phase == phase)
     accepted_handoff_path = _resolve_artifact_path(
         repository_root,
         workflow_id,

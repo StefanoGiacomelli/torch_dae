@@ -54,25 +54,27 @@ One model card always describes exactly one model family, variant, and checkpoin
 - No pretrained checkpoint payload or checkpoint-specific model card is redistributed by the
   repository; supported checkpoint payloads are acquired through the checkpoint-management subsystem.
 - `model inspect` remains an explicit unavailable-feature placeholder.
-- Profiling v1 and Technical Cards are normatively specified but not implemented yet. Profiling is
-  optional and begins only from an accepted `runtime_verified` Model Card.
+- Candidate Technical Cards produced by `torch-dae model profile` are not automatically promoted
+  into the repository's official `technical_cards/` tree; promotion is a separate, later,
+  human-reviewed step.
 
 ## Profiling and Technical Cards
 
 `torch-dae` defines an optional profiling evidence layer independent from model onboarding. An
 accepted checkpoint-specific Model Card remains the immutable scientific/runtime identity of the
-supported model. Profiling campaigns will emit one immutable **Technical Card** per successfully
-profiled device/backend plus compact, lossless raw measurements; profiling never rewrites the Model
-Card.
+supported model. `torch-dae model profile` emits one immutable candidate **Technical Card** per
+successfully profiled device/backend plus compact, lossless raw `.npz` measurements; profiling
+never rewrites the Model Card.
 
-Profiling v1 is dataset-independent and uses deterministic seeded white noise only. It is specified
-to measure architecture, cold/steady-state latency, throughput, host RAM, accelerator memory where
-available, and CodeCarbon-backed energy measurement or estimation when supported. Multiple users
-may append Technical Cards for the same Model Card so later analytics can compare compatible
-hardware/software execution contexts without changing onboarding evidence.
+Profiling v1 is dataset-independent and uses deterministic seeded white noise only. It measures
+architecture, cold/steady-state latency, throughput, host RAM, accelerator memory where available,
+and CodeCarbon-backed energy measurement or estimation when supported (`uv sync --extra profiling`
+installs CodeCarbon/`psutil` for the root control plane only). Multiple users may append Technical
+Cards for the same Model Card so later analytics can compare compatible hardware/software execution
+contexts without changing onboarding evidence.
 
-The planned CLI and normative protocol are documented under
-[`docs/profiling/`](docs/profiling/overview.md).
+The CLI and normative protocol are documented under
+[`docs/profiling/`](docs/profiling/overview.md); see also the `skills/audio-model-profiling` skill.
 
 ## Architecture
 
@@ -224,10 +226,12 @@ workflows:
 - `verify`: controlled acquisition and runtime verification for one selected model/checkpoint.
 - `card`: checkpoint-specific model-card generation from validated evidence and artifacts.
 
-`profile` remains a reserved compatibility entry point inside the onboarding skill. Profiling v1 is
-specified as an independent, repeatable Technical Card workflow and is not implemented yet. Agent
-workflows are not one-shot CLI commands and must not be confused with the control-plane commands
-above. See the
+`profile` remains a reserved compatibility entry point inside the onboarding skill; it never
+executes profiling itself. Profiling v1 is an independent, repeatable Technical Card workflow
+implemented by the separate [`skills/audio-model-profiling`](skills/audio-model-profiling/SKILL.md)
+skill and the `torch-dae model profile` / `torch-dae technical-card` CLI commands. Agent workflows
+are not one-shot CLI commands and must not be confused with the control-plane commands above. See
+the
 [skill guide](docs/model-onboarding-skill.md), [artifact guide](docs/onboarding-artifacts.md), and
 [canonical templates](skills/audio-model-onboarding/templates/README.md).
 
@@ -317,16 +321,21 @@ The `.agents/` and `.claude/` skill entries are public relative symlinks to the 
 ## Development and validation
 
 ```bash
-uv sync --all-groups
-uv run ruff format --check
-uv run ruff check
-uv run mypy src scripts
-uv run pytest
-uv run python scripts/generate_schemas.py --check
-uv run python scripts/check_worktree_patch.py --json
-uv run python scripts/validate_repository.py
-uv run python skills/audio-model-onboarding/scripts/validate_skill_artifacts.py . --json
+uv sync --python 3.11 --all-groups --extra profiling --frozen
+uv run --python 3.11 --all-groups --extra profiling --frozen ruff format --check
+uv run --python 3.11 --all-groups --extra profiling --frozen ruff check
+uv run --python 3.11 --all-groups --extra profiling --frozen mypy src scripts
+uv run --python 3.11 --all-groups --extra profiling --frozen pytest
+uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/generate_schemas.py --check
+uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/generate_profiling_schema.py --check
+uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/check_worktree_patch.py --json
+uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/validate_repository.py
+uv run --python 3.11 --all-groups --extra profiling --frozen python skills/audio-model-onboarding/scripts/validate_skill_artifacts.py . --json
 ```
+
+The `profiling` extra installs root control-plane tooling (`numpy`, `psutil`, and CodeCarbon), not
+model-runtime dependencies. The complete validation matrix is in
+[`docs/development/testing.md`](docs/development/testing.md).
 
 Run coverage with the same local thresholds as CI:
 
@@ -349,14 +358,18 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution and pull-request expecta
 
 The completed PANNs onboarding work terminates at immutable `runtime_verified` Model Cards.
 
-The next development sequence is:
+Profiling v1 and its Technical Card contracts are implemented. The next development sequence is:
 
-1. implement the profiling and Technical Card contracts defined in `project_spec.md`;
-2. profile the accepted PANNs Model Cards on locally supported CPU/accelerator backends;
-3. validate and contribute the first canonical Technical Cards;
-4. build the local-first Model Card + Technical Card presentation/analytics site;
-5. publish the coordinated repository/documentation/package update through the protected GitHub
+1. finalize and commit the Profiling v1 implementation;
+2. rerun the three PANNs profiling campaigns from that clean committed implementation;
+3. independently review the newly generated candidate Technical Cards;
+4. promote only approved new cards into `technical_cards/<model-id>/`;
+5. build the local-first Model Card + Technical Card presentation/analytics site;
+6. publish the coordinated repository/documentation/package update through the protected GitHub
    pull-request workflow.
+
+The nine pre-closure PANNs dogfood cards under `candidate_technical_cards/` are historical evidence
+only. They must remain unmodified and must never be promoted.
 
 Profiling is optional for model acceptance and may be repeated indefinitely by different
 contributors and execution contexts.

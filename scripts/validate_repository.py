@@ -29,6 +29,7 @@ from torch_dae.core.checkpoint import (
 from torch_dae.core.embeddings import EmbeddingSpec
 from torch_dae.core.registry import ModelCardRegistry
 from torch_dae.environment.results import (
+    ArtifactEvidence,
     EnvironmentDependencyClosureResult,
     EnvironmentLifecycleState,
     EnvironmentMaterializationResult,
@@ -101,6 +102,51 @@ def fail(message: str, failures: list[str]) -> None:
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+_IGNORED_RUNTIME_CACHE_PREFIX = ".torch-dae/"
+
+
+def _resolve_checkpoint_materialization_evidence(
+    root: Path, evidence: ArtifactEvidence
+) -> Path | None:
+    """Resolve the file whose bytes must match ``evidence.sha256``.
+
+    ``evidence.path`` is recorded, at runtime-verification time, as wherever the checkpoint
+    materialization record happened to live -- which is legitimately the ignored, mutable
+    ``.torch-dae/`` runtime cache (Section: "Treat `.torch-dae/` as ignored runtime state").
+    That cache is explicitly allowed to be refreshed (e.g. by a later, unrelated checkpoint
+    acquisition for the same checkpoint id/hash) without invalidating already-accepted evidence;
+    only the *checkpoint payload* SHA-256 is the durable contract, not the cache-record's
+    incidental fields (acquisition timestamp, per-request log correlation ids, etc.).
+
+    So: first try the literal ``evidence.path`` (fast path, exact match). If that path is under
+    the ignored runtime-cache prefix and no longer matches, fall back to any committed, tracked
+    "checkpoint-materializations" evidence copy (written under `onboarding_reports/**/` at
+    acceptance time) whose bytes match ``evidence.sha256`` -- these are durable, hash-addressed,
+    and never expected to change. This keeps `.torch-dae/` cache churn from being able to fail
+    repository validation, without weakening the guarantee: either way, the resolved file's bytes
+    must still hash to the pinned ``evidence.sha256``.
+    """
+
+    literal_path = (root / evidence.path).resolve()
+    try:
+        literal_path.relative_to(root)
+    except ValueError:
+        return None
+    if literal_path.is_file() and _sha256(literal_path) == evidence.sha256:
+        return literal_path
+
+    if not evidence.path.startswith(_IGNORED_RUNTIME_CACHE_PREFIX):
+        return None
+
+    onboarding_reports_root = root / "onboarding_reports"
+    if not onboarding_reports_root.is_dir():
+        return None
+    for candidate in sorted(onboarding_reports_root.glob("**/checkpoint-materializations/*.json")):
+        if candidate.is_file() and _sha256(candidate) == evidence.sha256:
+            return candidate
+    return None
 
 
 def git_ignored(path: str) -> bool:
@@ -235,8 +281,7 @@ def _wrapper_symbol_exists(root: Path, entry_point: str) -> bool:
     # Packages may intentionally expose runtime-heavy public symbols lazily
     # through module-level __getattr__, while keeping root imports lightweight.
     has_module_getattr = any(
-        isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-        and node.name == "__getattr__"
+        isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == "__getattr__"
         for node in tree.body
     )
     if not has_module_getattr:
@@ -504,10 +549,11 @@ def validate_integration_artifacts(root: Path, failures: list[str]) -> None:
                         failures,
                     )
                 else:
-                    materialization_path = (root / evidence.path).resolve()
+                    materialization_path = _resolve_checkpoint_materialization_evidence(
+                        root, evidence
+                    )
                     try:
-                        materialization_path.relative_to(root)
-                        if _sha256(materialization_path) != evidence.sha256:
+                        if materialization_path is None:
                             raise ValueError("materialization evidence SHA-256 mismatch")
                         materialization = CheckpointMaterializationRecord.model_validate_json(
                             materialization_path.read_text()
@@ -622,10 +668,9 @@ def validate_integration_artifacts(root: Path, failures: list[str]) -> None:
                     failures,
                 )
             else:
-                materialization_path = (root / evidence.path).resolve()
+                materialization_path = _resolve_checkpoint_materialization_evidence(root, evidence)
                 try:
-                    materialization_path.relative_to(root)
-                    if _sha256(materialization_path) != evidence.sha256:
+                    if materialization_path is None:
                         raise ValueError("materialization evidence SHA-256 mismatch")
                     materialization = CheckpointMaterializationRecord.model_validate_json(
                         materialization_path.read_text()

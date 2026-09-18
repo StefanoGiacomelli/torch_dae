@@ -32,14 +32,23 @@ def test_twine_accepts_core_metadata_25(tmp_path):
 def test_validation_commands_pin_interpreter_per_invocation(repo_root):
     workflow = (repo_root / ".github/workflows/ci.yml").read_text()
     matrix = workflow.split("  tests:")[1].split("  coverage:")[0]
-    assert "uv run --python ${{ matrix.python-version }} --all-groups --frozen pytest -q" in matrix
+    assert (
+        "uv run --python ${{ matrix.python-version }} --all-groups --extra profiling --frozen "
+        "pytest -q" in matrix
+    )
     assert "uv run python" not in matrix
-    for path in (
-        "docs/development/testing.md",
-        "skills/audio-model-onboarding/references/workflow-overview.md",
-    ):
-        text = (repo_root / path).read_text()
-        assert "uv run --python 3.11 --all-groups --frozen" in text
+
+    # `docs/development/testing.md` documents the root control-plane sequence, which now also
+    # exercises the Profiling v1 `profiling` optional-dependency group (numpy/psutil/codecarbon);
+    # `skills/audio-model-onboarding/references/workflow-overview.md` documents the onboarding
+    # skill's own sequence, which never touches profiling and keeps the plain invocation.
+    testing_doc = (repo_root / "docs/development/testing.md").read_text()
+    assert "uv run --python 3.11 --all-groups --extra profiling --frozen" in testing_doc
+
+    onboarding_doc = (
+        repo_root / "skills/audio-model-onboarding/references/workflow-overview.md"
+    ).read_text()
+    assert "uv run --python 3.11 --all-groups --frozen" in onboarding_doc
 
 
 def test_local_wheel_builder_uses_active_control_plane_python(tmp_path, monkeypatch):

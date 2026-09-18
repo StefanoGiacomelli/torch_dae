@@ -54,6 +54,11 @@ docs = [
   "myst-parser>=4,<5",
   "sphinx>=8.2,<9",
 ]
+profiling = [
+  "codecarbon>=2.8.0,<3",
+  "numpy>=1.26,<2.4",
+  "psutil>=6,<7",
+]
 
 [dependency-groups]
 dev = [
@@ -103,6 +108,17 @@ mypy_path = ["src"]
 module = ["jsonschema", "jsonschema.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["psutil", "psutil.*", "codecarbon", "codecarbon.*"]
+ignore_missing_imports = true
+
+# The profiling control-plane extra installs NumPy in the root environment, while the accepted
+# PANNs runtime must also remain type-checkable when NumPy is absent there. Its guarded imports
+# therefore require environment-dependent import-not-found ignores.
+[[tool.mypy.overrides]]
+module = ["torch_dae.models.panns.model"]
+warn_unused_ignores = false
+
 [tool.coverage.run]
 branch = true
 source = ["torch_dae"]
@@ -110,6 +126,9 @@ omit = [
   "src/torch_dae/models/panns/_vendor/*",
   "src/torch_dae/models/panns/model.py",
   "src/torch_dae/models/panns/verification.py",
+  "src/torch_dae/profiling_worker.py",
+  "src/torch_dae/profiling/architecture_worker.py",
+  "src/torch_dae/profiling/timing_worker.py",
 ]
 
 [tool.coverage.report]

@@ -3,16 +3,24 @@
 Run the complete local quality and validation sequence:
 
 ```bash
-uv sync --python 3.11 --all-groups --frozen
-uv run --python 3.11 --all-groups --frozen pytest -q
-uv run --python 3.11 --all-groups --frozen ruff format --check
-uv run --python 3.11 --all-groups --frozen ruff check
-uv run --python 3.11 --all-groups --frozen mypy src scripts
-uv run --python 3.11 --all-groups --frozen python scripts/generate_schemas.py --check
-uv run --python 3.11 --all-groups --frozen python scripts/check_worktree_patch.py --json
-uv run --python 3.11 --all-groups --frozen python scripts/validate_repository.py
-uv run --python 3.11 --all-groups --frozen python skills/audio-model-onboarding/scripts/validate_skill_artifacts.py . --json
+uv sync --python 3.11 --all-groups --extra profiling --frozen
+uv run --python 3.11 --all-groups --extra profiling --frozen pytest -q
+uv run --python 3.11 --all-groups --extra profiling --frozen ruff format --check
+uv run --python 3.11 --all-groups --extra profiling --frozen ruff check
+uv run --python 3.11 --all-groups --extra profiling --frozen mypy src scripts
+uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/generate_schemas.py --check
+uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/generate_profiling_schema.py --check
+uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/check_worktree_patch.py --json
+uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/validate_repository.py
+uv run --python 3.11 --all-groups --extra profiling --frozen python skills/audio-model-onboarding/scripts/validate_skill_artifacts.py . --json
 ```
+
+The `profiling` extra (`numpy`, `psutil`, `codecarbon`) is a root optional-dependency group for the
+Profiling v1 control-plane tooling itself -- not a model-runtime dependency -- so it is safe to
+install alongside the base control plane; see `pyproject.toml`'s `[project.optional-dependencies]`.
+Omitting `--extra profiling` will fail to collect `tests/profiling/`, `tests/cli/test_profiling_cli.py`,
+and `tests/test_profiling_checkpoint_reuse.py`, and will change `mypy`'s treatment of the profiling
+modules' `numpy` imports.
 
 `git diff --check` checks tracked unstaged changes, but it does not inspect new untracked files.
 `check_worktree_patch.py` builds the complete `git add -A` equivalent in a temporary index and runs

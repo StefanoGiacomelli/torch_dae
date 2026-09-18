@@ -11,8 +11,11 @@ Profiling v1 uses deterministic seeded white noise only and measures public-wrap
 architecture, cold/steady-state latency, throughput, host RAM, accelerator memory where available,
 and CodeCarbon-backed energy measurement/estimation when supported.
 
-The executable profiler is not implemented yet. This documentation defines the contract the
-implementation must satisfy.
+The executable profiler is implemented (`torch-dae model profile`; see
+`src/torch_dae/profiling/` and `src/torch_dae/profiling_executor.py`). Real profiling output is
+always candidate evidence under a repository-local candidate/workspace path of your choosing
+(`--output-dir`) until it is independently reviewed and promoted into
+`technical_cards/<model-id>/`; this implementation never performs that promotion itself.
 
 See:
 

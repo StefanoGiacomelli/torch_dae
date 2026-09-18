@@ -185,8 +185,8 @@ paths are not valid environment-promotion references.
 
 ## Profiling artifacts are independent
 
-Accepted Model Cards under `model_cards/` are immutable onboarding artifacts. Profiling v1 is
-specified to contribute separate paired assets under:
+Accepted Model Cards under `model_cards/` are immutable onboarding artifacts. Profiling v1
+(`torch-dae model profile`) contributes separate paired assets under:
 
 ```text
 technical_cards/<model-id>/<technical-card-id>.json
@@ -194,4 +194,7 @@ technical_cards/<model-id>/<technical-card-id>.npz
 ```
 
 Technical Cards reference the accepted Model Card/checkpoint plus protocol, execution context, and
-raw measurement hash. Profiling is optional and does not alter onboarding acceptance.
+raw measurement hash. Profiling is optional and does not alter onboarding acceptance. A profiling
+run never writes into `technical_cards/` itself; candidate evidence is written under an explicit
+`--output-dir` and promoted only after independent review (`src/torch_dae/profiling_executor.py`,
+`src/torch_dae/profiling/validation.py`).

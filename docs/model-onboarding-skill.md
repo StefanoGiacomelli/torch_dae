@@ -43,9 +43,10 @@ compatibility only.
   through the existing environment and checkpoint infrastructure.
 - `card` creates or updates one checkpoint-specific card only from validated evidence and completed
   workflow artifacts.
-- `profile` is reserved inside the onboarding skill. Profiling v1 is specified as a separate,
-  repeatable Technical Card workflow that starts from an accepted `runtime_verified` Model Card and
-  never mutates that card. The executable profiling workflow is not implemented yet.
+- `profile` is reserved inside the onboarding skill and never executes profiling itself. Profiling
+  v1 is a separate, repeatable Technical Card workflow implemented by the
+  `skills/audio-model-profiling` skill and `torch-dae model profile`; it starts from an accepted
+  `runtime_verified` Model Card and never mutates that card.
 
 Every mode executes only its own scope. No mode adds model dependencies to the root project, commits
 checkpoint binaries, silently begins another mode, or creates a Git commit.
