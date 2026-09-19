@@ -1,44 +1,54 @@
-# torch-dae: an AI skill-based framework for Audio Embedding Models
+# torch-dae
 
-**Status:** pre-release · **Version:** 0.1.0
+**Reproducible audio-model integration, runtime verification, embedding access, and profiling.**
 
-`torch-dae` is a model-agnostic control plane and AI skill-based workflow for
-evidence-grounded onboarding and integration of audio embedding models. It records source
-provenance, checkpoint identity, isolated environment resolution, wrapper behavior, embeddings,
-and runtime observations as explicit, validated artifacts.
+`torch-dae` turns an explicit audio-model implementation and checkpoint into a validated,
+repository-backed integration. It keeps model identity, runtime environment, checkpoint acquisition,
+waveform/output contracts, embeddings, verification evidence, and optional profiling evidence
+separate but connected.
 
-The source tree includes three completed PANNs AudioSet integrations with accepted
-runtime-verification evidence and immutable checkpoint-specific Model Cards. Profiling is specified
-as a separate optional Technical Card evidence layer and is not part of Model Card onboarding.
+The repository currently ships three accepted PANNs / AudioSet integrations. All three have
+`runtime_verified` Model Cards and canonical Profiling v1 Technical Cards for CPU and Apple MPS
+execution contexts.
 
-## Installation
+## Start here
 
-Install the package-index distribution:
+If you are new to the project, read these pages in order:
 
-```bash
-pip install torch-deepaudioembedding
-torch-dae --help
-```
+1. {doc}`getting-started/installation` — choose between the lightweight package install and the full
+   repository workspace.
+2. {doc}`getting-started/mental-model` — understand the control plane, model runtimes, Model Cards,
+   and Technical Cards.
+3. {doc}`getting-started/quickstart` — inspect the accepted registry and choose a workflow.
 
-Or install the source checkout:
+## Choose a workflow
 
-```bash
-git clone https://github.com/StefanoGiacomelli/torch_dae.git
-cd torch_dae
-uv sync --all-groups
-uv run torch-dae --help
-```
+**I want to use a supported model**
+: Start with {doc}`models/index`, then follow {doc}`tutorials/panns-inference` for the currently
+  supported PANNs models.
 
-Start with the {doc}`getting-started/quickstart`, then follow the
-{doc}`tutorials/audio-model-onboarding` for the skill workflow. Package users can consult the
-hand-curated {doc}`api/index`; contributors should begin with
-{doc}`development/architecture` and {doc}`development/contributing`.
+**I want to extract embeddings**
+: Read {doc}`user-guide/model-execution` and {doc}`user-guide/embeddings`.
+
+**I want to understand a Model Card or Technical Card**
+: Read {doc}`user-guide/model-cards` and {doc}`profiling/technical-cards`.
+
+**I want to integrate a new model**
+: Start with {doc}`skill/overview` and the end-to-end {doc}`tutorials/audio-model-onboarding`.
+
+**I want to profile an accepted model**
+: Start with {doc}`profiling/overview`; the profiling workflow is independent from model onboarding.
+
+**I want to contribute to or release the framework**
+: Use {doc}`development/architecture`, {doc}`development/contributing`, and
+  {doc}`development/releasing`.
 
 ```{toctree}
 :maxdepth: 2
 :caption: Getting started
 
 getting-started/installation
+getting-started/mental-model
 getting-started/quickstart
 ```
 
@@ -46,20 +56,23 @@ getting-started/quickstart
 :maxdepth: 2
 :caption: Tutorials
 
+tutorials/panns-inference
 tutorials/audio-model-onboarding
 tutorials/agent-interaction
 ```
 
 ```{toctree}
 :maxdepth: 2
-:caption: User guide
+:caption: Models and user guide
 
+models/index
+models/panns-runtime
+user-guide/model-execution
+user-guide/embeddings
 user-guide/model-registry
 user-guide/environments
 user-guide/checkpoints
-user-guide/embeddings
 user-guide/model-cards
-models/panns
 ```
 
 ```{toctree}
@@ -74,7 +87,7 @@ profiling/contributing
 
 ```{toctree}
 :maxdepth: 2
-:caption: Skill reference
+:caption: AI skills
 
 skill/overview
 ```
@@ -84,6 +97,15 @@ skill/overview
 :caption: API reference
 
 api/index
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: Reference
+
+reference/cli
+reference/schemas
+reference/lifecycle
 ```
 
 ```{toctree}
@@ -98,15 +120,6 @@ development/releasing
 ```
 
 ```{toctree}
-:maxdepth: 2
-:caption: Reference
-
-reference/cli
-reference/schemas
-reference/lifecycle
-```
-
-```{toctree}
 :hidden:
 
 checkpoint-management
@@ -117,38 +130,31 @@ onboarding-artifacts
 onboarding-evidence-policy
 ```
 
+## Project principles
+
+`torch-dae` uses a few deliberate constraints that explain much of the architecture:
+
+- **One Model Card identifies one model-family / variant / checkpoint tuple.** A card is not a vague
+  family-level description.
+- **The root package is a control plane, not a universal model environment.** Heavy model-runtime
+  dependencies remain isolated.
+- **Checkpoint acquisition is explicit.** Model construction never silently downloads weights.
+- **Model support and model profiling are separate.** A `runtime_verified` Model Card may have zero
+  or many Technical Cards.
+- **Unsupported behavior fails explicitly.** The wrapper does not silently resample, downmix, pad,
+  crop, normalize, or reinterpret tensors unless that behavior is part of the accepted contract.
+
 ## Citation
 
-Cite the software entry in the repository's
-[CITATION.cff](https://github.com/StefanoGiacomelli/torch_dae/blob/main/CITATION.cff) when citing the
-repository or package. Also cite the IEEE ISCC paper (DOI
-[`10.1109/ISCC65549.2025.11326439`](https://doi.org/10.1109/ISCC65549.2025.11326439)) when
-discussing the framework design, standardization rationale, or deployment methodology.
+Cite the software using the repository's `CITATION.cff`. When discussing the framework design,
+standardization rationale, or deployment methodology, also cite the IEEE ISCC paper:
+DOI `10.1109/ISCC65549.2025.11326439`.
 
 ## Funding
 
 Research project: *Methods of Computational Auditory Scene Analysis and Synthesis supporting
-eXtended and Immersive Reality Services*.
+extended and immersive reality services*.
 
-Research activities were mainly funded under the Ministerial Decree (DM) 118/2023, Mission 4,
-Component 1, Investment 4.1 of the National Recovery and Resilience Plan (PNRR) – “PNRR Research” –
+Research activities were mainly funded under Ministerial Decree (DM) 118/2023, Mission 4,
+Component 1, Investment 4.1 of the National Recovery and Resilience Plan (PNRR) — “PNRR Research” —
 CUP: E11I23000100001.
-
-## Contact
-
-**Stefano Giacomelli**<br>
-ICT - Ph.D. Candidate<br>
-Department of Information Engineering, Computer Science and Mathematics (DISIM)<br>
-University of L'Aquila, Italy
-
-<img
-  src="https://phdict.disim.univaq.it/wp-content/uploads/2024/06/logo-univaq-disim-2-2-768x283.png"
-  alt="University of L'Aquila — DISIM"
-  width="420"
-/>
-
-[Email](mailto:stefano.giacomelli@graduate.univaq.it) ·
-[GitHub](https://github.com/StefanoGiacomelli) ·
-[ORCID](https://orcid.org/0009-0009-0438-1748) ·
-[Google Scholar](https://scholar.google.com/citations?user=l-n0hl4AAAAJ&hl=en) ·
-[LinkedIn](https://www.linkedin.com/in/stefano-giacomelli-811654135)

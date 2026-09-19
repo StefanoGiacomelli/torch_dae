@@ -137,30 +137,27 @@ def test_readme_badges_sections_and_public_status(repo_root: Path) -> None:
     for badge in (
         "actions/workflows/ci.yml/badge.svg",
         "codecov.io",
+        "img.shields.io/pypi/v/torch-deepaudioembedding",
         "3.11%20%7C%203.12",
         "Apache--2.0",
         "readthedocs.org/projects/torch-dae/badge/?version=stable",
         "zenodo.org/badge/DOI/10.5281/zenodo.21641390.svg",
-        "status-release",
-        "version-v0.1.0",
     ):
         assert badge in text
     sections = [
-        "Project status",
-        "Overview",
-        "Current capabilities",
-        "Not available yet",
-        "Architecture",
+        "What you can do",
+        "Supported models",
         "Installation",
         "Quick start",
-        "Illustrative model-wrapper usage",
-        "Available CLI commands",
-        "Audio-model-onboarding skill",
-        "Copy-paste agent request",
-        "Expected agent response",
+        "Model execution at a glance",
+        "Embeddings",
+        "Profiling a supported model",
+        "Model Cards and Technical Cards",
+        "Integrating a new model with the skill",
         "Repository layout",
-        "Development and validation",
-        "Roadmap",
+        "Documentation",
+        "Development",
+        "Current boundaries",
         "Funding",
         "Citations",
         "License",
@@ -173,37 +170,41 @@ def test_readme_badges_sections_and_public_status(repo_root: Path) -> None:
     assert 'src="graphics/embedding_pipeline.png"' in text
     assert "raw.githubusercontent.com" not in text
     assert "from torch_dae import ModelCardRegistry" in text
-    assert "from torch_dae.core import ModelCardRegistry" not in text
-    assert 'registry.get_model_class("model_name")' in text
     assert "model.compute_embedding(" in text
-    assert "model.predict_probability(" in text
-    assert "torch-dae is pre-release research software" not in text
+    assert "output.tensors[\"probabilities\"]" in text
+    assert "pip install torch-deepaudioembedding" in text
+
+    normalized_text = " ".join(text.split())
+    for value in (
+        "panns-cnn14-16k-map-0438",
+        "panns-resnet38-map-0434",
+        "panns-wavegram-logmel-cnn14-map-0439",
+        "runtime_verified",
+        "technical_cards/<model-id>/",
+        "panns-official-post-fc1-embedding",
+        "uv run torch-dae card list",
+        "uv run torch-dae technical-card list",
+        "uv run torch-dae model profile",
+        "audio-model-onboarding",
+        "MODE: analyze",
+    ):
+        assert value in text or value in normalized_text
 
     graphic = repo_root / "graphics/embedding_pipeline.png"
     assert graphic.is_file()
     assert graphic.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
 
-    assert "pip install torch-deepaudioembedding" in text
-
-    normalized_text = " ".join(text.split())
-    assert "production PANNs adapters" in normalized_text
-    assert "No pretrained checkpoint payload or checkpoint-specific model card" in normalized_text
-    assert "uv run torch-dae card list" in text
-    assert "uv run torch-dae env create" in text
-    assert "uv run torch-dae checkpoint ensure" in text
     for value in (
         "0009-0009-0438-1748",
         "10.5281/zenodo.21641390",
         "10.5281/zenodo.21641391",
-        "phdict.disim.univaq.it/wp-content/uploads/2024/06/logo-univaq-disim-2-2-768x283.png",
         "stefano.giacomelli@graduate.univaq.it",
-        "DM 118/2023",
+        "DM) 118/2023",
         "Mission 4",
         "Component 1",
         "Investment 4.1",
         "PNRR Research",
         "CUP: E11I23000100001",
-        "@software{giacomelli2026torch_dae",
         "10.1109/ISCC65549.2025.11326439",
     ):
         assert value in text

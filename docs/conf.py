@@ -29,7 +29,14 @@ source_suffix = {
     ".md": "markdown",
 }
 master_doc = "index"
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = [
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    # Immutable onboarding evidence. The current user-facing PANNs guide is
+    # ``models/panns-runtime.md``.
+    "models/panns.md",
+]
 autosummary_generate = False
 autodoc_typehints = "none"
 napoleon_google_docstring = False
