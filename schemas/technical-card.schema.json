@@ -1,0 +1,1945 @@
+{
+  "$defs": {
+    "AcceleratorMemoryEvidence": {
+      "additionalProperties": false,
+      "description": "Device-native accelerator memory evidence (CUDA allocator or MPS surfaces).",
+      "properties": {
+        "backend": {
+          "$ref": "#/$defs/DeviceBackend"
+        },
+        "cuda_current_allocated_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cuda Current Allocated Bytes"
+        },
+        "cuda_current_reserved_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cuda Current Reserved Bytes"
+        },
+        "cuda_peak_allocated_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cuda Peak Allocated Bytes"
+        },
+        "cuda_peak_reserved_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cuda Peak Reserved Bytes"
+        },
+        "mps_current_allocated_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mps Current Allocated Bytes"
+        },
+        "mps_driver_allocated_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mps Driver Allocated Bytes"
+        },
+        "unified_memory_note": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unified Memory Note"
+        }
+      },
+      "required": [
+        "backend"
+      ],
+      "title": "AcceleratorMemoryEvidence",
+      "type": "object"
+    },
+    "ArchitectureEvidence": {
+      "additionalProperties": false,
+      "description": "Mandatory + optional architecture profiling evidence (Section 18).",
+      "properties": {
+        "buffer_bytes": {
+          "title": "Buffer Bytes",
+          "type": "integer"
+        },
+        "counting_backend": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Counting Backend"
+        },
+        "counting_backend_version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Counting Backend Version"
+        },
+        "counting_convention": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Counting Convention"
+        },
+        "dtype_distribution": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Dtype Distribution",
+          "type": "object"
+        },
+        "flops": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Flops"
+        },
+        "flops_macs_status": {
+          "$ref": "#/$defs/ArchitectureEvidenceStatus",
+          "default": "unavailable"
+        },
+        "macs": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Macs"
+        },
+        "module_count": {
+          "title": "Module Count",
+          "type": "integer"
+        },
+        "non_trainable_parameters": {
+          "title": "Non Trainable Parameters",
+          "type": "integer"
+        },
+        "parameter_bytes": {
+          "title": "Parameter Bytes",
+          "type": "integer"
+        },
+        "state_dict_tensor_bytes": {
+          "title": "State Dict Tensor Bytes",
+          "type": "integer"
+        },
+        "total_parameters": {
+          "title": "Total Parameters",
+          "type": "integer"
+        },
+        "trainable_parameters": {
+          "title": "Trainable Parameters",
+          "type": "integer"
+        },
+        "unaccounted_operations": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Unaccounted Operations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "total_parameters",
+        "trainable_parameters",
+        "non_trainable_parameters",
+        "parameter_bytes",
+        "buffer_bytes",
+        "state_dict_tensor_bytes",
+        "dtype_distribution",
+        "module_count"
+      ],
+      "title": "ArchitectureEvidence",
+      "type": "object"
+    },
+    "ArchitectureEvidenceStatus": {
+      "description": "Coverage status for architecture/FLOPs evidence (Section 18).",
+      "enum": [
+        "complete",
+        "partial",
+        "unavailable"
+      ],
+      "minLength": 1,
+      "title": "ArchitectureEvidenceStatus",
+      "type": "string"
+    },
+    "ColdStartEvidence": {
+      "additionalProperties": false,
+      "description": "Cold initialization/loading evidence, kept separate from steady-state timing.",
+      "properties": {
+        "checkpoint_loading_ns": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Checkpoint Loading Ns"
+        },
+        "device_placement_ns": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Device Placement Ns"
+        },
+        "first_inference_ns": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "First Inference Ns"
+        },
+        "initialization_ns": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Initialization Ns"
+        },
+        "limitations": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        }
+      },
+      "title": "ColdStartEvidence",
+      "type": "object"
+    },
+    "ComparabilityMetadata": {
+      "additionalProperties": false,
+      "description": "Explicit metadata for future cross-card comparability analytics.",
+      "properties": {
+        "comparable_only_within_same_execution_context": {
+          "default": true,
+          "title": "Comparable Only Within Same Execution Context",
+          "type": "boolean"
+        },
+        "execution_context_fingerprint": {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Context Fingerprint",
+          "type": "string"
+        },
+        "protocol_id": {
+          "const": "audio-inference-v1",
+          "minLength": 1,
+          "title": "Protocol Id",
+          "type": "string"
+        },
+        "protocol_version": {
+          "minLength": 1,
+          "title": "Protocol Version",
+          "type": "string"
+        },
+        "runtime_classification": {
+          "$ref": "#/$defs/RuntimeClassification"
+        }
+      },
+      "required": [
+        "protocol_id",
+        "protocol_version",
+        "execution_context_fingerprint",
+        "runtime_classification"
+      ],
+      "title": "ComparabilityMetadata",
+      "type": "object"
+    },
+    "ConditionStatus": {
+      "description": "Outcome of one benchmarked (device, thread-regime, duration, batch) condition.",
+      "enum": [
+        "success",
+        "unsupported",
+        "not_tested"
+      ],
+      "minLength": 1,
+      "title": "ConditionStatus",
+      "type": "string"
+    },
+    "ContributorMetadata": {
+      "additionalProperties": false,
+      "description": "Optional contributor identity; never participates in technical validity.",
+      "properties": {
+        "display_name": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Display Name"
+        },
+        "github_handle": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Github Handle"
+        }
+      },
+      "title": "ContributorMetadata",
+      "type": "object"
+    },
+    "DeviceBackend": {
+      "description": "Supported device/backend selectors.",
+      "enum": [
+        "cpu",
+        "mps",
+        "cuda"
+      ],
+      "minLength": 1,
+      "title": "DeviceBackend",
+      "type": "string"
+    },
+    "DeviceBackendMetadata": {
+      "additionalProperties": false,
+      "description": "Concrete device/backend identity for one Technical Card.",
+      "properties": {
+        "backend": {
+          "$ref": "#/$defs/DeviceBackend"
+        },
+        "device_index": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Device Index"
+        },
+        "device_label": {
+          "minLength": 1,
+          "title": "Device Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "backend",
+        "device_label"
+      ],
+      "title": "DeviceBackendMetadata",
+      "type": "object"
+    },
+    "EnergyEvidence": {
+      "additionalProperties": false,
+      "description": "CodeCarbon-backed energy evidence for the separate resource pass (Section 23).\n\n``total_energy_kwh`` (when present) is only ever the sum of the components this evidence\nactually measured or estimated; it is never a claim of complete run/system energy. Whether it\nrepresents the *whole* active run is stated explicitly by ``coverage_complete`` and\n``unaccounted_components`` -- e.g. an MPS run whose CPU/RAM energy is software-estimated but\nwhose accelerator energy CodeCarbon cannot measure MUST set\n``coverage_complete=False`` and ``unaccounted_components=(\"accelerator\",)`` rather than\nsilently presenting a CPU+RAM-only total as if it were the full run's energy.",
+      "properties": {
+        "accelerator_energy_kwh": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accelerator Energy Kwh"
+        },
+        "average_power_watts": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Average Power Watts"
+        },
+        "codecarbon_version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Codecarbon Version"
+        },
+        "coverage_complete": {
+          "default": false,
+          "title": "Coverage Complete",
+          "type": "boolean"
+        },
+        "cpu_energy_kwh": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cpu Energy Kwh"
+        },
+        "failure_reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Failure Reason"
+        },
+        "limitations": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "measurement_duration_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Measurement Duration Seconds"
+        },
+        "measurement_interval_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Measurement Interval Seconds"
+        },
+        "measurement_kind": {
+          "$ref": "#/$defs/EnergyMeasurementKind"
+        },
+        "measurement_scope": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Measurement Scope"
+        },
+        "privilege_used": {
+          "default": false,
+          "title": "Privilege Used",
+          "type": "boolean"
+        },
+        "ram_energy_kwh": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ram Energy Kwh"
+        },
+        "total_energy_kwh": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Energy Kwh"
+        },
+        "unaccounted_components": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Unaccounted Components",
+          "type": "array"
+        }
+      },
+      "required": [
+        "measurement_kind"
+      ],
+      "title": "EnergyEvidence",
+      "type": "object"
+    },
+    "EnergyMeasurementKind": {
+      "description": "CodeCarbon measurement classification (Section 23).",
+      "enum": [
+        "hardware_measured",
+        "software_estimated",
+        "unavailable",
+        "failed"
+      ],
+      "minLength": 1,
+      "title": "EnergyMeasurementKind",
+      "type": "string"
+    },
+    "ExecutionContextMetadata": {
+      "additionalProperties": false,
+      "description": "Privacy-safe fingerprint binding reproducibility-relevant execution conditions.",
+      "properties": {
+        "device_backend": {
+          "$ref": "#/$defs/DeviceBackend"
+        },
+        "execution_context_fingerprint": {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Context Fingerprint",
+          "type": "string"
+        },
+        "hardware_fingerprint": {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Hardware Fingerprint",
+          "type": "string"
+        },
+        "native_precision": {
+          "minLength": 1,
+          "title": "Native Precision",
+          "type": "string"
+        },
+        "os_name": {
+          "minLength": 1,
+          "title": "Os Name",
+          "type": "string"
+        },
+        "os_version": {
+          "minLength": 1,
+          "title": "Os Version",
+          "type": "string"
+        },
+        "profiler_implementation_version": {
+          "minLength": 1,
+          "title": "Profiler Implementation Version",
+          "type": "string"
+        },
+        "profiling_protocol_id": {
+          "const": "audio-inference-v1",
+          "minLength": 1,
+          "title": "Profiling Protocol Id",
+          "type": "string"
+        },
+        "profiling_protocol_version": {
+          "minLength": 1,
+          "title": "Profiling Protocol Version",
+          "type": "string"
+        },
+        "python_version": {
+          "minLength": 1,
+          "title": "Python Version",
+          "type": "string"
+        },
+        "thread_regime": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ThreadRegime"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "torch_dae_content_identity": {
+          "minLength": 1,
+          "title": "Torch Dae Content Identity",
+          "type": "string"
+        },
+        "torch_version": {
+          "minLength": 1,
+          "title": "Torch Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "hardware_fingerprint",
+        "execution_context_fingerprint",
+        "os_name",
+        "os_version",
+        "python_version",
+        "torch_version",
+        "torch_dae_content_identity",
+        "device_backend",
+        "native_precision",
+        "profiling_protocol_id",
+        "profiling_protocol_version",
+        "profiler_implementation_version"
+      ],
+      "title": "ExecutionContextMetadata",
+      "type": "object"
+    },
+    "HardwareMetadata": {
+      "additionalProperties": false,
+      "description": "Privacy-safe hardware-configuration evidence (never a physical-machine identifier).",
+      "properties": {
+        "accelerator_memory_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accelerator Memory Bytes"
+        },
+        "accelerator_model": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accelerator Model"
+        },
+        "accelerator_vendor": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accelerator Vendor"
+        },
+        "backend_capabilities": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Backend Capabilities",
+          "type": "array"
+        },
+        "cpu_architecture": {
+          "minLength": 1,
+          "title": "Cpu Architecture",
+          "type": "string"
+        },
+        "cpu_model": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cpu Model"
+        },
+        "logical_cores": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Logical Cores"
+        },
+        "physical_cores": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Physical Cores"
+        },
+        "total_ram_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Ram Bytes"
+        }
+      },
+      "required": [
+        "cpu_architecture"
+      ],
+      "title": "HardwareMetadata",
+      "type": "object"
+    },
+    "HostMemoryEvidence": {
+      "additionalProperties": false,
+      "description": "Host RAM / process RSS evidence (Section 19).",
+      "properties": {
+        "pss_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pss Bytes"
+        },
+        "rss_after_model_load_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rss After Model Load Bytes"
+        },
+        "rss_after_resource_pass_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rss After Resource Pass Bytes"
+        },
+        "rss_before_model_load_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rss Before Model Load Bytes"
+        },
+        "rss_before_resource_pass_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rss Before Resource Pass Bytes"
+        },
+        "rss_sampled_peak_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rss Sampled Peak Bytes"
+        },
+        "rss_sampled_peak_is_sampled": {
+          "default": true,
+          "title": "Rss Sampled Peak Is Sampled",
+          "type": "boolean"
+        },
+        "sampling_method": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sampling Method"
+        },
+        "total_ram_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Ram Bytes"
+        },
+        "uss_bytes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uss Bytes"
+        }
+      },
+      "title": "HostMemoryEvidence",
+      "type": "object"
+    },
+    "MeasurementCoverage": {
+      "additionalProperties": false,
+      "description": "Explicit tested/untested/unsupported coverage summary distinguishing absence types.",
+      "properties": {
+        "accelerator_memory_available": {
+          "title": "Accelerator Memory Available",
+          "type": "boolean"
+        },
+        "architecture_status": {
+          "$ref": "#/$defs/ArchitectureEvidenceStatus"
+        },
+        "energy_status": {
+          "$ref": "#/$defs/EnergyMeasurementKind"
+        },
+        "host_memory_available": {
+          "title": "Host Memory Available",
+          "type": "boolean"
+        },
+        "not_tested_conditions": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Not Tested Conditions",
+          "type": "array"
+        },
+        "tested_conditions": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Tested Conditions",
+          "type": "array"
+        },
+        "unsupported_conditions": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Unsupported Conditions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "tested_conditions",
+        "architecture_status",
+        "energy_status",
+        "host_memory_available",
+        "accelerator_memory_available"
+      ],
+      "title": "MeasurementCoverage",
+      "type": "object"
+    },
+    "MinimumInputProbeRecord": {
+      "additionalProperties": false,
+      "description": "One ordered probe observation in the minimum-input search (Section 11).\n\nPersisted so the search can be audited after the fact: which sample counts were tried, in\nwhat order, and whether each one succeeded.",
+      "properties": {
+        "probe_order": {
+          "title": "Probe Order",
+          "type": "integer"
+        },
+        "sample_count": {
+          "title": "Sample Count",
+          "type": "integer"
+        },
+        "succeeded": {
+          "title": "Succeeded",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "probe_order",
+        "sample_count",
+        "succeeded"
+      ],
+      "title": "MinimumInputProbeRecord",
+      "type": "object"
+    },
+    "MinimumInputSearchResult": {
+      "additionalProperties": false,
+      "description": "Empirical minimum supported input search evidence (Section 11).",
+      "properties": {
+        "below_boundary_verified": {
+          "default": false,
+          "title": "Below Boundary Verified",
+          "type": "boolean"
+        },
+        "boundary_verified": {
+          "default": false,
+          "title": "Boundary Verified",
+          "type": "boolean"
+        },
+        "minimum_duration_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum Duration Seconds"
+        },
+        "minimum_sample_count": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum Sample Count"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "probe_records": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/MinimumInputProbeRecord"
+          },
+          "title": "Probe Records",
+          "type": "array"
+        },
+        "probe_sample_counts_tested": {
+          "default": [],
+          "items": {
+            "type": "integer"
+          },
+          "title": "Probe Sample Counts Tested",
+          "type": "array"
+        },
+        "status": {
+          "$ref": "#/$defs/MinimumInputStatus"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "MinimumInputSearchResult",
+      "type": "object"
+    },
+    "MinimumInputStatus": {
+      "description": "Outcome of the empirical minimum-input search (Section 11).",
+      "enum": [
+        "found",
+        "non_monotonic",
+        "always_unsupported",
+        "max_duration_exhausted"
+      ],
+      "minLength": 1,
+      "title": "MinimumInputStatus",
+      "type": "string"
+    },
+    "ModelReference": {
+      "additionalProperties": false,
+      "description": "Immutable reference to the accepted Model Card and checkpoint being profiled.",
+      "properties": {
+        "checkpoint_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Checkpoint Id",
+          "type": "string"
+        },
+        "checkpoint_sha256": {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Checkpoint Sha256",
+          "type": "string"
+        },
+        "model_card_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Model Card Id",
+          "type": "string"
+        },
+        "model_card_path": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+          "title": "Model Card Path",
+          "type": "string"
+        },
+        "model_card_sha256": {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Card Sha256",
+          "type": "string"
+        },
+        "model_card_status": {
+          "minLength": 1,
+          "title": "Model Card Status",
+          "type": "string"
+        },
+        "wrapper_entry_point": {
+          "minLength": 1,
+          "title": "Wrapper Entry Point",
+          "type": "string"
+        }
+      },
+      "required": [
+        "model_card_id",
+        "model_card_path",
+        "model_card_sha256",
+        "model_card_status",
+        "checkpoint_id",
+        "checkpoint_sha256",
+        "wrapper_entry_point"
+      ],
+      "title": "ModelReference",
+      "type": "object"
+    },
+    "PrecisionMetadata": {
+      "additionalProperties": false,
+      "description": "Native execution precision (only verified/native precision is benchmarked in v1).",
+      "properties": {
+        "autocast": {
+          "default": false,
+          "title": "Autocast",
+          "type": "boolean"
+        },
+        "dtype": {
+          "minLength": 1,
+          "title": "Dtype",
+          "type": "string"
+        }
+      },
+      "required": [
+        "dtype"
+      ],
+      "title": "PrecisionMetadata",
+      "type": "object"
+    },
+    "ProfilerImplementationProvenance": {
+      "additionalProperties": false,
+      "description": "Identity of the profiling tooling that produced this evidence, distinct from the model.",
+      "properties": {
+        "codecarbon_version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Codecarbon Version"
+        },
+        "profiler_implementation_version": {
+          "minLength": 1,
+          "title": "Profiler Implementation Version",
+          "type": "string"
+        },
+        "profiling_protocol_id": {
+          "const": "audio-inference-v1",
+          "minLength": 1,
+          "title": "Profiling Protocol Id",
+          "type": "string"
+        },
+        "profiling_protocol_version": {
+          "minLength": 1,
+          "title": "Profiling Protocol Version",
+          "type": "string"
+        },
+        "psutil_version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Psutil Version"
+        },
+        "runtime_classification": {
+          "$ref": "#/$defs/RuntimeClassification"
+        },
+        "torch_dae_content_identity": {
+          "minLength": 1,
+          "title": "Torch Dae Content Identity",
+          "type": "string"
+        },
+        "torch_dae_package_version": {
+          "minLength": 1,
+          "title": "Torch Dae Package Version",
+          "type": "string"
+        },
+        "torch_dae_repository_dirty": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Torch Dae Repository Dirty"
+        },
+        "torch_dae_repository_head": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Torch Dae Repository Head"
+        }
+      },
+      "required": [
+        "profiler_implementation_version",
+        "profiling_protocol_id",
+        "profiling_protocol_version",
+        "torch_dae_package_version",
+        "torch_dae_content_identity",
+        "torch_dae_repository_head",
+        "torch_dae_repository_dirty",
+        "runtime_classification"
+      ],
+      "title": "ProfilerImplementationProvenance",
+      "type": "object"
+    },
+    "ProfilingCampaignReference": {
+      "additionalProperties": false,
+      "description": "Reference back to the orchestrating campaign that produced this card.",
+      "properties": {
+        "campaign_id": {
+          "minLength": 1,
+          "title": "Campaign Id",
+          "type": "string"
+        },
+        "run_id": {
+          "minLength": 1,
+          "title": "Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "campaign_id",
+        "run_id"
+      ],
+      "title": "ProfilingCampaignReference",
+      "type": "object"
+    },
+    "ProfilingConditions": {
+      "additionalProperties": false,
+      "description": "One benchmarked (duration, batch) condition and its outcome.",
+      "properties": {
+        "batch_size": {
+          "title": "Batch Size",
+          "type": "integer"
+        },
+        "condition_id": {
+          "minLength": 1,
+          "title": "Condition Id",
+          "type": "string"
+        },
+        "duration_seconds": {
+          "title": "Duration Seconds",
+          "type": "number"
+        },
+        "duration_source": {
+          "enum": [
+            "canonical_contract",
+            "protocol_default",
+            "empirical_minimum"
+          ],
+          "minLength": 1,
+          "title": "Duration Source",
+          "type": "string"
+        },
+        "raw_timing_array": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Timing Array"
+        },
+        "sample_count": {
+          "title": "Sample Count",
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/$defs/ConditionStatus"
+        },
+        "timing": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TimingSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "unsupported_reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unsupported Reason"
+        }
+      },
+      "required": [
+        "condition_id",
+        "duration_seconds",
+        "duration_source",
+        "batch_size",
+        "sample_count",
+        "status"
+      ],
+      "title": "ProfilingConditions",
+      "type": "object"
+    },
+    "RawArrayDescriptor": {
+      "additionalProperties": false,
+      "description": "One named array inside the raw `.npz` measurement manifest (Section 26).",
+      "properties": {
+        "dtype": {
+          "minLength": 1,
+          "title": "Dtype",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "shape": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Shape",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "dtype",
+        "shape"
+      ],
+      "title": "RawArrayDescriptor",
+      "type": "object"
+    },
+    "RawMeasurementManifest": {
+      "additionalProperties": false,
+      "description": "Reference and manifest for the bounded lossless raw `.npz` asset.\n\n``path`` is relative to the Technical Card JSON's own directory, never to the repository\nroot, so a reviewed JSON+`.npz` pair validates identically before and after being relocated\ntogether (e.g. candidate workspace -> `technical_cards/<model-id>/`). Absolute paths and any\n`..` traversal or directory-escape are rejected.",
+      "properties": {
+        "arrays": {
+          "items": {
+            "$ref": "#/$defs/RawArrayDescriptor"
+          },
+          "title": "Arrays",
+          "type": "array"
+        },
+        "media_type": {
+          "const": "application/x-npz",
+          "default": "application/x-npz",
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "path": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "arrays"
+      ],
+      "title": "RawMeasurementManifest",
+      "type": "object"
+    },
+    "RuntimeClassification": {
+      "description": "Whether a profiling run used unmodified, modified, or unknown torch-dae source.",
+      "enum": [
+        "canonical",
+        "modified_runtime",
+        "unknown_runtime"
+      ],
+      "minLength": 1,
+      "title": "RuntimeClassification",
+      "type": "string"
+    },
+    "SoftwareMetadata": {
+      "additionalProperties": false,
+      "description": "Software stack evidence relevant to reproducibility.",
+      "properties": {
+        "cuda_driver_version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cuda Driver Version"
+        },
+        "cuda_runtime_version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cuda Runtime Version"
+        },
+        "cudnn_version": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cudnn Version"
+        },
+        "mps_backend_info": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mps Backend Info"
+        },
+        "os_name": {
+          "minLength": 1,
+          "title": "Os Name",
+          "type": "string"
+        },
+        "os_version": {
+          "minLength": 1,
+          "title": "Os Version",
+          "type": "string"
+        },
+        "python_implementation": {
+          "minLength": 1,
+          "title": "Python Implementation",
+          "type": "string"
+        },
+        "python_version": {
+          "minLength": 1,
+          "title": "Python Version",
+          "type": "string"
+        },
+        "torch_version": {
+          "minLength": 1,
+          "title": "Torch Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "os_name",
+        "os_version",
+        "python_implementation",
+        "python_version",
+        "torch_version"
+      ],
+      "title": "SoftwareMetadata",
+      "type": "object"
+    },
+    "SupersessionMetadata": {
+      "additionalProperties": false,
+      "description": "Optional supersession pointer for a corrected later Technical Card.",
+      "properties": {
+        "supersede_reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Supersede Reason"
+        },
+        "supersedes": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Supersedes"
+        }
+      },
+      "title": "SupersessionMetadata",
+      "type": "object"
+    },
+    "SyntheticInputProvenance": {
+      "additionalProperties": false,
+      "description": "Deterministic synthetic white-noise input provenance (Section 9).",
+      "properties": {
+        "batch_size": {
+          "title": "Batch Size",
+          "type": "integer"
+        },
+        "channel_count": {
+          "title": "Channel Count",
+          "type": "integer"
+        },
+        "distribution": {
+          "const": "uniform",
+          "default": "uniform",
+          "minLength": 1,
+          "title": "Distribution",
+          "type": "string"
+        },
+        "dtype": {
+          "const": "float32",
+          "default": "float32",
+          "minLength": 1,
+          "title": "Dtype",
+          "type": "string"
+        },
+        "high": {
+          "default": 1.0,
+          "title": "High",
+          "type": "number"
+        },
+        "low": {
+          "default": -1.0,
+          "title": "Low",
+          "type": "number"
+        },
+        "prng_implementation": {
+          "minLength": 1,
+          "title": "Prng Implementation",
+          "type": "string"
+        },
+        "sample_count": {
+          "title": "Sample Count",
+          "type": "integer"
+        },
+        "sample_rate": {
+          "title": "Sample Rate",
+          "type": "integer"
+        },
+        "seed": {
+          "title": "Seed",
+          "type": "integer"
+        },
+        "tensor_sha256": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tensor Sha256"
+        }
+      },
+      "required": [
+        "prng_implementation",
+        "seed",
+        "sample_rate",
+        "sample_count",
+        "batch_size",
+        "channel_count"
+      ],
+      "title": "SyntheticInputProvenance",
+      "type": "object"
+    },
+    "TechnicalCardIdentity": {
+      "additionalProperties": false,
+      "description": "Technical Card identity: a hash digest plus its stable human-facing form.",
+      "properties": {
+        "identity_digest_sha256": {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Identity Digest Sha256",
+          "type": "string"
+        },
+        "nonce": {
+          "minLength": 1,
+          "title": "Nonce",
+          "type": "string"
+        },
+        "technical_card_id": {
+          "minLength": 1,
+          "title": "Technical Card Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "technical_card_id",
+        "identity_digest_sha256",
+        "nonce"
+      ],
+      "title": "TechnicalCardIdentity",
+      "type": "object"
+    },
+    "ThreadRegime": {
+      "description": "CPU intra-op thread regime.",
+      "enum": [
+        "single_thread",
+        "native_default"
+      ],
+      "minLength": 1,
+      "title": "ThreadRegime",
+      "type": "string"
+    },
+    "TimingSummary": {
+      "additionalProperties": false,
+      "description": "Recomputable summary statistics over 50 raw steady-state latency observations.",
+      "properties": {
+        "coefficient_of_variation": {
+          "title": "Coefficient Of Variation",
+          "type": "number"
+        },
+        "forward_calls_per_second": {
+          "title": "Forward Calls Per Second",
+          "type": "number"
+        },
+        "max_ns": {
+          "title": "Max Ns",
+          "type": "integer"
+        },
+        "mean_ns": {
+          "title": "Mean Ns",
+          "type": "number"
+        },
+        "min_ns": {
+          "title": "Min Ns",
+          "type": "integer"
+        },
+        "p50_ns": {
+          "title": "P50 Ns",
+          "type": "number"
+        },
+        "p90_ns": {
+          "title": "P90 Ns",
+          "type": "number"
+        },
+        "p95_ns": {
+          "title": "P95 Ns",
+          "type": "number"
+        },
+        "p99_ns": {
+          "title": "P99 Ns",
+          "type": "number"
+        },
+        "real_time_factor": {
+          "title": "Real Time Factor",
+          "type": "number"
+        },
+        "sample_count": {
+          "const": 50,
+          "title": "Sample Count",
+          "type": "integer"
+        },
+        "speed_factor": {
+          "title": "Speed Factor",
+          "type": "number"
+        },
+        "stddev_ns": {
+          "title": "Stddev Ns",
+          "type": "number"
+        },
+        "throughput_items_per_second": {
+          "title": "Throughput Items Per Second",
+          "type": "number"
+        }
+      },
+      "required": [
+        "sample_count",
+        "mean_ns",
+        "stddev_ns",
+        "min_ns",
+        "max_ns",
+        "p50_ns",
+        "p90_ns",
+        "p95_ns",
+        "p99_ns",
+        "coefficient_of_variation",
+        "throughput_items_per_second",
+        "forward_calls_per_second",
+        "real_time_factor",
+        "speed_factor"
+      ],
+      "title": "TimingSummary",
+      "type": "object"
+    }
+  },
+  "$id": "https://torch-dae.local/schemas/technical-card.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Complete immutable Technical Card: one Model Card, one protocol, one device, one session.",
+  "properties": {
+    "accelerator_memory": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AcceleratorMemoryEvidence"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "architecture": {
+      "$ref": "#/$defs/ArchitectureEvidence"
+    },
+    "campaign": {
+      "$ref": "#/$defs/ProfilingCampaignReference"
+    },
+    "canonical_duration_seconds": {
+      "title": "Canonical Duration Seconds",
+      "type": "number"
+    },
+    "canonical_duration_source": {
+      "enum": [
+        "explicit_model_contract",
+        "protocol_default"
+      ],
+      "minLength": 1,
+      "title": "Canonical Duration Source",
+      "type": "string"
+    },
+    "cold_start": {
+      "$ref": "#/$defs/ColdStartEvidence"
+    },
+    "comparability": {
+      "$ref": "#/$defs/ComparabilityMetadata"
+    },
+    "conditions": {
+      "items": {
+        "$ref": "#/$defs/ProfilingConditions"
+      },
+      "title": "Conditions",
+      "type": "array"
+    },
+    "contributor": {
+      "$ref": "#/$defs/ContributorMetadata",
+      "default": {
+        "display_name": null,
+        "github_handle": null
+      }
+    },
+    "coverage": {
+      "$ref": "#/$defs/MeasurementCoverage"
+    },
+    "created_at": {
+      "minLength": 1,
+      "title": "Created At",
+      "type": "string"
+    },
+    "device": {
+      "$ref": "#/$defs/DeviceBackendMetadata"
+    },
+    "energy": {
+      "$ref": "#/$defs/EnergyEvidence"
+    },
+    "execution_context": {
+      "$ref": "#/$defs/ExecutionContextMetadata"
+    },
+    "hardware": {
+      "$ref": "#/$defs/HardwareMetadata"
+    },
+    "host_memory": {
+      "$ref": "#/$defs/HostMemoryEvidence"
+    },
+    "identity": {
+      "$ref": "#/$defs/TechnicalCardIdentity"
+    },
+    "limitations": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "minimum_input_search": {
+      "$ref": "#/$defs/MinimumInputSearchResult"
+    },
+    "model": {
+      "$ref": "#/$defs/ModelReference"
+    },
+    "precision": {
+      "$ref": "#/$defs/PrecisionMetadata"
+    },
+    "profiler": {
+      "$ref": "#/$defs/ProfilerImplementationProvenance"
+    },
+    "raw_measurements": {
+      "$ref": "#/$defs/RawMeasurementManifest"
+    },
+    "software": {
+      "$ref": "#/$defs/SoftwareMetadata"
+    },
+    "supersession": {
+      "$ref": "#/$defs/SupersessionMetadata",
+      "default": {
+        "supersede_reason": null,
+        "supersedes": null
+      }
+    },
+    "synthetic_input": {
+      "$ref": "#/$defs/SyntheticInputProvenance"
+    },
+    "technical_card_schema_version": {
+      "const": "1.0.0",
+      "minLength": 1,
+      "title": "Technical Card Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "technical_card_schema_version",
+    "identity",
+    "model",
+    "profiler",
+    "hardware",
+    "software",
+    "device",
+    "execution_context",
+    "precision",
+    "synthetic_input",
+    "canonical_duration_seconds",
+    "canonical_duration_source",
+    "architecture",
+    "cold_start",
+    "minimum_input_search",
+    "conditions",
+    "host_memory",
+    "energy",
+    "raw_measurements",
+    "coverage",
+    "comparability",
+    "campaign",
+    "created_at"
+  ],
+  "title": "TechnicalCard",
+  "type": "object"
+}

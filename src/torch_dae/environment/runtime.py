@@ -74,9 +74,16 @@ class EnvironmentMaterializationRecord(StrictBaseModel):
     created_at: str
     completed_at: str | None = None
     environment_spec_sha256: str = Field(pattern=SHA256_PATTERN)
+    project_file_sha256: str = Field(pattern=SHA256_PATTERN)
     lockfile_sha256: str = Field(pattern=SHA256_PATTERN)
     source_manifest_sha256: str = Field(pattern=SHA256_PATTERN)
+    verification_script_sha256: str = Field(pattern=SHA256_PATTERN)
     local_package_identity: str
+    package_content_sha256: str = Field(pattern=SHA256_PATTERN)
+    repository_head: str | None
+    repository_dirty: bool | None
+    dependency_closure_preflight_path: str
+    dependency_closure_preflight_sha256: str = Field(pattern=SHA256_PATTERN)
     local_package_wheel_sha256: str | None = Field(default=None, pattern=SHA256_PATTERN)
     installed_packages: tuple[InstalledPackageRecord, ...] = ()
     installed_sources: tuple[InstalledSourceRecord, ...] = ()

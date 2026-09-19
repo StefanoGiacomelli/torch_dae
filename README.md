@@ -13,9 +13,9 @@
 
 `torch-dae 0.1.0` is the first public release of the generic framework. Its typed control
 plane, isolated environment and checkpoint subsystems, and evidence-grounded audio-model onboarding
-skill are implemented and validated. No model-specific integrations are distributed in the current
-release. Model support is added through the canonical onboarding workflow and isolated
-model-specific environments.
+skill are implemented and validated. The source tree now includes the production PANNs adapters for
+three accepted AudioSet model/checkpoint identities; checkpoint-specific cards and pretrained
+payload verification remain later onboarding phases.
 
 ## Overview
 
@@ -39,20 +39,42 @@ One model card always describes exactly one model family, variant, and checkpoin
 ## Current capabilities
 
 - Strict typed contracts and generated JSON Schemas for cards, environments, checkpoints,
-  embeddings, onboarding reports, and runtime verification.
+  embeddings, onboarding reports, cross-phase workflow handoffs, and runtime verification.
 - Reproducible model-specific environment materialization, verification, reuse, and execution.
 - Checkpoint acquisition from HTTPS, GitHub releases, Hugging Face, package resources, and local
   paths, with hashing, cache validation, offline behavior, and sanitized diagnostics.
 - Static upstream inspection and evidence-grounded analysis without importing untrusted model code.
 - A canonical agent-neutral onboarding skill shared by Codex and Claude.
 - Synthetic grounded evaluations, repository safety validation, and strict quality gates.
+- Lazy, isolated PANNs adapters for Cnn14_16k, ResNet38, and Wavegram_Logmel_Cnn14 with raw logits,
+  native sigmoid probabilities, the upstream post-fc1 embedding, and ordered AudioSet labels.
 
 ## Not available yet
 
-- No real audio model or checkpoint is included.
-- The `model inspect` and `model verify` CLI placeholders do not execute model workflows yet.
-- Profiling is reserved until a model is runtime-verified and a profiling workflow is explicitly
-  implemented and invoked.
+- No pretrained checkpoint payload or checkpoint-specific model card is redistributed by the
+  repository; supported checkpoint payloads are acquired through the checkpoint-management subsystem.
+- `model inspect` remains an explicit unavailable-feature placeholder.
+- Candidate Technical Cards produced by `torch-dae model profile` are not automatically promoted
+  into the repository's official `technical_cards/` tree; promotion is a separate, later,
+  human-reviewed step.
+
+## Profiling and Technical Cards
+
+`torch-dae` defines an optional profiling evidence layer independent from model onboarding. An
+accepted checkpoint-specific Model Card remains the immutable scientific/runtime identity of the
+supported model. `torch-dae model profile` emits one immutable candidate **Technical Card** per
+successfully profiled device/backend plus compact, lossless raw `.npz` measurements; profiling
+never rewrites the Model Card.
+
+Profiling v1 is dataset-independent and uses deterministic seeded white noise only. It measures
+architecture, cold/steady-state latency, throughput, host RAM, accelerator memory where available,
+and CodeCarbon-backed energy measurement or estimation when supported (`uv sync --extra profiling`
+installs CodeCarbon/`psutil` for the root control plane only). Multiple users may append Technical
+Cards for the same Model Card so later analytics can compare compatible hardware/software execution
+contexts without changing onboarding evidence.
+
+The CLI and normative protocol are documented under
+[`docs/profiling/`](docs/profiling/overview.md); see also the `skills/audio-model-profiling` skill.
 
 ## Architecture
 
@@ -61,7 +83,7 @@ The root package is a model-agnostic control plane:
 - [Typed contracts](src/torch_dae/contracts.py) and [model-card models](src/torch_dae/cards/models.py)
   enforce public identity, lifecycle, waveform, output, and evidence rules.
 - [Environment management](docs/environment-management.md) recreates isolated runtimes from
-  committed specifications under `environments/<card-id>/`.
+  committed specifications under `environments/<environment-id>/`.
 - [Checkpoint management](docs/checkpoint-management.md) validates and caches assets only under
   ignored runtime state.
 - [Static onboarding inspectors](src/torch_dae/onboarding/inspection.py) collect bounded evidence
@@ -73,9 +95,11 @@ The root package is a model-agnostic control plane:
 - [Synthetic grounded evaluation](skills/audio-model-onboarding/references/synthetic-evaluation.md)
   checks reports against concrete fixture observations.
 
-Model cards belong under `model_cards/`, verification reports under `verification_reports/`, and
-committed environment inputs under `environments/`. Materialized environments, repositories,
-checkpoints, diagnostics, and coverage data remain under ignored `.torch-dae/`.
+Model cards belong under `model_cards/`, accepted pre-runtime phase handoffs under
+`onboarding_reports/`, verification reports under `verification_reports/`, and committed
+environment inputs under `environments/`. `verification_reports/` contains checkpoint-specific
+runtime observations only. Materialized environments, managed workspaces, repositories, checkpoints,
+diagnostics, and coverage data remain under ignored `.torch-dae/`.
 
 ## Installation
 
@@ -109,15 +133,17 @@ uv run torch-dae env --help
 uv run torch-dae checkpoint --help
 ```
 
-Model-specific environment and checkpoint commands require a committed model card and its
-environment specification. No such production artifact is included yet.
+Direct `env resolve`, `env preflight`, `env materialize`, and `env verify` commands require an accepted environment
+definition; they do not require a model card. Card-oriented `env create`, `env ensure`, `env run`,
+`env info`, and `env remove` remain compatibility conveniences where applicable. Checkpoint
+commands remain card/checkpoint-specific. No pretrained checkpoint or checkpoint-specific card is
+included yet.
 
 ## Illustrative model-wrapper usage
 
-The public registry is empty in `0.1.0`. The placeholder `model_name` below denotes the identifier
-of a future checkpoint-specific model card. This non-executable interface example illustrates how
-an integrated wrapper is expected to be resolved and used once its model card, checkpoint, wrapper,
-and isolated runtime have been committed and activated.
+The public registry remains empty until checkpoint-specific cards are authored. The placeholder
+`model_name` below denotes a future card identifier. This non-executable interface example
+illustrates how a wrapper is resolved once its card, checkpoint, and isolated runtime are activated.
 
 ```python
 from pathlib import Path
@@ -166,7 +192,10 @@ uv run torch-dae card validate <card-id-or-path>
 
 uv run torch-dae env create <card-id>
 uv run torch-dae env ensure <card-id>
-uv run torch-dae env verify <card-id>
+uv run torch-dae env resolve <environment-id>
+uv run torch-dae env preflight <environment-id>
+uv run torch-dae env materialize <environment-id>
+uv run torch-dae env verify <environment-id>
 uv run torch-dae env remove <card-id>
 uv run torch-dae env info <card-id>
 uv run torch-dae env run <card-id> -- <command>
@@ -180,6 +209,12 @@ The CLI also exposes `uv run torch-dae model inspect <card-id>` and
 `uv run torch-dae model verify <card-id>` as explicit unavailable-feature placeholders. They do not
 perform onboarding or runtime verification.
 
+Local package and environment identities are stable across commits: the package identity hashes
+only deterministic wheel build inputs, while Git HEAD and cleanliness are separate informational
+provenance. Shared local-wheel cache creation is safe across concurrent processes and publishes one
+validated cache entry atomically, so parallel environment materialization requires no manual
+serialization.
+
 ## Audio-model-onboarding skill
 
 The [canonical skill](skills/audio-model-onboarding/SKILL.md) supports these implemented agent
@@ -191,8 +226,12 @@ workflows:
 - `verify`: controlled acquisition and runtime verification for one selected model/checkpoint.
 - `card`: checkpoint-specific model-card generation from validated evidence and artifacts.
 
-`profile` is documented separately as reserved functionality. Agent workflows are not one-shot CLI
-commands and must not be confused with the control-plane commands above. See the
+`profile` remains a reserved compatibility entry point inside the onboarding skill; it never
+executes profiling itself. Profiling v1 is an independent, repeatable Technical Card workflow
+implemented by the separate [`skills/audio-model-profiling`](skills/audio-model-profiling/SKILL.md)
+skill and the `torch-dae model profile` / `torch-dae technical-card` CLI commands. Agent workflows
+are not one-shot CLI commands and must not be confused with the control-plane commands above. See
+the
 [skill guide](docs/model-onboarding-skill.md), [artifact guide](docs/onboarding-artifacts.md), and
 [canonical templates](skills/audio-model-onboarding/templates/README.md).
 
@@ -205,6 +244,7 @@ fill in its placeholders:
 Use the canonical `audio-model-onboarding` skill available in this repository.
 
 MODE: <analyze | resolve-environment | integrate | verify | card>
+WORKFLOW_ID: <STABLE_WORKFLOW_ID_OR_AUTO_DISCOVER>
 
 MODEL_NAME: <MODEL_NAME>
 UPSTREAM_REPOSITORY: <GITHUB_REPOSITORY_URL>
@@ -223,10 +263,41 @@ no-commit instructions.
 
 ## Expected agent response
 
-The [canonical response template](skills/audio-model-onboarding/templates/agent-response.md) requires
-`Summary`, `Work completed`, `Problems and resolutions`, `Open questions`, `Files`, and `Validation`
-sections. It lists only files actually changed for the requested model and uses `None.` when no open
-question remains.
+The [canonical response template](skills/audio-model-onboarding/templates/agent-response.md) reports
+the consumed and produced handoffs, promoted paths, external review bundle and digest, scoped
+workspace cleanup, retained managed runtime paths, problems, open questions, files, and validation.
+It lists only files actually changed for the requested model and uses `None.` when no open question
+remains.
+
+Promotion accepts only the selected handoff's exact declared phase-local artifact set. Review
+bundles include explicit archive-normalization results and a SHA-256 sidecar. Scoped cleanup reports
+external audit outputs without deleting them and persists an atomic receipt under
+`.torch-dae/reports/onboarding/<workflow-id>/cleanup/`.
+
+Accepted prerequisites are locally discoverable by stable workflow ID:
+
+```bash
+uv run python scripts/onboarding_handoff.py discover \
+  --workflow-id <workflow-id> \
+  --required-phase <phase> \
+  --json
+```
+
+Accepted handoffs retain the skill fingerprint and specification SHA-256 observed for their phase.
+Discovery and validation report those historical values beside the current control plane, including
+separate skill/specification drift flags. Historical drift is informational; pending phase candidates
+must still match the current values exactly before promotion.
+
+Build a normalized deterministic external review bundle through an accepted phase:
+
+```bash
+uv run python scripts/onboarding_handoff.py bundle \
+  --workflow-id <workflow-id> \
+  --through-phase <phase> \
+  --output-dir ../torch-dae-review-bundles \
+  --include-working-tree \
+  --json
+```
 
 ## Repository layout
 
@@ -239,9 +310,10 @@ docs/                                  Public subsystem and workflow guides
 graphics/                              README figures and architectural diagrams
 tests/                                 Contract, subsystem, safety, and synthetic evaluation tests
 environments/                          Committed per-card environment inputs
+onboarding_reports/                    Accepted pre-runtime cross-phase handoffs
 model_cards/                           Checkpoint-specific production cards
-verification_reports/                  Committed runtime observations
-.torch-dae/                            Ignored runtime state
+verification_reports/                  Committed checkpoint-specific runtime observations
+.torch-dae/                            Ignored runtime state and managed workspaces
 ```
 
 The `.agents/` and `.claude/` skill entries are public relative symlinks to the canonical skill.
@@ -249,15 +321,21 @@ The `.agents/` and `.claude/` skill entries are public relative symlinks to the 
 ## Development and validation
 
 ```bash
-uv sync --all-groups
-uv run ruff format --check
-uv run ruff check
-uv run mypy src scripts
-uv run pytest
-uv run python scripts/generate_schemas.py --check
-uv run python scripts/validate_repository.py
-uv run python skills/audio-model-onboarding/scripts/validate_skill_artifacts.py . --json
+uv sync --python 3.11 --all-groups --extra profiling --frozen
+uv run --python 3.11 --all-groups --extra profiling --frozen ruff format --check
+uv run --python 3.11 --all-groups --extra profiling --frozen ruff check
+uv run --python 3.11 --all-groups --extra profiling --frozen mypy src scripts
+uv run --python 3.11 --all-groups --extra profiling --frozen pytest
+uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/generate_schemas.py --check
+uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/generate_profiling_schema.py --check
+uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/check_worktree_patch.py --json
+uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/validate_repository.py
+uv run --python 3.11 --all-groups --extra profiling --frozen python skills/audio-model-onboarding/scripts/validate_skill_artifacts.py . --json
 ```
+
+The `profiling` extra installs root control-plane tooling (`numpy`, `psutil`, and CodeCarbon), not
+model-runtime dependencies. The complete validation matrix is in
+[`docs/development/testing.md`](docs/development/testing.md).
 
 Run coverage with the same local thresholds as CI:
 
@@ -278,9 +356,23 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution and pull-request expecta
 
 ## Roadmap
 
-Model support is added through the canonical onboarding workflow after its evidence, isolation, and
-runtime prerequisites are satisfied. Profiling remains unavailable until a model integration is
-runtime-verified and a dedicated profiling workflow is implemented.
+The completed PANNs onboarding work terminates at immutable `runtime_verified` Model Cards.
+
+Profiling v1 and its Technical Card contracts are implemented. The next development sequence is:
+
+1. finalize and commit the Profiling v1 implementation;
+2. rerun the three PANNs profiling campaigns from that clean committed implementation;
+3. independently review the newly generated candidate Technical Cards;
+4. promote only approved new cards into `technical_cards/<model-id>/`;
+5. build the local-first Model Card + Technical Card presentation/analytics site;
+6. publish the coordinated repository/documentation/package update through the protected GitHub
+   pull-request workflow.
+
+The nine pre-closure PANNs dogfood cards under `candidate_technical_cards/` are historical evidence
+only. They must remain unmodified and must never be promoted.
+
+Profiling is optional for model acceptance and may be repeated indefinitely by different
+contributors and execution contexts.
 
 ## Funding
 

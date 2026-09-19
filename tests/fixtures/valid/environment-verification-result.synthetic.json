@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "environment_id": "synthetic-environment",
+  "environment_spec_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "materialization_result_reference": {
+    "path": "environments/synthetic-environment/materialization.json",
+    "sha256": "6666666666666666666666666666666666666666666666666666666666666666"
+  },
+  "verification_script_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "exact_interpreter": "CPython 3.12.13",
+  "platform": "macos-arm64",
+  "direct_dependency_versions": {
+    "synthetic-package": "1.0.0"
+  },
+  "import_results": [
+    {"name": "synthetic import", "status": "passed", "details": null}
+  ],
+  "environment_smoke_results": [
+    {"name": "synthetic constructor", "status": "passed", "details": null}
+  ],
+  "verification_status": "passed",
+  "lifecycle_state": "environment_verified",
+  "environment_fingerprint": "7777777777777777777777777777777777777777777777777777777777777777",
+  "warnings": [],
+  "failure_classification": null,
+  "result_path": "reports/environments/synthetic-environment/7777777777777777777777777777777777777777777777777777777777777777/environment-verification-result.json",
+  "evidence": [
+    {
+      "path": "environments/synthetic-environment/environment.json",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+    }
+  ],
+  "started_at": "2026-07-31T00:00:01Z",
+  "completed_at": "2026-07-31T00:00:02Z"
+}

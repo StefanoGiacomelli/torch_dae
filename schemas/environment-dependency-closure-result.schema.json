@@ -1,0 +1,203 @@
+{
+  "$defs": {
+    "EnvironmentFailureClassification": {
+      "description": "Stable infrastructure failure classes for environment operations.",
+      "enum": [
+        "invalid_specification",
+        "hash_mismatch",
+        "interpreter_unavailable",
+        "platform_incompatibility",
+        "dependency_installation",
+        "source_preparation",
+        "direct_dependency_mismatch",
+        "dependency_closure",
+        "verification_script",
+        "sandbox_or_execution_policy",
+        "external_command"
+      ],
+      "minLength": 1,
+      "title": "EnvironmentFailureClassification",
+      "type": "string"
+    },
+    "RuntimeRequirementEvidence": {
+      "additionalProperties": false,
+      "description": "One active local-wheel requirement and its reachable accepted-lock versions.",
+      "properties": {
+        "marker": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Marker"
+        },
+        "normalized_name": {
+          "minLength": 1,
+          "title": "Normalized Name",
+          "type": "string"
+        },
+        "reachable_versions": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Reachable Versions",
+          "type": "array"
+        },
+        "requirement": {
+          "minLength": 1,
+          "title": "Requirement",
+          "type": "string"
+        },
+        "specifier": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Specifier"
+        }
+      },
+      "required": [
+        "requirement",
+        "normalized_name"
+      ],
+      "title": "RuntimeRequirementEvidence",
+      "type": "object"
+    }
+  },
+  "$id": "https://torch-dae.local/schemas/environment-dependency-closure-result.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Offline proof that a lock can satisfy the local package wheel runtime metadata.",
+  "properties": {
+    "active_runtime_requirements": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Active Runtime Requirements",
+      "type": "array"
+    },
+    "environment_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Environment Id",
+      "type": "string"
+    },
+    "failure_classification": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EnvironmentFailureClassification"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "incompatible_requirements": {
+      "items": {
+        "$ref": "#/$defs/RuntimeRequirementEvidence"
+      },
+      "title": "Incompatible Requirements",
+      "type": "array"
+    },
+    "installation_policy": {
+      "const": "locked-project-closure-then-local-wheel-no-deps",
+      "minLength": 1,
+      "title": "Installation Policy",
+      "type": "string"
+    },
+    "lockfile_sha256": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Lockfile Sha256",
+      "type": "string"
+    },
+    "missing_requirements": {
+      "items": {
+        "$ref": "#/$defs/RuntimeRequirementEvidence"
+      },
+      "title": "Missing Requirements",
+      "type": "array"
+    },
+    "package_wheel_identity": {
+      "minLength": 1,
+      "title": "Package Wheel Identity",
+      "type": "string"
+    },
+    "package_wheel_sha256": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Package Wheel Sha256",
+      "type": "string"
+    },
+    "platform": {
+      "minLength": 1,
+      "title": "Platform",
+      "type": "string"
+    },
+    "python_version": {
+      "minLength": 1,
+      "title": "Python Version",
+      "type": "string"
+    },
+    "result_path": {
+      "minLength": 1,
+      "title": "Result Path",
+      "type": "string"
+    },
+    "satisfied_requirements": {
+      "items": {
+        "$ref": "#/$defs/RuntimeRequirementEvidence"
+      },
+      "title": "Satisfied Requirements",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "failed"
+      ],
+      "minLength": 1,
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "environment_id",
+    "package_wheel_identity",
+    "package_wheel_sha256",
+    "python_version",
+    "platform",
+    "installation_policy",
+    "active_runtime_requirements",
+    "satisfied_requirements",
+    "missing_requirements",
+    "incompatible_requirements",
+    "lockfile_sha256",
+    "status",
+    "result_path"
+  ],
+  "title": "EnvironmentDependencyClosureResult",
+  "type": "object"
+}

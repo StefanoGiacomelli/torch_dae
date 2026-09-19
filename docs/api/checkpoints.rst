@@ -26,9 +26,16 @@ A checkpoint specification identifies one concrete byte asset. Source fields are
      - repository-relative ``local_path``
      - every remote/package field and ``filename``
 
-``filename`` and ``local_path`` cannot be absolute or escape the repository. ``expected_sha256`` is
+``filename`` uses a dedicated provider-path grammar that admits safe ``=`` metric names and nested
+relative resources while rejecting traversal, URL syntax, drive paths, backslashes, NULs, and empty
+segments. ``local_path`` cannot be absolute or escape the repository. ``expected_sha256`` is
 upstream/committed integrity evidence; ``observed_sha256`` records local observation. If both are
 present, validation requires equality.
+
+Schema ``2.0.0`` specifications may bind a strict ``CheckpointAuthority``. Zenodo metadata is
+resolved from the provider-controlled record API before payload acquisition. Exact expected size,
+every algorithm-tagged published checksum, observed local checksums, metadata-response provenance,
+and observed SHA-256/cache identity remain separate evidence.
 
 For acquired bytes :math:`b`, integrity is recorded as
 
@@ -63,6 +70,14 @@ matching ignored checkpoint cache tree and leaves cards, source assets, and envi
 
 .. autoclass:: torch_dae.core.checkpoint.LicenseRecord
 
+.. autoclass:: torch_dae.core.checkpoint.PublishedChecksum
+
+.. autoclass:: torch_dae.core.checkpoint.ObservedChecksum
+
+.. autoclass:: torch_dae.core.checkpoint.CheckpointAuthority
+
+.. autoclass:: torch_dae.core.checkpoint.CheckpointAuthorityResolution
+
 .. autoclass:: torch_dae.core.checkpoint.CheckpointSpec
 
 .. autoclass:: torch_dae.core.checkpoint.ResolvedCheckpoint
@@ -72,5 +87,10 @@ matching ignored checkpoint cache tree and leaves cards, source assets, and envi
 .. autoclass:: torch_dae.core.checkpoint.CheckpointManager
 
    .. automethod:: ensure
+   .. automethod:: ensure_checkpoint
+   .. automethod:: resolve_checkpoint_authority
    .. automethod:: info
+   .. automethod:: info_checkpoint
    .. automethod:: remove
+
+.. autofunction:: torch_dae.core.checkpoint.resolve_checkpoint_authority

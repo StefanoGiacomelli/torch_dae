@@ -35,6 +35,133 @@ Canonical request and response formats are available at:
 
 Use deterministic utilities under `scripts/` for evidence collection. They may collect, normalize,
 and validate static evidence; they do not replace scientific or architectural reasoning.
+For a local paper or technical PDF, `scripts/extract_pdf_text.py` may extract its machine-readable
+text layer under explicit limits. Extraction performs no OCR and does not make the text verified
+scientific evidence without source review.
+
+## Phase Handoff Protocol
+
+Every mode accepts a stable `WORKFLOW_ID`. Before requesting a prerequisite attachment, run:
+
+```bash
+uv run python scripts/onboarding_handoff.py discover \
+  --workflow-id <workflow-id> \
+  --required-phase <phase> \
+  --json
+```
+
+Validate the discovered manifest, every local artifact hash, and its historical control-plane
+provenance. Accepted handoff control-plane hashes are immutable historical provenance: require
+valid SHA-256 values, preserve them, and report drift from the current skill or specification
+without treating it as corruption. Pending handoff control-plane hashes are current-repository
+validation inputs and must exactly match the current canonical skill fingerprint and
+`project_spec.md` SHA-256 before promotion. Consume recorded user decisions and unresolved items. Do not ask the user to
+reattach a canonical artifact that is already present. When a duplicate attachment is supplied,
+compare its SHA-256 with the canonical artifact and stop on mismatch. Never search Desktop,
+Downloads, home, or product-specific attachment directories. Without `WORKFLOW_ID`, auto-select
+only when exactly one compatible active workflow exists; otherwise open a decision gate.
+
+A later phase may consume accepted prerequisites created under an older control-plane identity.
+Record the later phase's current hashes, expose the historical/current transition, and do not
+rewrite the prerequisites. Historical hashes identify declared provenance but do not automatically
+reconstruct historical bytes; preserve existing bundle or audit references where available and do
+not infer a Git mapping for uncommitted control-plane content.
+
+When a lifecycle mode requires managed workspace storage, allocate it before performing any
+managed workspace work with the canonical run-manifest entry point:
+
+```bash
+uv run python scripts/onboarding_handoff.py run-manifest create \
+  --workflow-id <workflow-id> \
+  --phase <phase> \
+  --json
+```
+
+The allocator atomically creates the managed run root and its `run-manifest.json` and returns their
+absolute paths. Perform subsequent managed phase work inside the returned run root; do not create an
+independent `.torch-dae/workspaces/<workflow-id>/<phase>/<run-id>/` directory first and register it
+afterward. A context-managed system temporary directory may be used only when the phase does not
+require a managed repository workspace. Validate outputs in the workspace and promote only accepted
+canonical artifacts. For `analyze`, `resolve-environment`, `integrate`, `verify`, and `card`, promote
+the accepted handoff under `onboarding_reports/<workflow-id>/` before declaring the phase complete.
+Verify stores its strict targets and accepted environment evidence in its phase-local handoff tree
+and stores only checkpoint-specific runtime observations under `verification_reports/`.
+
+After promoting the accepted handoff, run the single canonical end-of-task path instead of hand
+assembling bundles, hashes, or cleanup scripts:
+
+```bash
+uv run python scripts/onboarding_handoff.py finalize \
+  --workflow-id <workflow-id> \
+  --phase <phase> \
+  --json
+```
+
+`finalize` composes the existing lifecycle validation, bounded repository gates, bundle, and
+cleanup primitives; it introduces no parallel packaging system. It revalidates accepted lifecycle
+evidence against the current repository, runs the required repository-level gates, performs cleanup
+preflight, and generates the deterministic review bundle through the requested phase under
+`../torch-dae-review-bundles/<workflow-id>/<phase>/` with its SHA-256 sidecar. Evidence-invariance
+reporting distinguishes unchanged phase-local accepted evidence, validated current external
+evidence, and validated declared historical supersessions; any unexpected undeclared mutation is a
+hard failure.
+
+Cleanup preflight never guesses ownership. A genuinely historical/legacy workflow with no managed
+run manifests and no unmanaged managed-workspace content may return a structured `not_applicable`
+result. Unmanaged content under the workflow's managed workspace scope is blocking rather than being
+silently classified as legacy or deleted. Real scoped cleanup is performed only when explicitly
+requested by the supported cleanup-execution option; otherwise `finalize` records the preflight
+result without deleting reusable state. Cleanup preserves accepted lifecycle evidence,
+repository/package caches, canonical materialized model environments, checkpoint caches, review
+bundles, and other retained categories unless an explicit destructive option authorizes otherwise.
+
+`finalize` writes one machine-readable `finalize-result.json` exposing the absolute paths of the
+generated review archive, SHA-256 sidecar, accepted lifecycle artifacts, bundle/finalization
+metadata, and any cleanup receipt that exists. Final Git inventory uses read-only
+cached-diff/status checks or the staged-equivalent validator and does not require `git write-tree`
+when Git metadata is intentionally non-writable.
+
+## Agent Completion Contract
+
+An onboarding mode is not complete on prose alone (for example, replying "done"). Before reporting a
+lifecycle mode as finished, an agent MUST:
+
+1. Run the canonical `finalize` path above for the completed workflow and phase.
+2. Generate the canonical review package (produced by `finalize`, or by `bundle` directly when a
+   full `finalize` pass does not apply).
+3. Report the lifecycle state (`workflow_status` / `current_accepted_phase`).
+4. Report validation status (pass/fail, and any control-plane drift).
+5. Report cleanup status (`complete`, `dry-run`, `blocked`, or `not_applicable`).
+6. Report remaining limitations or open issues carried forward.
+7. Provide the absolute paths of: the canonical lifecycle artifacts (accepted handoff, phase
+   reports); the review bundle archive; its SHA-256 sidecar; the machine-readable finalize/bundle
+   result JSON; and the cleanup receipt, when cleanup produced one.
+
+The review package exists to support independent cross-agent/cross-LLM review: another agent or a
+human reviewer must be able to inspect exactly what changed without access to this conversation's
+history. It is evidence for that independent audit, not a substitute for the lifecycle evidence
+itself (the accepted handoffs, reports, and cards remain the authoritative record).
+
+Package identity is content-addressed over deterministic local wheel build inputs. Record Git HEAD
+and cleanliness separately as informational provenance; they never affect package identity,
+environment fingerprint, wheel-cache key, offline reuse, or eligibility. Local wheel-cache creation
+must use the generic concurrency-safe manager with bounded locking, safe stale-lock handling,
+process-specific temporary paths, validation, and atomic publication. Manual serialization is not
+the required workaround for shared-cache races.
+
+Generate the current handoff and every repository evidence artifact before starting a phase's final
+validation matrix. Repository mutation is forbidden once that matrix begins; any source, test,
+schema, documentation, environment, report, workflow, handoff, or superseded-archive mutation
+invalidates all final gates. Record and later recompare the final staged-equivalent inventory and
+current handoff hash. Generate deterministic audit archives automatically and read-only after this
+barrier, so no archive member comes from outside the validated final inventory.
+
+When a legal later phase changes a shared repository output declared by an earlier accepted phase,
+the later handoff must declare a strict `artifact_supersessions` edge with the exact prior phase and
+hash, exact new hash, and a reason. Historical handoffs remain immutable evidence. Discovery,
+promotion, workflow validation, and bundling must resolve current bytes only through the unique
+ordered accepted chain; never use artifact supersession for canonical reports, workflow history,
+the project specification, schemas, credentials, checkpoints, or runtime state.
 
 ## Evidence Vocabulary
 
@@ -68,6 +195,7 @@ Purpose: investigate an unfamiliar upstream project and produce a structured tec
 report plus a Markdown rendering.
 
 Required inputs: official repository URL, local repository checkout, or official package identifier.
+Accept an optional stable `WORKFLOW_ID`; create or update its workflow record for accepted output.
 
 Optional inputs: paper/documentation references, candidate checkpoint URL, requested variant,
 requested checkpoint, intended task, target use, intended embedding, target platform.
@@ -82,12 +210,15 @@ Ordered procedure:
 2. Run static inventory utilities: repository, packaging, dependencies, checkpoint candidates, model
    candidates, and output candidates.
 3. Read upstream source, docs, papers, and package metadata needed to interpret the static evidence.
+   Use bounded local PDF extraction only when a supplied document has a machine-readable text layer.
 4. Produce the machine-readable report using `templates/technical-analysis-report.json`.
 5. Render the human report with `templates/technical-analysis-report.md`.
 6. Present unresolved scientific choices before making user-dependent decisions.
 
 Evidence requirements: every architecture, preprocessing, output, embedding, checkpoint,
-dependency, and source-strategy claim must cite evidence or be marked unresolved.
+dependency, and source-strategy claim must cite evidence or be marked unresolved. Variant-sensitive
+claims and embeddings must use declared variant/checkpoint scopes. Host-published checksums must
+preserve their explicit algorithm and published-not-locally-verified status.
 
 Generated outputs: technical analysis report JSON, Markdown report, open-question list, candidate
 source strategy list, checkpoint candidates, environment evidence summary.
@@ -104,7 +235,8 @@ Prohibited behavior: generate a model card from unsupported fields, download che
 upstream code in the root environment, execute `setup.py`, or select an ambiguous embedding silently.
 
 Completion criteria: strict report validation passes, Markdown report is consistent with the JSON,
-all unresolved items are explicit, and the user has seen decision gates.
+all unresolved items are explicit, the user has seen decision gates, the accepted handoff is
+promoted, and the canonical `finalize` path succeeds.
 
 Next allowed lifecycle transition: `analyzed` after report review and card authoring; otherwise
 continue in `analyze` or `resolve-environment`.
@@ -113,7 +245,8 @@ continue in `analyze` or `resolve-environment`.
 
 Purpose: determine an evidence-supported, reproducible compatibility configuration.
 
-Required inputs: accepted analysis report and selected source/checkpoint strategy.
+Required inputs: `WORKFLOW_ID` with an accepted analyze handoff and selected source/checkpoint
+strategy. Discover the accepted analysis locally before requesting any missing attachment.
 
 Optional inputs: target OS/architecture, manually supplied constraints, selected candidate ID,
 controlled trial results.
@@ -123,13 +256,14 @@ resolved; environment contracts and CLI are available.
 
 Ordered procedure:
 
-1. Collect Python, PyTorch, TorchAudio, NumPy, build backend, source revision, CI, Docker, and import
+1. Discover and validate the accepted analyze handoff and consume its decisions and unresolved items.
+2. Collect Python, PyTorch, TorchAudio, NumPy, build backend, source revision, CI, Docker, and import
    evidence.
-2. Generate ordered candidates using `scripts/generate_environment_candidates.py`.
-3. Trial only an explicitly selected evidence-motivated candidate in an isolated model-specific
+3. Generate ordered candidates using `scripts/generate_environment_candidates.py`.
+4. Trial only an explicitly selected evidence-motivated candidate in an isolated model-specific
    environment.
-4. Classify every failure with `references/failure-classification.md`.
-5. On success, prepare `environments/<card-id>/environment.json`, `pyproject.toml`, `uv.lock`,
+5. Classify every failure with `references/failure-classification.md`.
+6. On success, prepare `environments/<environment-id>/environment.json`, `pyproject.toml`, `uv.lock`,
    `sources.json`, and `verify_environment.py` using the committed environment contracts and
    commands.
 
@@ -147,20 +281,25 @@ Failure conditions: all evidence-supported candidates exhausted, external blocke
 implementation, source build failure, missing wheels, incompatible checkpoint, or unsafe execution.
 
 Prohibited behavior: arbitrary Cartesian version search, hidden environment materialization, adding
-model dependencies to the root environment, or duplicating the environment subsystem.
+model dependencies to the root environment, relying on transitive installation for a directly
+imported dependency, or duplicating the environment subsystem.
 
-Completion criteria: selected candidate is verified through environment recreation and
-verification, the lockfile is synchronized, the source manifest is coherent, and artifact
-references agree.
+Completion criteria: either (a) draft resolution is complete—an evidence-supported candidate,
+isolated import/constructor trial, coherent environment drafts, synchronized locks, no fingerprint,
+and no lifecycle promotion—or (b) canonical materialization and verification satisfy the strict
+`environment_resolved` lifecycle contract. In both cases artifact references agree; whenever an
+accepted lifecycle handoff is promoted, the canonical `finalize` path must succeed before the phase
+is declared complete.
 
-Next allowed lifecycle transition: `environment_resolved`.
+Next allowed lifecycle transition: `environment_resolved` only for completion state (b). Draft
+resolution may recommend `integrate` without lifecycle promotion.
 
 ## `integrate` Mode
 
 Purpose: implement the project-side wrapper while preserving upstream semantics.
 
-Required inputs: analyzed report, resolved source strategy, resolved checkpoint strategy, selected
-variant, selected embedding default when required.
+Required inputs: `WORKFLOW_ID`, accepted analyze and resolve-environment handoffs, resolved source
+and checkpoint strategies, selected variant, and selected embedding default when required.
 
 Optional inputs: user target use, wrapper package path, adaptation notes.
 
@@ -171,12 +310,19 @@ and the user explicitly authorized production integration.
 
 Ordered procedure:
 
-1. Define wrapper package path, model construction, checkpoint loading, preprocessing ownership,
+1. Discover and validate accepted analyze and resolve-environment handoffs.
+2. Before environment materialization, validate the active runtime requirements of the current
+   local package wheel against packages reachable from each accepted environment lock. Evaluate
+   markers for the selected Python/platform, keep extras inactive unless selected, perform no
+   network access, and preserve missing or incompatible requirements as structured evidence.
+   Use the content-addressed local package identity and concurrency-safe shared wheel cache; retain
+   Git provenance only as separate informational evidence.
+3. Define wrapper package path, model construction, checkpoint loading, preprocessing ownership,
    sample-rate/channel/length behavior, output mapping, embedding interface, device behavior,
    deterministic behavior, and tests.
-2. Verify source-strategy rules in `references/source-strategy.md`.
-3. Preserve upstream inference semantics and document any deviation.
-4. Add the wrapper, model-specific package code, committed environment and checkpoint
+4. Verify source-strategy rules in `references/source-strategy.md`.
+5. Preserve upstream inference semantics and document any deviation.
+6. Add the wrapper, model-specific package code, committed environment and checkpoint
    specifications, integration documentation, and tests needed for the selected model.
 
 Evidence requirements: source provenance, upstream forward semantics, preprocessing evidence,
@@ -195,51 +341,82 @@ Prohibited behavior: adding model dependencies to the root project, committing c
 silently beginning verification or another workflow mode, creating a Git commit, semantic
 reimplementation without provenance, or presenting logits/task decisions as embeddings.
 
-Completion criteria: integration plan is reviewable, evidence-backed, and declares verification
-requirements.
+Completion criteria: integration plan is reviewable, evidence-backed, declares verification
+requirements, carries unresolved items forward, records a passed dependency-closure preflight
+before any materialized environment it creates or reuses, is promoted with an accepted handoff, and
+the canonical `finalize` path succeeds. The required staged-equivalent validation and
+`git diff --check` checks are owned by that finalization path rather than repeated as an ad-hoc
+manual closeout sequence. The real Git index must remain unchanged.
 
 Next allowed lifecycle transition: none. `integrate` is a workflow mode, not a lifecycle state.
 Existing committed lifecycle states remain authoritative.
 
 ## `verify` Mode
 
-Purpose: verify runtime behavior after environment resolution and wrapper implementation.
+Purpose: verify explicit model/checkpoint/environment targets after wrapper integration.
 
-Required inputs: model card draft, wrapper implementation, resolved environment, checkpoint
-specification, expected outputs and embeddings.
+Required inputs: `WORKFLOW_ID`, accepted integrate handoff, wrapper implementation, accepted
+environment definition, checkpoint specification, expected outputs, and embeddings. A model card is
+not required.
 
 Optional inputs: accelerator targets, extra input cases, user target assertions.
 
-Prerequisites: environment verified, wrapper exists, the selected model and checkpoint are explicit,
-and card-declared outputs and embeddings are evidence-backed.
+Prerequisites: wrapper exists; selected integrated variant, checkpoint, environment, public entry
+point, outputs, and embeddings are explicit; unresolved decisions that affect execution are closed.
 
 Ordered procedure:
 
-1. Test random initialization when supported, checkpoint initialization, invalid checkpoint behavior,
+1. Discover and validate the accepted integrate handoff and consume recorded decisions.
+2. Create one strict `RuntimeVerificationTarget` per requested tuple; bind the accepted integrate
+   handoff hash, integrated variant/adapter, checkpoint, environment, source manifest, future card
+   identity, public entry point, expected contract, permitted devices, policy, and limits.
+   Completeness-aware targets use schema `2.0.0` and declare ordered, canonical, unique, disjoint
+   required and optional check IDs, with at least one required check.
+3. Resolve each target environment by environment ID, materialize it directly from the accepted
+   environment definition, run environment verification, and record the matching fingerprint and
+   promoted environment-verification result with `verification_status=passed` and
+   `lifecycle_state=environment_verified`. Successful evidence has nonempty import and smoke
+   observations, only passed observations, unique names across both collections, and no failure
+   classification. Do not acquire a checkpoint before this succeeds.
+4. Resolve structured authoritative metadata without acquiring payload bytes, then acquire only the
+   target checkpoint through the checkpoint subsystem. Enforce exact expected size, every
+   algorithm-tagged published checksum, observed SHA-256, specification fingerprint, and retained
+   metadata provenance before loading it in the verified isolated environment. Maximum bytes remains
+   an independent resource-safety ceiling. A published MD5 and locally observed SHA-256 remain
+   distinct evidence.
+5. Test random initialization when supported, checkpoint initialization, invalid checkpoint behavior,
    model variant agreement, and loading diagnostics.
-2. Test canonical `[B,C,T]` waveform inputs, sample-rate behavior, channels, valid lengths, short and
+6. Test canonical `[B,C,T]` waveform inputs, sample-rate behavior, channels, valid lengths, short and
    long inputs, zero input, batches, and deterministic synthetic waveforms.
-3. Observe every declared output and embedding for key, rank, shape, dtype, device, temporal
+7. Observe every declared output and embedding for key, rank, shape, dtype, device, temporal
    semantics, NaN/Inf, and repeated-call behavior.
-4. Generate a structured verification report.
+8. Generate a target-aware checkpoint-specific verification report with explicit overall
+   `verification_status`, the target's exact required/optional check contract, nonempty unique
+   declared checks, and complete passed required-check coverage; promote the accepted verify handoff
+   only when the report passed.
 
 Evidence requirements: environment fingerprint, checkpoint hash, source revision, package identity,
 test inputs, observed outputs, embedding observations, warnings, failures, unsupported capabilities.
 
-Generated outputs: verification plan and verification report JSON.
+Generated outputs: runtime-verification target JSON, promoted environment-verification result,
+verification plan, checkpoint-specific verification report JSON, and accepted verify handoff.
 
-User-decision gates: unsupported capabilities, output/card mismatch, embedding/card mismatch,
+User-decision gates: unsupported capabilities, output/target mismatch, embedding/target mismatch,
 unsupported device behavior, or non-reproducible runtime observations.
 
-Failure conditions: required runtime tests fail, card/report disagree, checkpoint cannot load,
+Failure conditions: required runtime tests fail, target/report associations disagree, checkpoint cannot load,
 outputs/embeddings are missing, or environment is not verified.
 
 Prohibited behavior: acquiring any checkpoint other than the explicitly selected checkpoint,
 acquiring checkpoints outside the checkpoint subsystem, running the model outside its isolated
-environment, lifecycle promotion from schema validity alone, profiling, or fabricated runtime
-observations.
+environment, lifecycle promotion from schema validity or evidence existence alone, lifecycle
+promotion from failed evidence, profiling, or fabricated runtime observations.
 
-Completion criteria: every card-declared output and embedding is observed and the report validates.
+Completion criteria: every target-required check passes, every target-declared output and embedding
+is observed, environment and runtime evidence validate independently, the runtime report validates
+under `verification_reports/`, the accepted verify handoff is promoted, and the canonical
+`finalize` path succeeds.
+No target or generic environment result is stored in `verification_reports/`.
 
 Next allowed lifecycle transition: `runtime_verified` only after `checkpoint_verified` and runtime
 verification prerequisites are satisfied.
@@ -248,8 +425,9 @@ verification prerequisites are satisfied.
 
 Purpose: generate or update a checkpoint-specific model card from verified evidence.
 
-Required inputs: analysis report, user decisions, source/checkpoint strategy, environment artifacts,
-wrapper evidence where applicable, verification report where applicable.
+Required inputs: `WORKFLOW_ID`, accepted analysis, resolve-environment, integrate, and verify
+handoffs; user decisions; source/checkpoint strategy; environment verification result; runtime
+target; wrapper evidence; and checkpoint-specific verification report.
 
 Optional inputs: unresolved issue decisions, intended default embedding, accepted limitations.
 
@@ -258,11 +436,18 @@ evidence; unresolved information remains explicit.
 
 Ordered procedure:
 
-1. Map report fields to the committed `ModelCard` schema.
-2. Use null, unresolved status, or issues where evidence is absent.
-3. Enforce checkpoint-specific scope: one family, one variant, one checkpoint.
-4. Validate through Pydantic and generated JSON Schema.
-5. Check lifecycle gates and card/report agreement.
+1. Discover and validate all accepted prerequisite handoffs and consume recorded decisions.
+2. Map report fields to the committed `ModelCard` schema.
+3. Use null, unresolved status, or issues where evidence is absent.
+4. Enforce checkpoint-specific scope: one family, one variant, one checkpoint.
+5. Validate through Pydantic and generated JSON Schema.
+6. Check lifecycle gates and card/report agreement.
+7. Require a passed promoted environment result and passed runtime report, plus matching environment
+   ID, specification hash, fingerprint, environment-result hash, checkpoint identity/hash,
+   runtime-target hash, report hash, integration-handoff hash, public entry point,
+   input/output/embedding contract, and tested device/platform scope.
+   The runtime target/report required and optional check contracts must match exactly, every required
+   check must be present exactly once and passed, and no undeclared check may promote the card.
 
 Evidence requirements: upstream source, paper/docs, environment evidence, checkpoint evidence,
 runtime observation, or explicit user decision for every populated field.
@@ -277,47 +462,50 @@ strategy, lifecycle promotion, or accepted known issue.
 Failure conditions: evidence reference missing, lifecycle skip, unsupported fact promoted, schema
 failure, card not checkpoint-specific, or report/card disagreement.
 
-Prohibited behavior: optional filler values, family-level cards for incompatible checkpoints, hidden
-lifecycle promotion, or legal conclusions from license metadata.
+Prohibited behavior: optional filler values, provisional cards used to bootstrap verification,
+family-level cards for incompatible checkpoints, hidden lifecycle promotion, or legal conclusions
+from license metadata.
 
-Completion criteria: Pydantic and JSON Schema validation both pass and lifecycle gates are truthful.
+Completion criteria: Pydantic and JSON Schema validation both pass, lifecycle gates are truthful,
+the accepted card handoff is promoted, and the canonical `finalize` path succeeds.
 
 Next allowed lifecycle transition: the next legal committed lifecycle state only; do not invent
 states beyond `project_spec.md`.
 
 ## `profile` Mode
 
-Purpose: reserved future mode that may inspect eligibility for profiling.
+Purpose: reserved compatibility mode in the onboarding skill. Profiling v1 is normatively specified
+as an independent, repeatable Technical Card workflow but that workflow and its dedicated CLI/skill
+are not implemented yet.
 
-Required inputs: runtime-verified card and verification report.
+Required inputs: `WORKFLOW_ID` and an accepted `runtime_verified` Model Card may be inspected only
+to report eligibility.
 
-Optional inputs: future profiling target platform and protocol.
-
-Prerequisites: none because no profiling workflow has been implemented.
+Prerequisites: no executable profiling workflow exists in this skill.
 
 Ordered procedure:
 
 1. Refuse profiling execution.
-2. List missing prerequisites when asked.
-3. Explain expected future inputs without producing profiling evidence.
+2. Confirm runtime-verification eligibility when asked.
+3. Direct implementation work to `project_spec.md` and `docs/profiling/`.
+4. Do not mutate Model Card profiling placeholders.
+5. Do not promote the Model Card to `profiled`.
 
-Evidence requirements: runtime verification status may be inspected; no profiling measurement is
-created.
+Evidence requirements: runtime-verification status may be inspected; no profiling measurement or
+Technical Card is created by this skill.
 
 Generated outputs: eligibility notes only.
 
-User-decision gates: future profiling protocol selection remains unresolved.
+Failure conditions: any attempt to fabricate profiling evidence before the independent profiler is
+implemented.
 
-Failure conditions: any attempt to measure latency, memory, energy, MACs, FLOPs, or benchmark
-performance.
-
-Prohibited behavior: latency measurement, memory profiling, energy measurement, MAC/FLOP
-calculation, computational characterization, benchmark reports, or lifecycle promotion to
+Prohibited behavior: latency measurement, RAM/device-memory profiling, energy measurement,
+MAC/FLOP measurement, Technical Card generation, Model Card rewriting, or lifecycle promotion to
 `profiled`.
 
 Completion criteria: profiling remains reserved and no fabricated profiling evidence exists.
 
-Next allowed lifecycle transition: none.
+Next allowed lifecycle transition: none. `runtime_verified` is terminal for new onboarding.
 
 Profiling remains unavailable until a model is runtime_verified and a profiling workflow is
 explicitly implemented and invoked.

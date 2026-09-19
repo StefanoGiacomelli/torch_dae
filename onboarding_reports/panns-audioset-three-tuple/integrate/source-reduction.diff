@@ -1,0 +1,90 @@
+--- selected-upstream-models.py
++++ vendored-models.py
+@@ -1,10 +1,14 @@
++# ruff: noqa
++# fmt: off
++# mypy: ignore-errors
++
+ import torch
+ import torch.nn as nn
+ import torch.nn.functional as F
+ from torchlibrosa.stft import Spectrogram, LogmelFilterBank
+ from torchlibrosa.augmentation import SpecAugmentation
+ 
+-from pytorch_utils import do_mixup, interpolate, pad_framewise_output
++from .pytorch_utils import do_mixup
+  
+ def init_layer(layer):
+     """Initialize a Linear or Convolutional layer. """
+@@ -132,6 +136,8 @@
+         out = self.relu(out)
+ 
+         return out
++
++
+ class _ResNet(nn.Module):
+     def __init__(self, block, layers, zero_init_residual=False,
+                  groups=1, width_per_group=64, replace_stride_with_dilation=None,
+@@ -284,9 +290,14 @@
+         x = F.dropout(x, p=0.5, training=self.training)
+         x = F.relu_(self.fc1(x))
+         embedding = F.dropout(x, p=0.5, training=self.training)
+-        clipwise_output = torch.sigmoid(self.fc_audioset(x))
+-        
+-        output_dict = {'clipwise_output': clipwise_output, 'embedding': embedding}
++        logits = self.fc_audioset(x)
++        clipwise_output = torch.sigmoid(logits)
++        
++        output_dict = {
++            'logits': logits,
++            'clipwise_output': clipwise_output,
++            'embedding': embedding,
++        }
+ 
+         return output_dict
+ class ConvPreWavBlock(nn.Module):
+@@ -431,9 +442,14 @@
+         x = F.dropout(x, p=0.5, training=self.training)
+         x = F.relu_(self.fc1(x))
+         embedding = F.dropout(x, p=0.5, training=self.training)
+-        clipwise_output = torch.sigmoid(self.fc_audioset(x))
+-        
+-        output_dict = {'clipwise_output': clipwise_output, 'embedding': embedding}
++        logits = self.fc_audioset(x)
++        clipwise_output = torch.sigmoid(logits)
++        
++        output_dict = {
++            'logits': logits,
++            'clipwise_output': clipwise_output,
++            'embedding': embedding,
++        }
+ 
+         return output_dict
+ class Cnn14_16k(nn.Module):
+@@ -526,8 +542,13 @@
+         x = F.dropout(x, p=0.5, training=self.training)
+         x = F.relu_(self.fc1(x))
+         embedding = F.dropout(x, p=0.5, training=self.training)
+-        clipwise_output = torch.sigmoid(self.fc_audioset(x))
+-        
+-        output_dict = {'clipwise_output': clipwise_output, 'embedding': embedding}
++        logits = self.fc_audioset(x)
++        clipwise_output = torch.sigmoid(logits)
++        
++        output_dict = {
++            'logits': logits,
++            'clipwise_output': clipwise_output,
++            'embedding': embedding,
++        }
+ 
+         return output_dict
+--- selected-upstream-pytorch_utils.py
++++ vendored-pytorch_utils.py
+@@ -1,3 +1,7 @@
++# ruff: noqa
++# fmt: off
++# mypy: ignore-errors
++
+ def do_mixup(x, mixup_lambda):
+     """Mixup x of even indexes (0, 2, 4, ...) with x of odd indexes 
+     (1, 3, 5, ...).

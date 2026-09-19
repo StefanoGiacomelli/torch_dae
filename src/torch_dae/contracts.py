@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 SHA256_PATTERN = r"^[0-9a-f]{64}$"
 GIT_REVISION_PATTERN = r"^[0-9a-f]{40}$"
 REPO_RELATIVE_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9._/-]*$"
+REPO_RELATIVE_OR_DOTFILE_PATTERN = r"^[A-Za-z0-9.][A-Za-z0-9._/-]*$"
 CANONICAL_ID_PATTERN = r"^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
 WRAPPER_ENTRY_POINT_PATTERN = (
     r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*:[A-Z][A-Za-z0-9_]*$"
@@ -55,7 +56,7 @@ def ensure_repository_relative(value: str | None) -> str | None:
     parts = value.split("/")
     if any(part in {"", ".", ".."} for part in parts):
         raise ValueError("path must not contain empty, '.', or '..' segments")
-    if re.fullmatch(REPO_RELATIVE_PATTERN, value) is None:
+    if re.fullmatch(REPO_RELATIVE_OR_DOTFILE_PATTERN, value) is None:
         raise ValueError("path contains unsupported characters")
     return value
 

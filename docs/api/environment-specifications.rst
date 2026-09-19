@@ -52,7 +52,7 @@ The implementation constructs this payload:
        "sources_manifest": source-manifest JSON using aliases,
        "resolved_python_version": specification.python.resolved_version,
        "target_platform": canonical OS/architecture tag,
-       "local_package_identity": clean Git HEAD plus content digest, or content digest only,
+       "local_package_identity": "content-sha256:" plus the package build-input digest,
    }
    fingerprint = SHA256(canonical_json(payload))
 
@@ -60,6 +60,9 @@ Canonical JSON is UTF-8, has sorted keys and compact separators. The local conte
 sorted build inputs: project metadata/readme, package source files, and recognized backend inputs;
 each relative path and byte sequence is length-prefixed before hashing. This is an identity
 algorithm, not a claim that upstream indexes or external services are reproducible forever.
+Git ``HEAD`` and cleanliness are optional diagnostic provenance and are excluded from both package
+identity and the environment fingerprint. Consequently, committing unchanged wheel inputs leaves
+the identity, wheel-cache key, and environment fingerprint unchanged.
 
 .. autoclass:: torch_dae.environment.specification.SourceInstallationType
 

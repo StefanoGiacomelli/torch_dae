@@ -1,0 +1,197 @@
+{
+  "$defs": {
+    "ChecksumAlgorithm": {
+      "description": "Published digest algorithms understood by the checkpoint authority contract.",
+      "enum": [
+        "md5",
+        "sha256"
+      ],
+      "minLength": 1,
+      "title": "ChecksumAlgorithm",
+      "type": "string"
+    },
+    "PublishedChecksum": {
+      "additionalProperties": false,
+      "description": "One digest explicitly published by an authoritative provider.",
+      "properties": {
+        "algorithm": {
+          "$ref": "#/$defs/ChecksumAlgorithm"
+        },
+        "digest": {
+          "minLength": 1,
+          "title": "Digest",
+          "type": "string"
+        }
+      },
+      "required": [
+        "algorithm",
+        "digest"
+      ],
+      "title": "PublishedChecksum",
+      "type": "object"
+    }
+  },
+  "$id": "https://torch-dae.local/schemas/checkpoint-authority-resolution.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Sanitized provenance from metadata-only authoritative resolution.",
+  "properties": {
+    "content_type": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Content Type"
+    },
+    "etag": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Etag"
+    },
+    "expected_size_bytes": {
+      "exclusiveMinimum": 0,
+      "title": "Expected Size Bytes",
+      "type": "integer"
+    },
+    "failure_classification": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Failure Classification"
+    },
+    "http_status": {
+      "exclusiveMaximum": 400,
+      "minimum": 200,
+      "title": "Http Status",
+      "type": "integer"
+    },
+    "last_modified": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Last Modified"
+    },
+    "metadata_request_url": {
+      "format": "uri",
+      "maxLength": 2083,
+      "minLength": 1,
+      "title": "Metadata Request Url",
+      "type": "string"
+    },
+    "metadata_response_sha256": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Metadata Response Sha256",
+      "type": "string"
+    },
+    "metadata_source": {
+      "enum": [
+        "network",
+        "managed_cache"
+      ],
+      "minLength": 1,
+      "title": "Metadata Source",
+      "type": "string"
+    },
+    "provider": {
+      "const": "zenodo",
+      "minLength": 1,
+      "title": "Provider",
+      "type": "string"
+    },
+    "published_checksums": {
+      "items": {
+        "$ref": "#/$defs/PublishedChecksum"
+      },
+      "title": "Published Checksums",
+      "type": "array"
+    },
+    "record_id": {
+      "minLength": 1,
+      "title": "Record Id",
+      "type": "string"
+    },
+    "requested_filename": {
+      "minLength": 1,
+      "title": "Requested Filename",
+      "type": "string"
+    },
+    "resolved_filename": {
+      "minLength": 1,
+      "title": "Resolved Filename",
+      "type": "string"
+    },
+    "resolved_payload_url": {
+      "format": "uri",
+      "maxLength": 2083,
+      "minLength": 1,
+      "title": "Resolved Payload Url",
+      "type": "string"
+    },
+    "retrieved_at": {
+      "minLength": 1,
+      "title": "Retrieved At",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "warnings": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "provider",
+    "record_id",
+    "requested_filename",
+    "resolved_filename",
+    "expected_size_bytes",
+    "published_checksums",
+    "metadata_request_url",
+    "resolved_payload_url",
+    "http_status",
+    "metadata_response_sha256",
+    "retrieved_at",
+    "metadata_source"
+  ],
+  "title": "CheckpointAuthorityResolution",
+  "type": "object"
+}

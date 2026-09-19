@@ -19,3 +19,47 @@ empty, `hash association` remains unresolved, and reports must omit the hash.
 
 Checkpoint candidates are not verified until acquired, hashed, and loaded in the intended model
 environment during a later lifecycle stage.
+
+## Metadata-only authoritative-host procedure
+
+During `analyze`, inspect authoritative metadata without opening asset download URLs:
+
+- For Zenodo, prefer the immutable record metadata/API and record record ID, related identifiers,
+  filenames, sizes, licenses, access conditions, and each checksum with its exact algorithm.
+- For GitHub Releases, use the official release/API metadata and record repository, release/tag ID,
+  asset ID, filename, size, content type when present, and published digest when present.
+- For Hugging Face, use official repository and file metadata, recording repository ID, immutable
+  revision when available, filename, size, LFS/object identifier or published hash, license, and
+  gating/authentication state.
+- For package-bundled resources, record official package name/version, resource path, package
+  metadata, file size, license, and a package-published checksum if one exists.
+- For direct HTTPS assets, use the official immutable metadata page or documentation and record the
+  exact URL, filename, size, access requirements, license, and published hashes without requesting
+  the asset body.
+
+Prefer official APIs or immutable metadata pages, and do not treat a third-party mirror as
+authoritative when an official host exists. Never include authentication tokens in commands, logs,
+URLs, or reports. Inaccessible metadata remains unresolved. A host-published checksum is structured
+metadata with an explicit algorithm and `published_not_locally_verified` state; MD5, SHA-1, SHA-256,
+SHA-512, and BLAKE2b are not interchangeable. In particular, published MD5 does not satisfy later
+local SHA-256 verification.
+
+Completeness-aware verification carries this evidence through a schema `2.0.0`
+`CheckpointSpec.authority`: provider, canonical record ID, exact filename, exact expected byte
+size, unique algorithm-tagged published checksums, optional persistent record URL, and authoritative
+provenance status. Resolve the authority through the card-independent checkpoint API before payload
+acquisition. For Zenodo, derive the official API URL from the structured record ID; never promote a
+direct HTTPS URL into authority implicitly.
+
+Published checksum is provider-declared evidence. Observed checksum is calculated from acquired or
+cached bytes. Exact expected size is an authority identity and integrity constraint. Maximum bytes
+is an independent resource-safety ceiling. A published MD5 may establish provider checksum agreement
+when policy permits, while the separately observed SHA-256 remains the content-addressed cache
+identity.
+
+## Source chronology
+
+Keep checkpoint/source revision selection candidate-specific. Prefer an explicit host revision,
+associated signed or annotated tag, or authoritative cited commit. Repository chronology can support
+an inference, but nearest preceding commit is only a candidate and current default-branch HEAD is
+current-source evidence, never automatic checkpoint-equivalence evidence.

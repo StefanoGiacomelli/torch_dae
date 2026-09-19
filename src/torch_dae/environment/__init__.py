@@ -4,6 +4,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from torch_dae.environment.results import (
+    ArtifactEvidence,
+    EnvironmentDependencyClosureResult,
+    EnvironmentFailureClassification,
+    EnvironmentLifecycleState,
+    EnvironmentMaterializationResult,
+    EnvironmentVerificationResult,
+    ResolvedEnvironmentDefinition,
+    RuntimeRequirementEvidence,
+    VerificationObservation,
+)
 from torch_dae.environment.specification import (
     EnvironmentSourcesManifest,
     EnvironmentSpecification,
@@ -32,11 +43,17 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "ArtifactEvidence",
+    "EnvironmentDependencyClosureResult",
+    "EnvironmentFailureClassification",
     "EnvironmentInfo",
+    "EnvironmentLifecycleState",
     "EnvironmentManager",
+    "EnvironmentMaterializationResult",
     "EnvironmentSourcesManifest",
     "EnvironmentSpecification",
     "EnvironmentVerification",
+    "EnvironmentVerificationResult",
     "EnvironmentVerificationSpec",
     "InstalledSource",
     "OfficialPackageSource",
@@ -44,11 +61,14 @@ __all__ = [
     "PlatformSpecification",
     "PythonSpecification",
     "ResolvedEnvironment",
+    "ResolvedEnvironmentDefinition",
+    "RuntimeRequirementEvidence",
     "SourceInstallationType",
     "TensorDimension",
     "TensorObservation",
     "VendoredAdaptationSource",
     "VerificationCheck",
+    "VerificationObservation",
     "VerificationReport",
 ]
 

@@ -1,0 +1,257 @@
+{
+  "$defs": {
+    "ArtifactEvidence": {
+      "additionalProperties": false,
+      "description": "Repository or managed-runtime artifact plus its observed SHA-256.",
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactEvidence",
+      "type": "object"
+    },
+    "EnvironmentFailureClassification": {
+      "description": "Stable infrastructure failure classes for environment operations.",
+      "enum": [
+        "invalid_specification",
+        "hash_mismatch",
+        "interpreter_unavailable",
+        "platform_incompatibility",
+        "dependency_installation",
+        "source_preparation",
+        "direct_dependency_mismatch",
+        "dependency_closure",
+        "verification_script",
+        "sandbox_or_execution_policy",
+        "external_command"
+      ],
+      "minLength": 1,
+      "title": "EnvironmentFailureClassification",
+      "type": "string"
+    }
+  },
+  "$id": "https://torch-dae.local/schemas/environment-materialization-result.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Result of creating or reusing environment infrastructure without verification.",
+  "properties": {
+    "completed_at": {
+      "format": "date-time",
+      "minLength": 1,
+      "title": "Completed At",
+      "type": "string"
+    },
+    "dependency_closure_preflight": {
+      "$ref": "#/$defs/ArtifactEvidence"
+    },
+    "dependency_installation_status": {
+      "enum": [
+        "complete",
+        "failed",
+        "not_started"
+      ],
+      "minLength": 1,
+      "title": "Dependency Installation Status",
+      "type": "string"
+    },
+    "environment_fingerprint": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Environment Fingerprint",
+      "type": "string"
+    },
+    "environment_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Environment Id",
+      "type": "string"
+    },
+    "environment_spec_sha256": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Environment Spec Sha256",
+      "type": "string"
+    },
+    "failure_classification": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EnvironmentFailureClassification"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "interpreter": {
+      "minLength": 1,
+      "title": "Interpreter",
+      "type": "string"
+    },
+    "lifecycle_state": {
+      "const": "materialized",
+      "minLength": 1,
+      "title": "Lifecycle State",
+      "type": "string"
+    },
+    "local_package_identity": {
+      "minLength": 1,
+      "title": "Local Package Identity",
+      "type": "string"
+    },
+    "local_package_wheel_sha256": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Local Package Wheel Sha256",
+      "type": "string"
+    },
+    "lockfile_sha256": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Lockfile Sha256",
+      "type": "string"
+    },
+    "managed_identifier": {
+      "minLength": 1,
+      "title": "Managed Identifier",
+      "type": "string"
+    },
+    "materialization_record": {
+      "$ref": "#/$defs/ArtifactEvidence"
+    },
+    "package_content_sha256": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Package Content Sha256",
+      "type": "string"
+    },
+    "platform": {
+      "minLength": 1,
+      "title": "Platform",
+      "type": "string"
+    },
+    "project_file_sha256": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Project File Sha256",
+      "type": "string"
+    },
+    "repository_dirty": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Repository Dirty"
+    },
+    "repository_head": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Repository Head"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_manifest_sha256": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Manifest Sha256",
+      "type": "string"
+    },
+    "source_preparation_status": {
+      "enum": [
+        "complete",
+        "failed",
+        "not_started"
+      ],
+      "minLength": 1,
+      "title": "Source Preparation Status",
+      "type": "string"
+    },
+    "started_at": {
+      "format": "date-time",
+      "minLength": 1,
+      "title": "Started At",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "created",
+        "reused",
+        "failed"
+      ],
+      "minLength": 1,
+      "title": "Status",
+      "type": "string"
+    },
+    "verification_script_sha256": {
+      "minLength": 1,
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Verification Script Sha256",
+      "type": "string"
+    },
+    "warnings": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "environment_id",
+    "environment_spec_sha256",
+    "project_file_sha256",
+    "lockfile_sha256",
+    "source_manifest_sha256",
+    "verification_script_sha256",
+    "environment_fingerprint",
+    "local_package_identity",
+    "package_content_sha256",
+    "repository_head",
+    "repository_dirty",
+    "local_package_wheel_sha256",
+    "interpreter",
+    "platform",
+    "managed_identifier",
+    "status",
+    "dependency_installation_status",
+    "source_preparation_status",
+    "lifecycle_state",
+    "started_at",
+    "completed_at",
+    "materialization_record",
+    "dependency_closure_preflight"
+  ],
+  "title": "EnvironmentMaterializationResult",
+  "type": "object"
+}

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
 import urllib.error
 import urllib.request
@@ -13,8 +14,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import Annotated, BinaryIO, Literal, Protocol
-from urllib.parse import quote
+from typing import Annotated, Any, BinaryIO, Literal, Protocol
+from urllib.parse import quote, urlparse
 
 from pydantic import Field, HttpUrl, field_validator, model_validator
 
@@ -30,8 +31,12 @@ from torch_dae.contracts import (
 )
 from torch_dae.core.errors import (
     CheckpointAcquisitionError,
+    CheckpointAuthorityResolutionError,
     CheckpointHashMismatchError,
     CheckpointNotFoundError,
+    CheckpointPublishedChecksumMismatchError,
+    CheckpointResponseTooLargeError,
+    CheckpointSizeMismatchError,
     ExternalCommandError,
     OfflineResourceUnavailableError,
 )
@@ -60,6 +65,162 @@ class CheckpointSourceType(StrEnum):
     HUGGINGFACE = "huggingface"
     PACKAGE_BUNDLE = "package_bundle"
     LOCAL_PATH = "local_path"
+
+
+CHECKPOINT_PATH_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._=+@/-]*$")
+MD5_PATTERN = r"^[0-9a-f]{32}$"
+ZENODO_METADATA_MAXIMUM_BYTES = 4 * 1024 * 1024
+ZENODO_HOSTS = frozenset({"zenodo.org", "www.zenodo.org"})
+
+
+def ensure_checkpoint_relative_path(value: str | None) -> str | None:
+    """Validate a safe provider filename or relative checkpoint resource path.
+
+    Checkpoint-host paths intentionally have a dedicated grammar: metric-bearing ``=`` names and
+    nested package resources are valid, while repository traversal, URL syntax, Windows paths,
+    backslashes, NULs, empty segments, and ambiguous dot segments are not.
+    """
+
+    if value is None:
+        return None
+    if not value or value.startswith("/") or "\\" in value or "\x00" in value:
+        raise ValueError("checkpoint path must be a nonempty relative POSIX path")
+    if "?" in value or "#" in value or re.match(r"^[A-Za-z]:", value):
+        raise ValueError("checkpoint path must not contain URL or drive-path syntax")
+    parts = value.split("/")
+    if any(part in {"", ".", ".."} for part in parts):
+        raise ValueError("checkpoint path must not contain empty, '.', or '..' segments")
+    if CHECKPOINT_PATH_PATTERN.fullmatch(value) is None:
+        raise ValueError("checkpoint path contains unsupported characters")
+    return value
+
+
+class ChecksumAlgorithm(StrEnum):
+    """Published digest algorithms understood by the checkpoint authority contract."""
+
+    MD5 = "md5"
+    SHA256 = "sha256"
+
+
+class PublishedChecksum(StrictBaseModel):
+    """One digest explicitly published by an authoritative provider."""
+
+    algorithm: ChecksumAlgorithm
+    digest: str
+
+    @model_validator(mode="after")
+    def digest_matches_algorithm(self) -> PublishedChecksum:
+        pattern = MD5_PATTERN if self.algorithm == ChecksumAlgorithm.MD5 else SHA256_PATTERN
+        if re.fullmatch(pattern, self.digest) is None:
+            raise ValueError(f"invalid {self.algorithm.value} digest")
+        return self
+
+
+class ObservedChecksum(StrictBaseModel):
+    """One digest calculated from acquired or cached local bytes."""
+
+    algorithm: ChecksumAlgorithm
+    digest: str
+
+    @model_validator(mode="after")
+    def digest_matches_algorithm(self) -> ObservedChecksum:
+        pattern = MD5_PATTERN if self.algorithm == ChecksumAlgorithm.MD5 else SHA256_PATTERN
+        if re.fullmatch(pattern, self.digest) is None:
+            raise ValueError(f"invalid {self.algorithm.value} digest")
+        return self
+
+
+class CheckpointAuthority(StrictBaseModel):
+    """Immutable authoritative identity for one provider record file."""
+
+    provider: Literal["zenodo"]
+    record_id: Annotated[str, Field(pattern=r"^[1-9][0-9]*$")]
+    filename: str
+    expected_size_bytes: int = Field(gt=0)
+    published_checksums: tuple[PublishedChecksum, ...]
+    record_url: HttpUrl | None = None
+    provenance_status: Literal["authoritative_provider_declared"]
+
+    @field_validator("filename")
+    @classmethod
+    def filename_is_safe(cls, value: str) -> str:
+        return ensure_checkpoint_relative_path(value) or value
+
+    @field_validator("published_checksums")
+    @classmethod
+    def checksums_are_canonical(
+        cls, value: tuple[PublishedChecksum, ...]
+    ) -> tuple[PublishedChecksum, ...]:
+        return tuple(sorted(value, key=lambda item: item.algorithm.value))
+
+    @model_validator(mode="after")
+    def authority_is_unambiguous(self) -> CheckpointAuthority:
+        if not self.published_checksums:
+            raise ValueError("checkpoint authority requires published checksums")
+        algorithms = [item.algorithm for item in self.published_checksums]
+        if len(algorithms) != len(set(algorithms)):
+            raise ValueError("published checksum algorithms must be unique")
+        if self.record_url is not None:
+            parsed = urlparse(str(self.record_url))
+            if parsed.scheme != "https" or parsed.hostname not in ZENODO_HOSTS:
+                raise ValueError("Zenodo record URL must use an official HTTPS host")
+            if parsed.path.rstrip("/") != f"/records/{self.record_id}":
+                raise ValueError("Zenodo record URL must match record_id")
+        return self
+
+
+class CheckpointAuthorityResolution(StrictBaseModel):
+    """Sanitized provenance from metadata-only authoritative resolution."""
+
+    schema_version: Literal["1.0.0"]
+    provider: Literal["zenodo"]
+    record_id: str
+    requested_filename: str
+    resolved_filename: str
+    expected_size_bytes: int = Field(gt=0)
+    published_checksums: tuple[PublishedChecksum, ...]
+    metadata_request_url: HttpUrl
+    resolved_payload_url: HttpUrl
+    http_status: int = Field(ge=200, lt=400)
+    etag: str | None = None
+    last_modified: str | None = None
+    content_type: str | None = None
+    metadata_response_sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    retrieved_at: str
+    metadata_source: Literal["network", "managed_cache"]
+    warnings: tuple[str, ...] = ()
+    failure_classification: str | None = None
+
+    @model_validator(mode="after")
+    def resolution_is_consistent(self) -> CheckpointAuthorityResolution:
+        if self.requested_filename != self.resolved_filename:
+            raise ValueError("authority resolution filename identity mismatch")
+        algorithms = [item.algorithm for item in self.published_checksums]
+        if not algorithms or len(algorithms) != len(set(algorithms)):
+            raise ValueError("resolved published checksums must be nonempty and unique")
+        for value, label in (
+            (str(self.metadata_request_url), "metadata"),
+            (str(self.resolved_payload_url), "payload"),
+        ):
+            parsed = urlparse(value)
+            if parsed.scheme != "https" or parsed.hostname not in ZENODO_HOSTS:
+                raise ValueError(f"resolved Zenodo {label} URL is not provider-controlled HTTPS")
+        if self.failure_classification is not None:
+            raise ValueError("successful authority resolution cannot declare a failure")
+        return self
+
+
+class CheckpointAcquisitionPolicy(StrictBaseModel):
+    """Explicit network, authentication, authority, and resource-safety policy."""
+
+    allow_network: bool
+    allow_authentication: bool
+    maximum_bytes: int | None = Field(default=None, gt=0)
+    require_expected_sha256: bool = False
+    require_authority: bool = False
+    require_exact_size: bool = False
+    require_published_checksums: bool = False
+    require_observed_sha256: bool = False
 
 
 class LicenseRecord(StrictBaseModel):
@@ -117,7 +278,7 @@ class CheckpointSpec(StrictBaseModel):
     Validation performs no network access and does not deserialize model weights.
     """
 
-    schema_version: Literal["1.0.0"]
+    schema_version: Literal["1.0.0", "2.0.0"]
     checkpoint_id: CanonicalId
     source_type: CheckpointSourceType
     url: HttpUrl | None = None
@@ -130,6 +291,7 @@ class CheckpointSpec(StrictBaseModel):
     local_path: str | None = None
     expected_sha256: Annotated[str | None, Field(pattern=SHA256_PATTERN)] = None
     observed_sha256: Annotated[str | None, Field(pattern=SHA256_PATTERN)] = None
+    authority: CheckpointAuthority | None = None
     format: str
     loader: str
     license: LicenseRecord
@@ -142,14 +304,14 @@ class CheckpointSpec(StrictBaseModel):
     @field_validator("filename")
     @classmethod
     def filename_is_safe_relative(cls, value: str | None) -> str | None:
-        return ensure_repository_relative(value)
+        return ensure_checkpoint_relative_path(value)
 
     @model_validator(mode="after")
     def validate_source_fields(self) -> CheckpointSpec:
         match self.source_type:
             case CheckpointSourceType.HTTPS:
-                if self.url is None:
-                    raise ValueError("https checkpoints require url")
+                if self.url is None and self.authority is None:
+                    raise ValueError("https checkpoints require url or structured authority")
                 self._reject_non_null(
                     "https",
                     "repository_id",
@@ -205,6 +367,19 @@ class CheckpointSpec(StrictBaseModel):
             and self.expected_sha256 != self.observed_sha256
         ):
             raise ValueError("expected_sha256 and observed_sha256 must agree when both are set")
+        if self.schema_version == "1.0.0" and self.authority is not None:
+            raise ValueError("structured authority requires checkpoint schema 2.0.0")
+        if self.schema_version == "2.0.0":
+            if self.authority is None:
+                raise ValueError("checkpoint schema 2.0.0 requires structured authority")
+            if self.source_type != CheckpointSourceType.HTTPS:
+                raise ValueError("structured authority currently requires https source_type")
+            if self.filename != self.authority.filename:
+                raise ValueError("checkpoint filename must exactly match authority filename")
+            if self.url is not None:
+                raise ValueError(
+                    "authoritative payload URL must be resolved from provider metadata"
+                )
         return self
 
     def _reject_non_null(self, source_type: str, *fields: str) -> None:
@@ -255,7 +430,7 @@ class CheckpointMaterializationRecord(StrictBaseModel):
         Runtime-report references with secrets removed.
     """
 
-    schema_version: Literal["1.0.0"]
+    schema_version: Literal["1.0.0", "2.0.0"]
     checkpoint_id: CanonicalId
     source_type: CheckpointSourceType
     source_description: str
@@ -270,6 +445,49 @@ class CheckpointMaterializationRecord(StrictBaseModel):
     environment_id: str | None = None
     specification_fingerprint: str = Field(pattern=SHA256_PATTERN)
     command_log_references: tuple[str, ...] = ()
+    authority: CheckpointAuthority | None = None
+    expected_size_bytes: int | None = Field(default=None, gt=0)
+    observed_size_bytes: int | None = Field(default=None, ge=0)
+    published_checksums: tuple[PublishedChecksum, ...] = ()
+    observed_checksums: tuple[ObservedChecksum, ...] = ()
+    metadata_resolution_reference: str | None = None
+    metadata_resolution_sha256: Annotated[str | None, Field(pattern=SHA256_PATTERN)] = None
+    payload_etag: str | None = None
+    payload_last_modified: str | None = None
+    materialization_status: Literal["downloaded", "local_copy", "package_bundle"] | None = None
+
+    @model_validator(mode="after")
+    def authoritative_record_is_complete(self) -> CheckpointMaterializationRecord:
+        if self.schema_version == "2.0.0":
+            required = {
+                "authority": self.authority,
+                "expected_size_bytes": self.expected_size_bytes,
+                "observed_size_bytes": self.observed_size_bytes,
+                "metadata_resolution_reference": self.metadata_resolution_reference,
+                "metadata_resolution_sha256": self.metadata_resolution_sha256,
+                "materialization_status": self.materialization_status,
+            }
+            missing = sorted(name for name, value in required.items() if value is None)
+            if missing:
+                raise ValueError(f"authoritative materialization is missing: {missing}")
+            if self.expected_size_bytes != self.observed_size_bytes:
+                raise ValueError("authoritative expected and observed sizes must match")
+            if self.size_bytes != self.observed_size_bytes:
+                raise ValueError("legacy and authoritative observed sizes must match")
+            if self.observed_sha256 != self.sha256:
+                raise ValueError("observed SHA-256 must equal cache identity")
+            if (
+                self.authority is None
+                or self.published_checksums != self.authority.published_checksums
+            ):
+                raise ValueError("materialization published checksums must match authority")
+            observed = {item.algorithm: item.digest for item in self.observed_checksums}
+            if observed.get(ChecksumAlgorithm.SHA256) != self.sha256:
+                raise ValueError("observed checksum set must contain cache SHA-256")
+            for item in self.published_checksums:
+                if observed.get(item.algorithm) != item.digest:
+                    raise ValueError("published checksums must match observed local digests")
+        return self
 
 
 @dataclass(frozen=True)
@@ -279,6 +497,7 @@ class TransportResponse:
     status_code: int
     headers: Mapping[str, str]
     body: BinaryIO
+    effective_url: str | None = None
 
 
 class DownloadTransport(Protocol):
@@ -329,7 +548,232 @@ class UrllibDownloadTransport:
             status_code=int(getattr(response, "status", 200)),
             headers=dict(response.headers.items()),
             body=response,
+            effective_url=str(getattr(response, "geturl", lambda: url)()),
         )
+
+
+def _header(headers: Mapping[str, str], name: str) -> str | None:
+    for key, value in headers.items():
+        if key.lower() == name.lower():
+            return value
+    return None
+
+
+def _reject_duplicate_json_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def _validate_zenodo_url(value: str, *, label: str) -> str:
+    parsed = urlparse(value)
+    if (
+        parsed.scheme != "https"
+        or parsed.hostname not in ZENODO_HOSTS
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.fragment
+    ):
+        raise CheckpointAuthorityResolutionError(
+            f"Zenodo {label} URL must use a provider-controlled HTTPS host"
+        )
+    return value
+
+
+def _published_checksums_from_metadata(
+    file_record: Mapping[str, Any],
+) -> tuple[PublishedChecksum, ...]:
+    raw_values: list[str] = []
+    checksum = file_record.get("checksum")
+    if isinstance(checksum, str):
+        raw_values.append(checksum)
+    checksums = file_record.get("checksums")
+    if isinstance(checksums, list) and all(isinstance(item, str) for item in checksums):
+        raw_values.extend(checksums)
+    parsed: list[PublishedChecksum] = []
+    for value in raw_values:
+        algorithm, separator, digest = value.partition(":")
+        if not separator:
+            raise CheckpointAuthorityResolutionError(
+                "Zenodo published checksum must be algorithm-tagged"
+            )
+        try:
+            parsed.append(
+                PublishedChecksum.model_validate(
+                    {"algorithm": algorithm.lower(), "digest": digest.lower()}
+                )
+            )
+        except Exception as exc:
+            raise CheckpointAuthorityResolutionError(
+                "Zenodo published checksum is unsupported or malformed"
+            ) from exc
+    algorithms = [item.algorithm for item in parsed]
+    if not parsed or len(algorithms) != len(set(algorithms)):
+        raise CheckpointAuthorityResolutionError(
+            "Zenodo file requires a nonempty unique published checksum set"
+        )
+    return tuple(sorted(parsed, key=lambda item: item.algorithm.value))
+
+
+def resolve_checkpoint_authority(
+    specification: CheckpointSpec,
+    *,
+    transport: DownloadTransport | None = None,
+    timeout: float = 300.0,
+) -> CheckpointAuthorityResolution:
+    """Resolve provider metadata for one checkpoint without downloading payload bytes.
+
+    Parameters
+    ----------
+    specification
+        Strict authority-complete checkpoint specification.
+    transport
+        Optional injectable metadata transport.
+    timeout
+        Metadata request timeout in seconds.
+
+    Returns
+    -------
+    CheckpointAuthorityResolution
+        Sanitized exact-file authority and metadata-response provenance.
+    """
+
+    spec = CheckpointSpec.model_validate(specification)
+    authority = spec.authority
+    if authority is None:
+        raise CheckpointAuthorityResolutionError(
+            "checkpoint specification has no structured authority"
+        )
+    metadata_url = f"https://zenodo.org/api/records/{authority.record_id}"
+    client = transport or UrllibDownloadTransport()
+    response: TransportResponse | None = None
+    try:
+        response = client.open(
+            metadata_url,
+            headers={"Accept": "application/json"},
+            timeout=timeout,
+        )
+        effective_url = response.effective_url or metadata_url
+        _validate_zenodo_url(effective_url, label="metadata response")
+        if response.status_code < 200 or response.status_code >= 400:
+            raise CheckpointAuthorityResolutionError(
+                f"Zenodo metadata request failed with HTTP {response.status_code}"
+            )
+        content_type = _header(response.headers, "Content-Type")
+        warnings: list[str] = []
+        if content_type is None:
+            warnings.append("metadata response omitted Content-Type")
+        elif "json" not in content_type.lower():
+            raise CheckpointAuthorityResolutionError(
+                "Zenodo metadata response Content-Type is not JSON"
+            )
+        raw = bytearray()
+        while True:
+            chunk = response.body.read(64 * 1024)
+            if not chunk:
+                break
+            raw.extend(chunk)
+            if len(raw) > ZENODO_METADATA_MAXIMUM_BYTES:
+                raise CheckpointAuthorityResolutionError(
+                    "Zenodo metadata response exceeded the bounded size limit"
+                )
+        try:
+            data = json.loads(raw, object_pairs_hook=_reject_duplicate_json_keys)
+        except (json.JSONDecodeError, UnicodeDecodeError, ValueError) as exc:
+            raise CheckpointAuthorityResolutionError(
+                "Zenodo metadata response is invalid JSON"
+            ) from exc
+        if not isinstance(data, dict) or str(data.get("id")) != authority.record_id:
+            raise CheckpointAuthorityResolutionError("Zenodo metadata record identity mismatch")
+        files = data.get("files")
+        if not isinstance(files, list):
+            raise CheckpointAuthorityResolutionError("Zenodo metadata files are missing")
+        matches: list[Mapping[str, Any]] = []
+        for item in files:
+            if not isinstance(item, dict):
+                raise CheckpointAuthorityResolutionError("Zenodo metadata file entry is malformed")
+            filename = item.get("key", item.get("filename"))
+            if filename == authority.filename:
+                matches.append(item)
+        if not matches:
+            raise CheckpointNotFoundError(
+                f"authoritative checkpoint file not found: {authority.filename}"
+            )
+        if len(matches) != 1:
+            raise CheckpointAuthorityResolutionError(
+                "Zenodo metadata contains duplicate requested filename identity"
+            )
+        file_record = matches[0]
+        resolved_filename = file_record.get("key", file_record.get("filename"))
+        try:
+            resolved_filename = ensure_checkpoint_relative_path(str(resolved_filename))
+            resolved_size = int(file_record["size"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise CheckpointAuthorityResolutionError(
+                "Zenodo metadata file identity or size is malformed"
+            ) from exc
+        if resolved_filename != authority.filename:
+            raise CheckpointAuthorityResolutionError("metadata/file identity mismatch")
+        if resolved_size != authority.expected_size_bytes:
+            raise CheckpointAuthorityResolutionError(
+                "authoritative metadata exact size differs from the specification"
+            )
+        published = _published_checksums_from_metadata(file_record)
+        expected_published = tuple(
+            sorted(authority.published_checksums, key=lambda item: item.algorithm.value)
+        )
+        if published != expected_published:
+            raise CheckpointAuthorityResolutionError(
+                "authoritative metadata published checksums differ from the specification"
+            )
+        links = file_record.get("links")
+        if not isinstance(links, dict):
+            raise CheckpointAuthorityResolutionError("Zenodo payload links are missing")
+        payload_url = next(
+            (
+                links[key]
+                for key in ("content", "download", "self")
+                if isinstance(links.get(key), str)
+            ),
+            None,
+        )
+        if payload_url is None:
+            raise CheckpointAuthorityResolutionError("Zenodo payload URL is missing")
+        _validate_zenodo_url(payload_url, label="payload")
+        return CheckpointAuthorityResolution(
+            schema_version="1.0.0",
+            provider=authority.provider,
+            record_id=authority.record_id,
+            requested_filename=authority.filename,
+            resolved_filename=resolved_filename,
+            expected_size_bytes=resolved_size,
+            published_checksums=published,
+            metadata_request_url=HttpUrl(metadata_url),
+            resolved_payload_url=HttpUrl(payload_url),
+            http_status=response.status_code,
+            etag=_header(response.headers, "ETag"),
+            last_modified=_header(response.headers, "Last-Modified"),
+            content_type=content_type,
+            metadata_response_sha256=hashlib.sha256(raw).hexdigest(),
+            retrieved_at=utc_now(),
+            metadata_source="network",
+            warnings=tuple(warnings),
+        )
+    except CheckpointAcquisitionError:
+        raise
+    except (OSError, TypeError, ValueError) as exc:
+        raise CheckpointAuthorityResolutionError(
+            f"Zenodo metadata resolution failed: {sanitize_text(str(exc))}"
+        ) from exc
+    finally:
+        if response is not None:
+            try:
+                response.body.close()
+            except OSError:
+                pass
 
 
 def validate_sha256(value: str) -> str:
@@ -432,9 +876,40 @@ class CheckpointManager:
         except ValueError as exc:
             raise CheckpointNotFoundError(f"invalid checkpoint card ID: {card_id}") from exc
         try:
-            spec = ModelCardRegistry(self.repository_root).get_card(card_id).checkpoint
+            card = ModelCardRegistry(self.repository_root).get_card(card_id)
+            spec = card.checkpoint
         except KeyError as exc:
             raise CheckpointNotFoundError(f"model card not found: {card_id}") from exc
+        return self.ensure_checkpoint(
+            spec,
+            environment_id=card.usage.recommended_environment.environment_id,
+        )
+
+    def ensure_checkpoint(
+        self,
+        specification: CheckpointSpec,
+        *,
+        environment_id: str | None = None,
+        acquisition_policy: CheckpointAcquisitionPolicy | None = None,
+    ) -> ResolvedCheckpoint:
+        """Acquire one explicit checkpoint specification without requiring a model card.
+
+        Parameters
+        ----------
+        specification
+            Strict checkpoint source and integrity contract.
+        environment_id
+            Isolated environment required only by package-bundled sources.
+        acquisition_policy
+            Optional explicit authority, network, authentication, and byte-limit policy.
+
+        Returns
+        -------
+        ResolvedCheckpoint
+            Integrity-checked content-addressed local checkpoint.
+        """
+
+        spec = CheckpointSpec.model_validate(specification)
         original_sink = self._report_sink
         original_executor = self.executor
         self._report_sink = RuntimeReportSink(
@@ -445,18 +920,28 @@ class CheckpointManager:
         )
         self.executor = original_executor.with_report_sink(self._report_sink)
         try:
-            return self._ensure_spec(card_id, spec)
+            policy = acquisition_policy or CheckpointAcquisitionPolicy(
+                allow_network=not self.policy.offline,
+                allow_authentication=True,
+            )
+            return self._ensure_spec(environment_id, spec, policy)
         finally:
             self._report_sink = original_sink
             self.executor = original_executor
 
-    def _ensure_spec(self, card_id: str, spec: CheckpointSpec) -> ResolvedCheckpoint:
+    def _ensure_spec(
+        self,
+        environment_id: str | None,
+        spec: CheckpointSpec,
+        acquisition_policy: CheckpointAcquisitionPolicy,
+    ) -> ResolvedCheckpoint:
         """Resolve a loaded checkpoint spec with acquisition reporting enabled."""
 
+        self._validate_acquisition_policy(spec, acquisition_policy)
         cached = self._cached(spec)
         if cached is not None:
             return cached
-        if self.policy.offline and spec.source_type in {
+        if (self.policy.offline or not acquisition_policy.allow_network) and spec.source_type in {
             CheckpointSourceType.HTTPS,
             CheckpointSourceType.GITHUB_RELEASE,
             CheckpointSourceType.HUGGINGFACE,
@@ -474,23 +959,141 @@ class CheckpointManager:
             case CheckpointSourceType.LOCAL_PATH:
                 return self._from_local_path(spec)
             case CheckpointSourceType.HTTPS:
-                return self._from_remote(spec, str(spec.url), {}, "https")
+                resolution = (
+                    self.resolve_checkpoint_authority(spec) if spec.authority is not None else None
+                )
+                url = str(resolution.resolved_payload_url) if resolution else str(spec.url)
+                return self._from_remote(
+                    spec,
+                    url,
+                    {},
+                    "https",
+                    acquisition_policy=acquisition_policy,
+                    authority_resolution=resolution,
+                )
             case CheckpointSourceType.GITHUB_RELEASE:
                 return self._from_remote(
                     spec,
                     github_release_url(spec),
-                    optional_auth_header("GITHUB_TOKEN"),
+                    optional_auth_header("GITHUB_TOKEN")
+                    if acquisition_policy.allow_authentication
+                    else {},
                     "github_release",
+                    acquisition_policy=acquisition_policy,
                 )
             case CheckpointSourceType.HUGGINGFACE:
                 return self._from_remote(
                     spec,
                     huggingface_url(spec),
-                    optional_auth_header("HF_TOKEN") or optional_auth_header("HUGGINGFACE_TOKEN"),
+                    (optional_auth_header("HF_TOKEN") or optional_auth_header("HUGGINGFACE_TOKEN"))
+                    if acquisition_policy.allow_authentication
+                    else {},
                     "huggingface",
+                    acquisition_policy=acquisition_policy,
                 )
             case CheckpointSourceType.PACKAGE_BUNDLE:
-                return self._from_package_bundle(card_id, spec)
+                if environment_id is None:
+                    raise CheckpointAcquisitionError(
+                        "package-bundle checkpoint acquisition requires environment_id"
+                    )
+                return self._from_package_bundle(environment_id, spec)
+
+    @staticmethod
+    def _validate_acquisition_policy(
+        spec: CheckpointSpec,
+        policy: CheckpointAcquisitionPolicy,
+    ) -> None:
+        if policy.require_authority and spec.authority is None:
+            raise CheckpointAcquisitionError("checkpoint acquisition policy requires authority")
+        if policy.require_expected_sha256 and spec.expected_sha256 is None:
+            raise CheckpointAcquisitionError(
+                "checkpoint acquisition policy requires expected SHA-256"
+            )
+        if policy.require_exact_size and (
+            spec.authority is None or spec.authority.expected_size_bytes <= 0
+        ):
+            raise CheckpointAcquisitionError("checkpoint acquisition policy requires exact size")
+        if policy.require_published_checksums and (
+            spec.authority is None or not spec.authority.published_checksums
+        ):
+            raise CheckpointAcquisitionError(
+                "checkpoint acquisition policy requires published checksums"
+            )
+
+    def resolve_checkpoint_authority(
+        self,
+        specification: CheckpointSpec,
+    ) -> CheckpointAuthorityResolution:
+        """Resolve or reuse bounded authoritative metadata without acquiring payload bytes.
+
+        Parameters
+        ----------
+        specification
+            Strict authority-complete checkpoint specification.
+
+        Returns
+        -------
+        CheckpointAuthorityResolution
+            Network or managed-cache metadata provenance.
+        """
+
+        spec = CheckpointSpec.model_validate(specification)
+        if spec.authority is None:
+            raise CheckpointAuthorityResolutionError(
+                "checkpoint specification has no structured authority"
+            )
+        path = self._authority_cache_path(spec)
+        cached = self._load_cached_authority_resolution(spec, path)
+        if cached is not None:
+            return cached.model_copy(update={"metadata_source": "managed_cache"})
+        if self.policy.offline:
+            raise OfflineResourceUnavailableError(
+                f"checkpoint authority metadata cache miss for {spec.checkpoint_id}"
+            )
+        try:
+            resolved = resolve_checkpoint_authority(
+                spec,
+                transport=self.transport,
+                timeout=self.policy.download_timeout_seconds,
+            )
+            write_json_atomic(path, resolved)
+        except OSError as exc:
+            raise CheckpointAuthorityResolutionError(
+                f"checkpoint authority cache write failed: {sanitize_text(str(exc))}"
+            ) from exc
+        return resolved
+
+    def _authority_cache_path(self, spec: CheckpointSpec) -> Path:
+        return contained_path(
+            self.runtime_root / "checkpoints",
+            spec.checkpoint_id,
+            ".authority",
+            checkpoint_specification_fingerprint(spec),
+            "checkpoint-authority-resolution.json",
+        )
+
+    def _load_cached_authority_resolution(
+        self,
+        spec: CheckpointSpec,
+        path: Path,
+    ) -> CheckpointAuthorityResolution | None:
+        if not path.is_file() or spec.authority is None:
+            return None
+        try:
+            result = CheckpointAuthorityResolution.model_validate_json(path.read_text())
+        except (OSError, ValueError):
+            return None
+        authority = spec.authority
+        if (
+            result.provider != authority.provider
+            or result.record_id != authority.record_id
+            or result.requested_filename != authority.filename
+            or result.expected_size_bytes != authority.expected_size_bytes
+            or result.published_checksums
+            != tuple(sorted(authority.published_checksums, key=lambda item: item.algorithm.value))
+        ):
+            return None
+        return result
 
     def info(self, card_id: str) -> dict[str, object]:
         """Inspect a checkpoint specification and local cache without acquisition.
@@ -526,6 +1129,25 @@ class CheckpointManager:
             spec = ModelCardRegistry(self.repository_root).get_card(card_id).checkpoint
         except KeyError as exc:
             raise CheckpointNotFoundError(f"model card not found: {card_id}") from exc
+        data = self.info_checkpoint(spec)
+        data["card_id"] = card_id
+        return data
+
+    def info_checkpoint(self, specification: CheckpointSpec) -> dict[str, object]:
+        """Inspect an explicit specification and its managed caches without network access.
+
+        Parameters
+        ----------
+        specification
+            Strict checkpoint specification to inspect.
+
+        Returns
+        -------
+        dict
+            Specification fingerprint, authority state, and validated cache inventory.
+        """
+
+        spec = CheckpointSpec.model_validate(specification)
         root = contained_path(self.runtime_root / "checkpoints", spec.checkpoint_id)
         entries: list[dict[str, object]] = []
         if root.exists():
@@ -535,16 +1157,36 @@ class CheckpointManager:
                     entries.append(
                         {
                             "sha256": child.name,
-                            "path": str(child),
+                            "cache_identity": f"{spec.checkpoint_id}:{child.name}",
+                            "runtime_path": str(child),
                             "valid": validity is not None,
                         }
                     )
+        authority_cache = None
+        if spec.authority is not None:
+            authority_path = self._authority_cache_path(spec)
+            cached_authority = self._load_cached_authority_resolution(spec, authority_path)
+            authority_cache = {
+                "cached": cached_authority is not None,
+                "reference": (
+                    str(authority_path.relative_to(self.runtime_root))
+                    if authority_path.is_file()
+                    else None
+                ),
+                "metadata_response_sha256": (
+                    cached_authority.metadata_response_sha256
+                    if cached_authority is not None
+                    else None
+                ),
+            }
         return {
-            "card_id": card_id,
             "checkpoint_id": spec.checkpoint_id,
             "source_type": spec.source_type.value,
             "expected_sha256": spec.expected_sha256,
             "observed_sha256": spec.observed_sha256,
+            "specification_fingerprint": checkpoint_specification_fingerprint(spec),
+            "authority": spec.authority.model_dump(mode="json") if spec.authority else None,
+            "authority_cache": authority_cache,
             "cached": entries,
         }
 
@@ -635,6 +1277,66 @@ class CheckpointManager:
                 hashes.add(value)
         if len(hashes) != 1:
             return None
+        if spec.authority is not None:
+            if metadata.schema_version != "2.0.0" or metadata.authority != spec.authority:
+                return None
+            try:
+                actual_size = file_path.stat().st_size
+            except OSError:
+                return None
+            if (
+                actual_size != spec.authority.expected_size_bytes
+                or metadata.expected_size_bytes != spec.authority.expected_size_bytes
+                or metadata.observed_size_bytes != actual_size
+                or metadata.size_bytes != actual_size
+            ):
+                return None
+            algorithms = {item.algorithm for item in spec.authority.published_checksums}
+            algorithms.add(ChecksumAlgorithm.SHA256)
+            digesters = {algorithm: hashlib.new(algorithm.value) for algorithm in algorithms}
+            try:
+                with file_path.open("rb") as handle:
+                    for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                        for digest in digesters.values():
+                            digest.update(chunk)
+            except OSError:
+                return None
+            observed = {algorithm: digest.hexdigest() for algorithm, digest in digesters.items()}
+            if observed[ChecksumAlgorithm.SHA256] != actual:
+                return None
+            for published in spec.authority.published_checksums:
+                if observed.get(published.algorithm) != published.digest:
+                    return None
+            if (
+                metadata.metadata_resolution_reference is None
+                or metadata.metadata_resolution_sha256 is None
+            ):
+                return None
+            try:
+                ensure_repository_relative(metadata.metadata_resolution_reference)
+                resolution_path = contained_path(
+                    self.runtime_root, metadata.metadata_resolution_reference
+                )
+                if sha256_file(resolution_path) != metadata.metadata_resolution_sha256:
+                    return None
+                resolution = CheckpointAuthorityResolution.model_validate_json(
+                    resolution_path.read_text()
+                )
+            except (OSError, ValueError):
+                return None
+            if (
+                resolution.record_id != spec.authority.record_id
+                or resolution.resolved_filename != spec.authority.filename
+                or resolution.expected_size_bytes != spec.authority.expected_size_bytes
+                or resolution.published_checksums
+                != tuple(
+                    sorted(
+                        spec.authority.published_checksums,
+                        key=lambda item: item.algorithm.value,
+                    )
+                )
+            ):
+                return None
         return ResolvedCheckpoint(
             checkpoint_id=spec.checkpoint_id,
             sha256=actual,
@@ -684,9 +1386,14 @@ class CheckpointManager:
         url: str,
         headers: Mapping[str, str],
         source_description: str,
+        *,
+        acquisition_policy: CheckpointAcquisitionPolicy,
+        authority_resolution: CheckpointAuthorityResolution | None = None,
     ) -> ResolvedCheckpoint:
         if not url.startswith("https://"):
             raise CheckpointAcquisitionError("remote checkpoint URLs must use HTTPS")
+        if authority_resolution is not None:
+            _validate_zenodo_url(url, label="payload")
         downloads = contained_path(self.runtime_root / "checkpoints", ".downloads")
         tmp = downloads / f"{spec.checkpoint_id}.{uuid.uuid4().hex}.download"
         response: TransportResponse | None = None
@@ -743,15 +1450,48 @@ class CheckpointManager:
                 if response.status_code == 404:
                     raise CheckpointNotFoundError(message)
                 raise CheckpointAcquisitionError(message)
+            effective_url = response.effective_url or url
+            if not effective_url.startswith("https://"):
+                raise CheckpointAcquisitionError(
+                    "checkpoint redirect resolved to an unsupported scheme"
+                )
+            if authority_resolution is not None:
+                _validate_zenodo_url(effective_url, label="payload response")
             filename = spec.filename or Path(url).name or spec.checkpoint_id
-            digest = hashlib.sha256()
+            algorithms = {ChecksumAlgorithm.SHA256}
+            if authority_resolution is not None:
+                algorithms.update(
+                    item.algorithm for item in authority_resolution.published_checksums
+                )
+            digests = {
+                algorithm: hashlib.new(algorithm.value)
+                for algorithm in sorted(algorithms, key=lambda item: item.value)
+            }
             size = 0
             try:
                 downloads.mkdir(parents=True, exist_ok=True)
                 with tmp.open("wb") as handle:
                     for chunk in iter(lambda: response.body.read(1024 * 1024), b""):
                         size += len(chunk)
-                        digest.update(chunk)
+                        if (
+                            acquisition_policy.maximum_bytes is not None
+                            and size > acquisition_policy.maximum_bytes
+                        ):
+                            self._record_checkpoint_event(
+                                "remote-stream",
+                                spec,
+                                "failed",
+                                location=url,
+                                source_description=source_description,
+                                byte_count=size,
+                                failure_classification="oversized_response",
+                                failure_detail="checkpoint response exceeded maximum_bytes",
+                            )
+                            raise CheckpointResponseTooLargeError(
+                                "checkpoint response exceeded maximum_bytes"
+                            )
+                        for digest in digests.values():
+                            digest.update(chunk)
                         handle.write(chunk)
             except OSError as exc:
                 self._record_checkpoint_event(
@@ -767,7 +1507,12 @@ class CheckpointManager:
                 raise CheckpointAcquisitionError(
                     f"checkpoint download stream failed: {sanitize_text(str(exc))}"
                 ) from exc
-            sha = digest.hexdigest()
+            observed = tuple(
+                ObservedChecksum(algorithm=algorithm, digest=digest.hexdigest())
+                for algorithm, digest in digests.items()
+            )
+            observed_by_algorithm = {item.algorithm: item.digest for item in observed}
+            sha = observed_by_algorithm[ChecksumAlgorithm.SHA256]
             self._record_checkpoint_event(
                 "remote-stream",
                 spec,
@@ -777,8 +1522,90 @@ class CheckpointManager:
                 byte_count=size,
                 sha256=sha,
             )
+            if authority_resolution is not None:
+                expected_size = authority_resolution.expected_size_bytes
+                if size != expected_size:
+                    declared_length = _header(response.headers, "Content-Length")
+                    truncated = False
+                    if declared_length is not None:
+                        try:
+                            truncated = size < expected_size <= int(declared_length)
+                        except ValueError:
+                            truncated = False
+                    classification = "truncated_transfer" if truncated else "exact_size_mismatch"
+                    self._record_checkpoint_event(
+                        "size-validation",
+                        spec,
+                        "failed",
+                        location=url,
+                        source_description=source_description,
+                        byte_count=size,
+                        sha256=sha,
+                        failure_classification=classification,
+                        failure_detail=(
+                            f"checkpoint exact size mismatch: expected {expected_size}, got {size}"
+                        ),
+                    )
+                    raise CheckpointSizeMismatchError(
+                        f"checkpoint exact size mismatch: expected {expected_size}, got {size}"
+                    )
+                self._record_checkpoint_event(
+                    "size-validation",
+                    spec,
+                    "success",
+                    location=url,
+                    source_description=source_description,
+                    byte_count=size,
+                    sha256=sha,
+                    report_extra={"expected_size_bytes": expected_size},
+                )
+                for published in authority_resolution.published_checksums:
+                    actual = observed_by_algorithm[published.algorithm]
+                    if actual != published.digest:
+                        self._record_checkpoint_event(
+                            "published-checksum-validation",
+                            spec,
+                            "failed",
+                            location=url,
+                            source_description=source_description,
+                            byte_count=size,
+                            sha256=sha,
+                            failure_classification="published_checksum_mismatch",
+                            failure_detail=(
+                                f"published {published.algorithm.value} checksum mismatch"
+                            ),
+                            report_extra={
+                                "algorithm": published.algorithm.value,
+                                "published_digest": published.digest,
+                                "observed_digest": actual,
+                            },
+                        )
+                        raise CheckpointPublishedChecksumMismatchError(
+                            f"published {published.algorithm.value} checkpoint checksum mismatch"
+                        )
+                self._record_checkpoint_event(
+                    "published-checksum-validation",
+                    spec,
+                    "success",
+                    location=url,
+                    source_description=source_description,
+                    byte_count=size,
+                    sha256=sha,
+                )
             self._validate_checkpoint_hashes(spec, sha, url, source_description)
-            return self._finalize_tmp(spec, tmp, filename, url, source_description, sha, size)
+            return self._finalize_tmp(
+                spec,
+                tmp,
+                filename,
+                effective_url,
+                source_description,
+                sha,
+                size,
+                authority_resolution=authority_resolution,
+                observed_checksums=observed,
+                payload_etag=_header(response.headers, "ETag"),
+                payload_last_modified=_header(response.headers, "Last-Modified"),
+            )
         except CheckpointAcquisitionError as exc:
             acquisition_error = exc
             self._cleanup_path(tmp, spec, source_description)
@@ -802,14 +1629,26 @@ class CheckpointManager:
                             f"checkpoint response close failed: {sanitize_text(str(exc))}"
                         ) from exc
 
-    def _from_package_bundle(self, card_id: str, spec: CheckpointSpec) -> ResolvedCheckpoint:
+    def _from_package_bundle(
+        self,
+        environment_id: str,
+        spec: CheckpointSpec,
+    ) -> ResolvedCheckpoint:
         from torch_dae.environment.manager import EnvironmentManager
 
-        resolved = EnvironmentManager(
+        manager = EnvironmentManager(
             self.repository_root,
             policy=self.policy,
             executor=self.executor,
-        ).ensure(card_id)
+        )
+        manager.materialize_environment(environment_id)
+        manager.verify_environment(
+            environment_id,
+            expected_fingerprint=manager.resolve_environment(
+                environment_id
+            ).environment_fingerprint,
+        )
+        resolved = manager.resolved_environment(environment_id)
         if spec.package is None or spec.package_version is None or spec.filename is None:
             raise CheckpointAcquisitionError("package bundle checkpoint is incomplete")
         code = """
@@ -961,6 +1800,11 @@ print(json.dumps({"path": str(target), "root": str(root)}))
         source_description: str,
         sha: str,
         size: int,
+        *,
+        authority_resolution: CheckpointAuthorityResolution | None = None,
+        observed_checksums: tuple[ObservedChecksum, ...] = (),
+        payload_etag: str | None = None,
+        payload_last_modified: str | None = None,
     ) -> ResolvedCheckpoint:
         cache_dir = checkpoint_cache_path(self.runtime_root, spec.checkpoint_id, sha)
         final = contained_path(cache_dir, Path(filename).name)
@@ -992,7 +1836,19 @@ print(json.dumps({"path": str(target), "root": str(root)}))
             byte_count=size,
             sha256=sha,
         )
-        self._write_metadata_or_cleanup(spec, final, location, source_description, sha, size)
+        self._write_metadata_or_cleanup(
+            spec,
+            final,
+            location,
+            source_description,
+            sha,
+            size,
+            authority_resolution=authority_resolution,
+            observed_checksums=observed_checksums,
+            payload_etag=payload_etag,
+            payload_last_modified=payload_last_modified,
+            materialization_status="downloaded",
+        )
         return ResolvedCheckpoint(
             checkpoint_id=spec.checkpoint_id,
             sha256=sha,
@@ -1159,6 +2015,11 @@ print(json.dumps({"path": str(target), "root": str(root)}))
         size: int,
         *,
         environment_id: str | None = None,
+        authority_resolution: CheckpointAuthorityResolution | None = None,
+        observed_checksums: tuple[ObservedChecksum, ...] = (),
+        payload_etag: str | None = None,
+        payload_last_modified: str | None = None,
+        materialization_status: Literal["downloaded", "local_copy", "package_bundle"] | None = None,
     ) -> None:
         try:
             self._write_metadata(
@@ -1169,6 +2030,11 @@ print(json.dumps({"path": str(target), "root": str(root)}))
                 sha,
                 size,
                 environment_id=environment_id,
+                authority_resolution=authority_resolution,
+                observed_checksums=observed_checksums,
+                payload_etag=payload_etag,
+                payload_last_modified=payload_last_modified,
+                materialization_status=materialization_status,
             )
         except OSError as exc:
             self._record_checkpoint_event(
@@ -1233,9 +2099,22 @@ print(json.dumps({"path": str(target), "root": str(root)}))
         size: int,
         *,
         environment_id: str | None = None,
+        authority_resolution: CheckpointAuthorityResolution | None = None,
+        observed_checksums: tuple[ObservedChecksum, ...] = (),
+        payload_etag: str | None = None,
+        payload_last_modified: str | None = None,
+        materialization_status: Literal["downloaded", "local_copy", "package_bundle"] | None = None,
     ) -> None:
+        authority_path = self._authority_cache_path(spec) if spec.authority is not None else None
+        metadata_reference: str | None = None
+        metadata_sha256: str | None = None
+        if authority_resolution is not None and authority_path is not None:
+            if not authority_path.is_file():
+                raise OSError("checkpoint authority resolution cache is missing")
+            metadata_reference = str(authority_path.relative_to(self.runtime_root))
+            metadata_sha256 = sha256_file(authority_path)
         metadata = CheckpointMaterializationRecord(
-            schema_version="1.0.0",
+            schema_version="2.0.0" if spec.authority is not None else "1.0.0",
             checkpoint_id=spec.checkpoint_id,
             source_type=spec.source_type,
             source_description=source_description,
@@ -1244,7 +2123,7 @@ print(json.dumps({"path": str(target), "root": str(root)}))
             sha256=sha,
             size_bytes=size,
             acquired_at=utc_now(),
-            cache_path=str(final.parent),
+            cache_path=str(final.parent.relative_to(self.runtime_root)),
             expected_sha256=spec.expected_sha256,
             observed_sha256=spec.observed_sha256 or sha,
             environment_id=environment_id,
@@ -1252,6 +2131,22 @@ print(json.dumps({"path": str(target), "root": str(root)}))
             command_log_references=tuple(
                 self._report_sink.references if self._report_sink is not None else ()
             ),
+            authority=spec.authority,
+            expected_size_bytes=(
+                authority_resolution.expected_size_bytes
+                if authority_resolution is not None
+                else None
+            ),
+            observed_size_bytes=size if authority_resolution is not None else None,
+            published_checksums=(
+                authority_resolution.published_checksums if authority_resolution is not None else ()
+            ),
+            observed_checksums=observed_checksums,
+            metadata_resolution_reference=metadata_reference,
+            metadata_resolution_sha256=metadata_sha256,
+            payload_etag=payload_etag,
+            payload_last_modified=payload_last_modified,
+            materialization_status=materialization_status,
         )
         write_json_atomic(final.parent / "checkpoint-materialization.json", metadata)
 
@@ -1374,6 +2269,7 @@ def checkpoint_specification_fingerprint(spec: CheckpointSpec) -> str:
         "local_path": spec.local_path,
         "expected_sha256": spec.expected_sha256,
         "observed_sha256": spec.observed_sha256,
+        "authority": spec.authority.model_dump(mode="json") if spec.authority is not None else None,
         "format": spec.format,
         "loader": spec.loader,
     }

@@ -70,6 +70,7 @@ REQUIRED_SCRIPTS = {
     "validate_analysis_report.py",
     "validate_skill_artifacts.py",
     "render_analysis_report.py",
+    "extract_pdf_text.py",
     "common.py",
 }
 
@@ -314,7 +315,18 @@ def behavioral_smoke_errors(root: Path) -> list[str]:
         scenario_id="hidden-checkpoint-helper",
     )
     wrong_hash_report = copy.deepcopy(hidden)
-    wrong_hash_report["checkpoint_candidates"][0]["hash_evidence"] = "1" * 64
+    if not isinstance(wrong_hash_report, dict):
+        errors.append("hidden checkpoint golden report is malformed")
+        return errors
+    wrong_hash_candidates = wrong_hash_report["checkpoint_candidates"]
+    if (
+        not isinstance(wrong_hash_candidates, list)
+        or not wrong_hash_candidates
+        or not isinstance(wrong_hash_candidates[0], dict)
+    ):
+        errors.append("hidden checkpoint golden candidates are malformed")
+        return errors
+    wrong_hash_candidates[0]["hash_evidence"] = "1" * 64
     checkpoint_failures = evaluate_analysis_report(
         hidden_scenario,
         AnalysisReport.model_validate(wrong_hash_report),
@@ -410,6 +422,8 @@ def main() -> int:
         name for name in REQUIRED_SCRIPTS if not (skill / "scripts" / name).exists()
     )
     errors: list[str] = []
+    if not (root / "scripts/onboarding_handoff.py").is_file():
+        errors.append("root onboarding handoff command is missing")
 
     stale_license_access_phrases = (
         "license_or_" + "access_blocker",
@@ -424,6 +438,26 @@ def main() -> int:
             )
     if "Next allowed lifecycle transition: `integrated`" in text:
         errors.append("stale integrated lifecycle transition remains in SKILL.md")
+    for required_handoff_text in (
+        "WORKFLOW_ID",
+        "scripts/onboarding_handoff.py discover",
+        ".torch-dae/workspaces/<workflow-id>/<phase>/<run-id>/",
+        "onboarding_reports/<workflow-id>/",
+    ):
+        if required_handoff_text not in text:
+            errors.append(f"phase handoff guidance is missing: {required_handoff_text}")
+    environment_guidance = (skill / "references/environment-resolution.md").read_text()
+    for required_environment_text in (
+        "direct dependency",
+        "constructor trial",
+        "Draft resolution complete",
+        "byte identity",
+        "external failure",
+    ):
+        if required_environment_text.lower() not in environment_guidance.lower():
+            errors.append(
+                f"environment-resolution hardening guidance is missing: {required_environment_text}"
+            )
     errors.extend(
         markdown_link_errors(
             root,
@@ -471,6 +505,7 @@ def main() -> int:
     request_text = (template_dir / "agent-request.md").read_text()
     for placeholder in (
         "MODE: <analyze | resolve-environment | integrate | verify | card>",
+        "WORKFLOW_ID: <STABLE_WORKFLOW_ID_OR_AUTO_DISCOVER>",
         "MODEL_NAME: <MODEL_NAME>",
         "UPSTREAM_REPOSITORY: <GITHUB_REPOSITORY_URL>",
         "PAPER_OR_TECHNICAL_REFERENCE: <PAPER_URL_OR_NONE>",
@@ -485,6 +520,11 @@ def main() -> int:
     for heading in (
         "## Summary",
         "## Work completed",
+        "## Consumed handoff",
+        "## Produced handoff",
+        "## Finalize result",
+        "## Evidence invariance",
+        "## Workspace cleanup",
         "## Problems and resolutions",
         "## Open questions",
         "## Files",

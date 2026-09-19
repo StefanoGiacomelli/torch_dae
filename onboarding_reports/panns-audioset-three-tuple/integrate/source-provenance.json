@@ -1,0 +1,256 @@
+{
+  "schema_version": "1.0.0",
+  "workflow_id": "panns-audioset-three-tuple",
+  "upstream_repository": "https://github.com/qiuqiangkong/audioset_tagging_cnn",
+  "upstream_revision": "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0",
+  "upstream_cache": {
+    "path": ".torch-dae/repositories/audioset_tagging_cnn",
+    "head_matches_selected_revision": true,
+    "working_tree_clean": true,
+    "retained_immutable_for_validation": true
+  },
+  "checkpoint_equivalence": "unresolved",
+  "license": {
+    "name": "MIT",
+    "informational_only": true,
+    "upstream_path": "LICENSE.MIT"
+  },
+  "files": [
+    {
+      "upstream_path": "pytorch/models.py",
+      "original_size_bytes": 125210,
+      "original_sha256": "58e9664b3731fd420f77b3be163504c1edeefc9c92c71696e1ed3dbdd60a1453",
+      "selected_ranges_concatenated_sha256": "2dbabc865f12e18dccc24a309750ec688c53e68f324c0dfd60f496740ee47d49",
+      "selected_ranges": [
+        {
+          "order": 0,
+          "start_line": 1,
+          "end_line": 8,
+          "size_bytes": 255,
+          "sha256": "318fcab19466b1b936f07ff31eaa3e2a5f2d7eadddd6d3b8408d7069aa20a63e"
+        },
+        {
+          "order": 1,
+          "start_line": 10,
+          "end_line": 68,
+          "size_bytes": 1940,
+          "sha256": "f115177ea4eb3ee880a6c42d3017562112142ca4a17fa4ca26ba80ca5e6ad35b"
+        },
+        {
+          "order": 2,
+          "start_line": 569,
+          "end_line": 635,
+          "size_bytes": 2105,
+          "sha256": "a9acc344050c77517721ad093b0b2346fa888fa7af88a57d9e15d32618de4273"
+        },
+        {
+          "order": 3,
+          "start_line": 697,
+          "end_line": 768,
+          "size_bytes": 3148,
+          "sha256": "8b13048f4fe9841d876fa47aab15747a186add7e42e6383c7e7ce6bf22a38545"
+        },
+        {
+          "order": 4,
+          "start_line": 858,
+          "end_line": 942,
+          "size_bytes": 3069,
+          "sha256": "8b3442aa962e481d42e5ae79c003dcfacbd65854683857be2d7ff6f3102b8414"
+        },
+        {
+          "order": 5,
+          "start_line": 2189,
+          "end_line": 2223,
+          "size_bytes": 1190,
+          "sha256": "f7c159e4894bef321af532bbb89e5974a7a9954cbe7052ef78d985bf6257e4c5"
+        },
+        {
+          "order": 6,
+          "start_line": 2314,
+          "end_line": 2425,
+          "size_bytes": 4524,
+          "sha256": "c36ccd762ca513fe3b23c4d65b819cdce3e29b8ea7f801b3814d0cf5e82764a7"
+        },
+        {
+          "order": 7,
+          "start_line": 2542,
+          "end_line": 2636,
+          "size_bytes": 3679,
+          "sha256": "6c8183c20ac4472cbaaad347d84d6b0412aaafa41713f9c2cf9f1ace7af10aad"
+        }
+      ],
+      "selected_symbols": [
+        {
+          "order": 0,
+          "symbol": "init_layer",
+          "node_type": "FunctionDef",
+          "start_line": 10,
+          "end_line": 16,
+          "source_sha256": "42a8b7afad328f18970b3c0a40c50d6ae435a14724089321326ba7a23204203f",
+          "ast_sha256": "c36d83e376c608d8082294c0207c4065a6cb2ec1588fa33eacc306d15549a353"
+        },
+        {
+          "order": 1,
+          "symbol": "init_bn",
+          "node_type": "FunctionDef",
+          "start_line": 19,
+          "end_line": 22,
+          "source_sha256": "d42aea41e68986a35df0ee27f1b7e73232cab8874e2eefeaeeea0c130bdcc968",
+          "ast_sha256": "f13616f882f691de2ba08864871e957c8836456c8403d096ca87b956e2960716"
+        },
+        {
+          "order": 2,
+          "symbol": "ConvBlock",
+          "node_type": "ClassDef",
+          "start_line": 25,
+          "end_line": 68,
+          "source_sha256": "38e90e9fbe55bd4b8684fb648f64ac3b454c9c877acdb7c804b6bc3b821dc0ff",
+          "ast_sha256": "fc4d8a4fa84ad7426ddbc629215a6b97a94d1188df39e6e59c06376d8a5953c4"
+        },
+        {
+          "order": 3,
+          "symbol": "_resnet_conv3x3",
+          "node_type": "FunctionDef",
+          "start_line": 569,
+          "end_line": 572,
+          "source_sha256": "d945c998c07782d664f2d9f30d3de943d88c16d442eaaf74c12f777feaacb27f",
+          "ast_sha256": "c989f01f48790282c92b3cfa8ff489e67f3d81994cf70b4693b262b1ff6c20ca"
+        },
+        {
+          "order": 4,
+          "symbol": "_resnet_conv1x1",
+          "node_type": "FunctionDef",
+          "start_line": 575,
+          "end_line": 577,
+          "source_sha256": "500abbf0f68223852d0083fcc6596890b117d904e09f9b54342bd68dc3ed8864",
+          "ast_sha256": "8535c9407038a78656ef0abbe2856d10804e7d7c4a629a494662bbabc57d525f"
+        },
+        {
+          "order": 5,
+          "symbol": "_ResnetBasicBlock",
+          "node_type": "ClassDef",
+          "start_line": 580,
+          "end_line": 635,
+          "source_sha256": "669587b31def56b414e5257bdbc05a7971684b31aa20d4fca549de1e06551e56",
+          "ast_sha256": "87e658c38def571ade7fc05e5f11c4d0f9e172b4e86f0fcd24a80906c259a003"
+        },
+        {
+          "order": 6,
+          "symbol": "_ResNet",
+          "node_type": "ClassDef",
+          "start_line": 697,
+          "end_line": 768,
+          "source_sha256": "8b13048f4fe9841d876fa47aab15747a186add7e42e6383c7e7ce6bf22a38545",
+          "ast_sha256": "1b8ea7281194f4c52d01725f0ec3f5dbae083a72374e27afe1f204117591b980"
+        },
+        {
+          "order": 7,
+          "symbol": "ResNet38",
+          "node_type": "ClassDef",
+          "start_line": 858,
+          "end_line": 942,
+          "source_sha256": "8b3442aa962e481d42e5ae79c003dcfacbd65854683857be2d7ff6f3102b8414",
+          "ast_sha256": "01a5dbeb98b0fa89cad29ee89a57f6a22cfe7ceb87bd5e3d3afdf757fffc9df3"
+        },
+        {
+          "order": 8,
+          "symbol": "ConvPreWavBlock",
+          "node_type": "ClassDef",
+          "start_line": 2189,
+          "end_line": 2223,
+          "source_sha256": "f7c159e4894bef321af532bbb89e5974a7a9954cbe7052ef78d985bf6257e4c5",
+          "ast_sha256": "3d75adbefda4f1903a35d6c5288e428ed159ed34e9bd9471b7c0a33bd20a18ee"
+        },
+        {
+          "order": 9,
+          "symbol": "Wavegram_Logmel_Cnn14",
+          "node_type": "ClassDef",
+          "start_line": 2314,
+          "end_line": 2425,
+          "source_sha256": "c36ccd762ca513fe3b23c4d65b819cdce3e29b8ea7f801b3814d0cf5e82764a7",
+          "ast_sha256": "da771c34646831795d69508e0503c709de225837453c34baf2648953aed25835"
+        },
+        {
+          "order": 10,
+          "symbol": "Cnn14_16k",
+          "node_type": "ClassDef",
+          "start_line": 2542,
+          "end_line": 2636,
+          "source_sha256": "6c8183c20ac4472cbaaad347d84d6b0412aaafa41713f9c2cf9f1ace7af10aad",
+          "ast_sha256": "2569d66312d38c8dfde8f5b393ba7f565e964ea0baa1c9a22b6ee1435dd19347"
+        }
+      ],
+      "integrated_path": "src/torch_dae/models/panns/_vendor/models.py",
+      "integrated_size_bytes": 20192,
+      "integrated_sha256": "9fd2d078c9dbc47843919c61ba94943844f1a74cd92e56d5873d2d51d7e748a5"
+    },
+    {
+      "upstream_path": "pytorch/pytorch_utils.py",
+      "original_size_bytes": 8309,
+      "original_sha256": "1464fcfbfc0fe4c55f690f6b39e1c80eeed5de1e7fd1b7fd30334d304de7dbe9",
+      "selected_symbols": [
+        {
+          "order": 0,
+          "symbol": "do_mixup",
+          "node_type": "FunctionDef",
+          "start_line": 18,
+          "end_line": 31,
+          "source_sha256": "7699ea9013bcb811497f5dd1e23299c969fc9d5153a689f217add64a5d241203",
+          "ast_sha256": "7ef074f013333e553d465f1f2b934a7ce15484f363785b2ad64fc4cf423a11a5"
+        }
+      ],
+      "integrated_path": "src/torch_dae/models/panns/_vendor/pytorch_utils.py",
+      "integrated_size_bytes": 454,
+      "integrated_sha256": "447880ffe7a6bd3e2dadb336d38267d6b20a38f48cc1e094f220af44d237ea23"
+    },
+    {
+      "upstream_path": "LICENSE.MIT",
+      "original_size_bytes": 1101,
+      "original_sha256": "98c2ef776f248a1363e9230ceee291673a0fca3f2bf3ca364ddcb51d3efd0e80",
+      "integrated_path": "src/torch_dae/models/panns/_vendor/LICENSE.MIT",
+      "integrated_size_bytes": 1101,
+      "integrated_sha256": "98c2ef776f248a1363e9230ceee291673a0fca3f2bf3ca364ddcb51d3efd0e80"
+    },
+    {
+      "upstream_path": "metadata/class_labels_indices.csv",
+      "original_size_bytes": 14675,
+      "original_sha256": "cdd1049833c4b86127c2773ac0d14a2754b6a6d0d1798002ed5c66e699708429",
+      "integrated_path": "src/torch_dae/models/panns/resources/class_labels_indices.csv",
+      "integrated_size_bytes": 14675,
+      "integrated_sha256": "cdd1049833c4b86127c2773ac0d14a2754b6a6d0d1798002ed5c66e699708429"
+    }
+  ],
+  "transformations": {
+    "import_adaptation": {
+      "before": "from pytorch_utils import do_mixup, interpolate, pad_framewise_output",
+      "after": "from .pytorch_utils import do_mixup"
+    },
+    "logits_extension": {
+      "classes": [
+        "ResNet38",
+        "Wavegram_Logmel_Cnn14",
+        "Cnn14_16k"
+      ],
+      "before": "clipwise_output = torch.sigmoid(self.fc_audioset(x))",
+      "after": "logits = self.fc_audioset(x); clipwise_output = torch.sigmoid(logits); output_dict includes logits",
+      "fc_audioset_evaluation_count_preserved": 1
+    },
+    "behavior_neutral_directives": [
+      "# ruff: noqa",
+      "# fmt: off",
+      "# mypy: ignore-errors"
+    ],
+    "deterministic_diff": "onboarding_reports/panns-audioset-three-tuple/integrate/source-reduction.diff",
+    "deterministic_record": "onboarding_reports/panns-audioset-three-tuple/integrate/source-transformation.json"
+  },
+  "validation": {
+    "complete_upstream_hashes_match_retained_cache": true,
+    "selected_ranges_and_symbols_hashed": true,
+    "selection_order_is_explicit": true,
+    "integrated_hashes_match_working_tree": true,
+    "audioset_rows": 527,
+    "indices_contiguous": true,
+    "mids_unique": true,
+    "classifier_dimension": 527
+  }
+}

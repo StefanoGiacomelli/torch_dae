@@ -5,24 +5,39 @@ Committed state and ignored runtime state are deliberately separated:
 
 .. container:: api-flow
 
-   **model card** → references **environment specification + lockfile + sources** →
-   produces **environment fingerprint** → identifies **isolated runtime**
+   **environment specification + lockfile + local-wheel dependency preflight** → **materialization result** →
+   **passed environment verification result + matching fingerprint** → identifies **verified
+   isolated runtime**
 
 .. container:: api-flow
 
-   **model card** → owns **checkpoint specification** → resolves **content-addressed checkpoint** →
-   supplies runtime verification evidence tied to **environment fingerprint**
+   **runtime verification target** → binds **model + checkpoint + environment** →
+   produces **checkpoint-specific passed verification report** → final **model card** consumes
+   evidence
 
-The manager loads and cross-checks card, environment, source-manifest, lockfile, project file, and
-verification-script identities. ``create`` fails if current state already exists. ``ensure`` reuses
+Failed environment or runtime results remain diagnostic evidence. Their existence never promotes
+an environment or model-card lifecycle state.
+
+A passed environment result requires nonempty import and smoke evidence, every observation passed,
+and unique observation names. A successful result proves both successful global status and complete
+successful coverage of the evidence required by its authority contract.
+
+The direct manager loads and cross-checks environment, source-manifest, lockfile, project file, and
+verification-script identities without a card. ``create`` fails if current state already exists. ``ensure`` reuses
 a verified target or removes and rebuilds invalid current state. Neither operation deletes older
 fingerprints. ``verify`` checks metadata hashes, Python, the local project wheel, installed sources,
 dependency consistency, and the committed verification script without repairing state.
 
+``preflight_environment`` performs no environment creation or network access. It evaluates active
+local-wheel requirements and selected-platform markers against only the installable closure
+reachable from the accepted lock, preserving distinct missing and incompatible results. It is lock
+completeness evidence, not an environment lifecycle transition.
+
 Materialization resolves exact CPython, runs locked ``uv`` synchronization, builds a deterministic
 local project wheel, installs package/Git/vendored sources, records inventories, and writes ignored
 runtime reports. Commands run without shell activation and with a sanitized environment. There is no
-cross-process lock, so callers must serialize concurrent mutation for the same card/fingerprint.
+cross-process lock, so callers must serialize concurrent mutation for the same
+environment/fingerprint.
 
 A lightweight metadata-only example needs no model or network:
 
@@ -32,16 +47,13 @@ A lightweight metadata-only example needs no model or network:
    from torch_dae.environment import EnvironmentManager
 
    manager = EnvironmentManager(Path.cwd())
-   state = manager.info("example-card")
-   if state.specification_exists:
-       spec = manager.load_specification("example-card")
-       print(spec.python.constraint, spec.python.resolved_version)
-       print(manager.fingerprint_for(spec))
+   definition = manager.resolve_environment("example-environment")
+   print(definition.python_version, definition.environment_fingerprint)
 
 ``info`` represents a missing specification in its return value. Other loading operations propagate
 missing-file, Pydantic, path, and identity errors. ``remove`` is destructive but bounded to ignored
-environment materializations for one canonical card; it does not remove checkpoints, committed
-inputs, or reports.
+environment materializations for one logical environment ID (directly or through a card convenience
+lookup); it does not remove checkpoints, committed inputs, or reports.
 
 .. autoclass:: torch_dae.environment.manager.InstalledSource
 
@@ -51,6 +63,14 @@ inputs, or reports.
 
 .. autoclass:: torch_dae.environment.manager.EnvironmentVerification
 
+.. autoclass:: torch_dae.environment.results.ResolvedEnvironmentDefinition
+
+.. autoclass:: torch_dae.environment.results.EnvironmentDependencyClosureResult
+
+.. autoclass:: torch_dae.environment.results.EnvironmentMaterializationResult
+
+.. autoclass:: torch_dae.environment.results.EnvironmentVerificationResult
+
 .. autoclass:: torch_dae.environment.manager.EnvironmentManager
 
    .. automethod:: from_repository_root
@@ -58,6 +78,11 @@ inputs, or reports.
    .. automethod:: load_specification
    .. automethod:: load_sources_manifest
    .. automethod:: fingerprint_for
+   .. automethod:: resolve_environment
+   .. automethod:: preflight_environment
+   .. automethod:: materialize_environment
+   .. automethod:: verify_environment
+   .. automethod:: resolved_environment
    .. automethod:: create
    .. automethod:: ensure
    .. automethod:: verify

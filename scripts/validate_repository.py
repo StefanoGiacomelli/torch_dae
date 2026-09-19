@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import hashlib
 import json
 import re
 import subprocess
@@ -20,45 +21,76 @@ from pydantic import BaseModel
 
 from torch_dae.cards.models import ModelCard, ModelCardLifecycle
 from torch_dae.cards.validation import load_json, validate_model_card_path
-from torch_dae.core.checkpoint import CheckpointMaterializationRecord, CheckpointSpec
+from torch_dae.core.checkpoint import (
+    CheckpointMaterializationRecord,
+    CheckpointSpec,
+    checkpoint_specification_fingerprint,
+)
 from torch_dae.core.embeddings import EmbeddingSpec
 from torch_dae.core.registry import ModelCardRegistry
+from torch_dae.environment.results import (
+    ArtifactEvidence,
+    EnvironmentDependencyClosureResult,
+    EnvironmentLifecycleState,
+    EnvironmentMaterializationResult,
+    EnvironmentVerificationResult,
+)
 from torch_dae.environment.runtime import EnvironmentMaterializationRecord, RuntimeReportSink
 from torch_dae.environment.specification import EnvironmentSourcesManifest, EnvironmentSpecification
 from torch_dae.environment.verification import VerificationReport
 from torch_dae.onboarding.contracts import (
     AnalysisReport,
+    CleanupReceipt,
     DependencyEvidenceRecord,
     EnvironmentResolutionReport,
     EvidenceItem,
+    PhaseHandoffManifest,
     SkillEvaluationScenario,
+    WorkflowRecord,
 )
 from torch_dae.onboarding.evaluation import evaluate_analysis_report
+from torch_dae.onboarding.handoff import validate_workflow
 from torch_dae.onboarding.inspection import (
     InspectionBudget,
     generate_environment_candidates,
     inspect_dependencies,
     inspect_scenario_repository,
 )
+from torch_dae.runtime_verification import (
+    RuntimeVerificationTarget,
+    validate_runtime_verification_target,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 MODEL_DEPS = {"torch", "torchaudio", "torchvision", "transformers", "tensorflow", "jax", "librosa"}
 BINARY_MODEL_SUFFIXES = {".pt", ".pth", ".ckpt", ".bin", ".safetensors", ".onnx"}
 REQUIRED = [
+    ".gitattributes",
     "project_spec.md",
     "pyproject.toml",
     "uv.lock",
+    "scripts/onboarding_handoff.py",
+    "scripts/check_worktree_patch.py",
     "skills/audio-model-onboarding/SKILL.md",
     ".agents/skills/audio-model-onboarding",
     ".claude/skills/audio-model-onboarding",
     "schemas/model-card.schema.json",
     "schemas/checkpoint.schema.json",
+    "schemas/checkpoint-authority-resolution.schema.json",
+    "schemas/checkpoint-materialization.schema.json",
     "schemas/environment.schema.json",
     "schemas/environment-sources.schema.json",
+    "schemas/environment-materialization-result.schema.json",
+    "schemas/environment-dependency-closure-result.schema.json",
+    "schemas/environment-verification-result.schema.json",
     "schemas/embedding.schema.json",
     "schemas/verification-report.schema.json",
+    "schemas/runtime-verification-target.schema.json",
     "schemas/analysis-report.schema.json",
     "schemas/environment-resolution-report.schema.json",
+    "schemas/workflow-record.schema.json",
+    "schemas/phase-handoff.schema.json",
+    "schemas/cleanup-receipt.schema.json",
     "src/torch_dae",
     "tests/fixtures",
 ]
@@ -66,6 +98,55 @@ REQUIRED = [
 
 def fail(message: str, failures: list[str]) -> None:
     failures.append(message)
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+_IGNORED_RUNTIME_CACHE_PREFIX = ".torch-dae/"
+
+
+def _resolve_checkpoint_materialization_evidence(
+    root: Path, evidence: ArtifactEvidence
+) -> Path | None:
+    """Resolve the file whose bytes must match ``evidence.sha256``.
+
+    ``evidence.path`` is recorded, at runtime-verification time, as wherever the checkpoint
+    materialization record happened to live -- which is legitimately the ignored, mutable
+    ``.torch-dae/`` runtime cache (Section: "Treat `.torch-dae/` as ignored runtime state").
+    That cache is explicitly allowed to be refreshed (e.g. by a later, unrelated checkpoint
+    acquisition for the same checkpoint id/hash) without invalidating already-accepted evidence;
+    only the *checkpoint payload* SHA-256 is the durable contract, not the cache-record's
+    incidental fields (acquisition timestamp, per-request log correlation ids, etc.).
+
+    So: first try the literal ``evidence.path`` (fast path, exact match). If that path is under
+    the ignored runtime-cache prefix and no longer matches, fall back to any committed, tracked
+    "checkpoint-materializations" evidence copy (written under `onboarding_reports/**/` at
+    acceptance time) whose bytes match ``evidence.sha256`` -- these are durable, hash-addressed,
+    and never expected to change. This keeps `.torch-dae/` cache churn from being able to fail
+    repository validation, without weakening the guarantee: either way, the resolved file's bytes
+    must still hash to the pinned ``evidence.sha256``.
+    """
+
+    literal_path = (root / evidence.path).resolve()
+    try:
+        literal_path.relative_to(root)
+    except ValueError:
+        return None
+    if literal_path.is_file() and _sha256(literal_path) == evidence.sha256:
+        return literal_path
+
+    if not evidence.path.startswith(_IGNORED_RUNTIME_CACHE_PREFIX):
+        return None
+
+    onboarding_reports_root = root / "onboarding_reports"
+    if not onboarding_reports_root.is_dir():
+        return None
+    for candidate in sorted(onboarding_reports_root.glob("**/checkpoint-materializations/*.json")):
+        if candidate.is_file() and _sha256(candidate) == evidence.sha256:
+            return candidate
+    return None
 
 
 def git_ignored(path: str) -> bool:
@@ -92,9 +173,16 @@ def pydantic_validate(fixture: Path) -> None:
         "embedding": EmbeddingSpec,
         "environment": EnvironmentSpecification,
         "environment-sources": EnvironmentSourcesManifest,
+        "environment-materialization-result": EnvironmentMaterializationResult,
+        "environment-dependency-closure-result": EnvironmentDependencyClosureResult,
+        "environment-verification-result": EnvironmentVerificationResult,
         "verification-report": VerificationReport,
+        "runtime-verification-target": RuntimeVerificationTarget,
         "analysis-report": AnalysisReport,
         "environment-resolution-report": EnvironmentResolutionReport,
+        "workflow-record": WorkflowRecord,
+        "phase-handoff": PhaseHandoffManifest,
+        "cleanup-receipt": CleanupReceipt,
     }
     model_by_kind[kind].model_validate(load_json(fixture))
 
@@ -185,8 +273,47 @@ def _wrapper_symbol_exists(root: Path, entry_point: str) -> bool:
         tree = ast.parse(source_path.read_text(), filename=str(source_path))
     except (OSError, SyntaxError, UnicodeDecodeError):
         return False
+
     definitions = (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
-    return any(isinstance(node, definitions) and node.name == symbol for node in tree.body)
+    if any(isinstance(node, definitions) and node.name == symbol for node in tree.body):
+        return True
+
+    # Packages may intentionally expose runtime-heavy public symbols lazily
+    # through module-level __getattr__, while keeping root imports lightweight.
+    has_module_getattr = any(
+        isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == "__getattr__"
+        for node in tree.body
+    )
+    if not has_module_getattr:
+        return False
+
+    lazy_exports: set[str] = set()
+
+    for node in tree.body:
+        name: str | None = None
+        value: ast.expr | None = None
+
+        if isinstance(node, ast.Assign) and len(node.targets) == 1:
+            target = node.targets[0]
+            if isinstance(target, ast.Name):
+                name = target.id
+                value = node.value
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            name = node.target.id
+            value = node.value
+
+        if name is None or value is None:
+            continue
+        if name != "__all__" and not name.endswith("_EXPORTS"):
+            continue
+        if not isinstance(value, (ast.List, ast.Tuple, ast.Set)):
+            continue
+
+        for element in value.elts:
+            if isinstance(element, ast.Constant) and isinstance(element.value, str):
+                lazy_exports.add(element.value)
+
+    return symbol in lazy_exports
 
 
 def _is_binary_asset(path: Path) -> bool:
@@ -230,7 +357,9 @@ def validate_integration_artifacts(root: Path, failures: list[str]) -> None:
             ModelCardLifecycle.RUNTIME_VERIFIED,
             ModelCardLifecycle.PROFILED,
         }:
-            environment_dir = root / "environments" / card.card_id
+            recommended = card.usage.recommended_environment
+            specification_path = root / recommended.specification
+            environment_dir = specification_path.parent
             required = {
                 "environment.json",
                 "pyproject.toml",
@@ -258,10 +387,7 @@ def validate_integration_artifacts(root: Path, failures: list[str]) -> None:
                 continue
             assert isinstance(specification, EnvironmentSpecification)
             assert isinstance(sources, EnvironmentSourcesManifest)
-            expected_prefix = f"environments/{card.card_id}"
-            recommended = card.usage.recommended_environment
-            if specification.model_card_id != card.card_id:
-                fail(f"environment model_card_id disagrees for {card.card_id}", failures)
+            expected_prefix = environment_dir.relative_to(root).as_posix()
             if not (
                 recommended.environment_id == specification.environment_id == sources.environment_id
             ):
@@ -286,6 +412,74 @@ def validate_integration_artifacts(root: Path, failures: list[str]) -> None:
                 if observed_paths[label] != expected:
                     fail(f"{label} path disagrees for {card.card_id}", failures)
 
+            assert recommended.verification_result is not None
+            assert recommended.verification_result_sha256 is not None
+            assert recommended.fingerprint is not None
+            environment_result_path = root / recommended.verification_result
+            result_parts = Path(recommended.verification_result).parts
+            if not (
+                len(result_parts) >= 4
+                and result_parts[0] == "onboarding_reports"
+                and result_parts[2] == "verify"
+                and environment_result_path.suffix == ".json"
+            ):
+                fail(
+                    f"environment verification result path is not canonical for {card.card_id}",
+                    failures,
+                )
+            try:
+                environment_result = _validate_with_schema(
+                    environment_result_path,
+                    schema_root / "environment-verification-result.schema.json",
+                    EnvironmentVerificationResult,
+                )
+            except Exception as exc:
+                fail(f"invalid environment verification result for {card.card_id}: {exc}", failures)
+            else:
+                assert isinstance(environment_result, EnvironmentVerificationResult)
+                if _sha256(environment_result_path) != recommended.verification_result_sha256:
+                    fail(
+                        f"environment verification result hash disagrees for {card.card_id}",
+                        failures,
+                    )
+                if environment_result.environment_id != recommended.environment_id:
+                    fail(
+                        f"environment verification identity disagrees for {card.card_id}", failures
+                    )
+                if environment_result.environment_fingerprint != recommended.fingerprint:
+                    fail(f"environment fingerprint disagrees for {card.card_id}", failures)
+                if environment_result.environment_spec_sha256 != _sha256(specification_path):
+                    fail(
+                        f"environment specification evidence disagrees for {card.card_id}", failures
+                    )
+                if not (
+                    environment_result.verification_status == "passed"
+                    and environment_result.lifecycle_state == EnvironmentLifecycleState.VERIFIED
+                    and environment_result.failure_classification is None
+                ):
+                    fail(f"environment verification did not succeed for {card.card_id}", failures)
+
+    targets: dict[str, tuple[Path, RuntimeVerificationTarget]] = {}
+    target_candidates = sorted(
+        set((root / "onboarding_reports").glob("**/runtime-verification-target*.json"))
+        | set((root / "onboarding_reports").glob("**/runtime-targets/*.json"))
+    )
+    for path in target_candidates:
+        try:
+            target = _validate_with_schema(
+                path,
+                schema_root / "runtime-verification-target.schema.json",
+                RuntimeVerificationTarget,
+            )
+            assert isinstance(target, RuntimeVerificationTarget)
+            validate_runtime_verification_target(target, root)
+        except Exception as exc:
+            fail(f"invalid runtime verification target {path.relative_to(root)}: {exc}", failures)
+            continue
+        if target.target_id in targets:
+            fail(f"duplicate runtime verification target ID: {target.target_id}", failures)
+        targets[target.target_id] = (path, target)
+
     reports: dict[Path, VerificationReport] = {}
     for path in sorted((root / "verification_reports").glob("**/*.json")):
         try:
@@ -300,31 +494,268 @@ def validate_integration_artifacts(root: Path, failures: list[str]) -> None:
         assert isinstance(verified_report, VerificationReport)
         reports[path.resolve()] = verified_report
         card_item = cards.get(verified_report.model_card_id)
-        if card_item is None:
-            fail(
-                f"verification report references missing card: {verified_report.model_card_id}",
-                failures,
+        if verified_report.schema_version == "2.0.0":
+            target_item = targets.get(verified_report.runtime_target_id or "")
+            if target_item is None:
+                fail(f"verification report references missing runtime target: {path}", failures)
+                continue
+            target = target_item[1]
+            if target.schema_version != "2.0.0":
+                fail(
+                    f"target-aware verification report requires a completeness-aware "
+                    f"runtime target: {path}",
+                    failures,
+                )
+            associations = {
+                "workflow": (verified_report.workflow_id, target.workflow_id),
+                "variant": (verified_report.integrated_variant_id, target.integrated_variant_id),
+                "checkpoint": (verified_report.checkpoint_id, target.checkpoint.checkpoint_id),
+                "environment": (verified_report.environment_id, target.environment_id),
+                "integration handoff": (
+                    verified_report.integration_handoff_sha256,
+                    target.accepted_integration_handoff.sha256,
+                ),
+                "environment specification": (
+                    verified_report.environment_spec_sha256,
+                    target.environment_spec_sha256,
+                ),
+                "source manifest": (
+                    verified_report.source_manifest_sha256,
+                    target.source_manifest.sha256,
+                ),
+                "public model entry point": (
+                    verified_report.public_model_entry_point,
+                    target.public_model_entry_point,
+                ),
+            }
+            for label, values in associations.items():
+                if values[0] != values[1]:
+                    fail(f"verification report {label} disagrees for {path}", failures)
+            if target.checkpoint_acquisition_policy.require_authority:
+                if (
+                    verified_report.checkpoint_specification_fingerprint
+                    != checkpoint_specification_fingerprint(target.checkpoint)
+                ):
+                    fail(
+                        f"verification report checkpoint specification fingerprint disagrees "
+                        f"for {path}",
+                        failures,
+                    )
+                evidence = verified_report.checkpoint_materialization
+                if evidence is None:
+                    fail(
+                        f"authoritative verification report lacks checkpoint materialization "
+                        f"provenance: {path}",
+                        failures,
+                    )
+                else:
+                    materialization_path = _resolve_checkpoint_materialization_evidence(
+                        root, evidence
+                    )
+                    try:
+                        if materialization_path is None:
+                            raise ValueError("materialization evidence SHA-256 mismatch")
+                        materialization = CheckpointMaterializationRecord.model_validate_json(
+                            materialization_path.read_text()
+                        )
+                    except Exception as exc:
+                        fail(
+                            f"invalid authoritative checkpoint materialization for {path}: {exc}",
+                            failures,
+                        )
+                    else:
+                        authority = target.checkpoint.authority
+                        if (
+                            authority is None
+                            or materialization.authority != authority
+                            or materialization.expected_size_bytes != authority.expected_size_bytes
+                            or materialization.observed_size_bytes != authority.expected_size_bytes
+                            or materialization.published_checksums != authority.published_checksums
+                            or materialization.observed_sha256 != verified_report.checkpoint_sha256
+                            or materialization.specification_fingerprint
+                            != checkpoint_specification_fingerprint(target.checkpoint)
+                        ):
+                            fail(
+                                f"authoritative checkpoint provenance disagrees for {path}",
+                                failures,
+                            )
+            if verified_report.required_check_ids != target.required_check_ids:
+                fail(f"verification report required-check contract disagrees for {path}", failures)
+            if verified_report.optional_check_ids != target.optional_check_ids:
+                fail(f"verification report optional-check contract disagrees for {path}", failures)
+            check_names = [check.name for check in verified_report.checks]
+            if len(check_names) != len(set(check_names)):
+                fail(f"verification report contains duplicate check names: {path}", failures)
+            missing_required = sorted(set(target.required_check_ids) - set(check_names))
+            if missing_required:
+                fail(
+                    f"verification report required-check coverage is incomplete for {path}: "
+                    f"{missing_required}",
+                    failures,
+                )
+            undeclared_checks = sorted(
+                set(check_names) - set(target.required_check_ids) - set(target.optional_check_ids)
             )
-            continue
-        card = card_item[1]
-        if verified_report.environment_id != card.usage.recommended_environment.environment_id:
-            fail(f"verification report environment disagrees for {card.card_id}", failures)
-        if verified_report.checkpoint_sha256 != card.checkpoint.observed_sha256:
-            fail(f"verification report checkpoint disagrees for {card.card_id}", failures)
+            if undeclared_checks:
+                fail(
+                    f"verification report contains checks undeclared by its target for {path}: "
+                    f"{undeclared_checks}",
+                    failures,
+                )
+            status_by_name = {check.name: check.status for check in verified_report.checks}
+            unsupported_required = sorted(
+                name
+                for name in target.required_check_ids
+                if status_by_name.get(name) == "unsupported"
+            )
+            if unsupported_required:
+                fail(
+                    f"verification report has unsupported required checks for {path}: "
+                    f"{unsupported_required}",
+                    failures,
+                )
+            if verified_report.verification_status == "passed":
+                unpassed_required = sorted(
+                    name
+                    for name in target.required_check_ids
+                    if status_by_name.get(name) != "passed"
+                )
+                if unpassed_required:
+                    fail(
+                        f"verification report required checks did not all pass for {path}: "
+                        f"{unpassed_required}",
+                        failures,
+                    )
+            if (
+                target.future_card_id is not None
+                and target.future_card_id != verified_report.model_card_id
+            ):
+                fail(f"verification report future card identity disagrees for {path}", failures)
+        elif card_item is None:
+            fail(f"legacy verification report references missing card: {path}", failures)
+        if card_item is not None:
+            card = card_item[1]
+            if verified_report.environment_id != card.usage.recommended_environment.environment_id:
+                fail(f"verification report environment disagrees for {card.card_id}", failures)
+            if verified_report.checkpoint_sha256 != card.checkpoint.observed_sha256:
+                fail(f"verification report checkpoint disagrees for {card.card_id}", failures)
+            if (
+                verified_report.environment_fingerprint
+                != card.usage.recommended_environment.fingerprint
+            ):
+                fail(f"verification report fingerprint disagrees for {card.card_id}", failures)
 
     for _, card in cards.values():
+        if (
+            card.card_status
+            in {
+                ModelCardLifecycle.CHECKPOINT_VERIFIED,
+                ModelCardLifecycle.RUNTIME_VERIFIED,
+                ModelCardLifecycle.PROFILED,
+            }
+            and card.checkpoint.schema_version == "2.0.0"
+        ):
+            expected_fingerprint = checkpoint_specification_fingerprint(card.checkpoint)
+            if card.checkpoint_specification_fingerprint != expected_fingerprint:
+                fail(
+                    f"authority-complete card checkpoint fingerprint disagrees for {card.card_id}",
+                    failures,
+                )
+            evidence = card.checkpoint_materialization
+            if evidence is None:
+                fail(
+                    f"authority-complete card lacks checkpoint materialization for {card.card_id}",
+                    failures,
+                )
+            else:
+                materialization_path = _resolve_checkpoint_materialization_evidence(root, evidence)
+                try:
+                    if materialization_path is None:
+                        raise ValueError("materialization evidence SHA-256 mismatch")
+                    materialization = CheckpointMaterializationRecord.model_validate_json(
+                        materialization_path.read_text()
+                    )
+                except Exception as exc:
+                    fail(
+                        f"invalid card checkpoint materialization for {card.card_id}: {exc}",
+                        failures,
+                    )
+                else:
+                    authority = card.checkpoint.authority
+                    if (
+                        authority is None
+                        or materialization.authority != authority
+                        or materialization.expected_size_bytes != authority.expected_size_bytes
+                        or materialization.observed_size_bytes != authority.expected_size_bytes
+                        or materialization.published_checksums != authority.published_checksums
+                        or materialization.observed_sha256 != card.checkpoint.observed_sha256
+                        or materialization.specification_fingerprint != expected_fingerprint
+                    ):
+                        fail(
+                            f"card checkpoint materialization disagrees for {card.card_id}",
+                            failures,
+                        )
         if card.card_status not in {
             ModelCardLifecycle.RUNTIME_VERIFIED,
             ModelCardLifecycle.PROFILED,
         }:
             continue
         assert card.verification_report is not None
+        assert card.verification_report_sha256 is not None
+        assert card.runtime_verification_target is not None
+        assert card.runtime_verification_target_sha256 is not None
         report_path = (root / card.verification_report).resolve()
         referenced_report = reports.get(report_path)
         if referenced_report is None:
             fail(f"runtime-verified card lacks its verification report: {card.card_id}", failures)
-        elif referenced_report.model_card_id != card.card_id:
-            fail(f"verification report card identity disagrees for {card.card_id}", failures)
+            continue
+        if _sha256(report_path) != card.verification_report_sha256:
+            fail(f"verification report hash disagrees for {card.card_id}", failures)
+        if not referenced_report.successful:
+            fail(f"runtime verification did not succeed for {card.card_id}", failures)
+        if referenced_report.schema_version != "2.0.0":
+            fail(
+                f"runtime-verified card requires a target-aware verification report: "
+                f"{card.card_id}",
+                failures,
+            )
+        target_path = (root / card.runtime_verification_target).resolve()
+        target_item = targets.get(referenced_report.runtime_target_id or "")
+        if target_item is None or target_item[0].resolve() != target_path:
+            fail(f"runtime target reference disagrees for {card.card_id}", failures)
+            continue
+        target = target_item[1]
+        if target.schema_version != "2.0.0":
+            fail(
+                f"runtime-verified card requires a completeness-aware runtime target: "
+                f"{card.card_id}",
+                failures,
+            )
+        if _sha256(target_path) != card.runtime_verification_target_sha256:
+            fail(f"runtime target hash disagrees for {card.card_id}", failures)
+        if (
+            referenced_report.required_check_ids != target.required_check_ids
+            or referenced_report.optional_check_ids != target.optional_check_ids
+        ):
+            fail(f"runtime verification check contract disagrees for {card.card_id}", failures)
+        report_checks = {check.name: check.status for check in referenced_report.checks}
+        incomplete_required = sorted(
+            name for name in target.required_check_ids if report_checks.get(name) != "passed"
+        )
+        if incomplete_required:
+            fail(
+                f"runtime-verified card has incomplete required runtime evidence for "
+                f"{card.card_id}: {incomplete_required}",
+                failures,
+            )
+        if (
+            referenced_report.model_card_id != card.card_id
+            or target.future_card_id != card.card_id
+            or target.checkpoint.checkpoint_id != card.checkpoint.checkpoint_id
+            or target.environment_id != card.usage.recommended_environment.environment_id
+            or target.public_model_entry_point != card.identity.wrapper_entry_point
+        ):
+            fail(f"runtime verification evidence identity disagrees for {card.card_id}", failures)
 
     excluded_roots = {".git", ".torch-dae", ".venv", "build", "dist"}
     for path in root.rglob("*"):
@@ -337,6 +768,54 @@ def validate_integration_artifacts(root: Path, failures: list[str]) -> None:
                 f"committed model/checkpoint binary is forbidden: {path.relative_to(root)}",
                 failures,
             )
+
+
+def validate_onboarding_reports(
+    root: Path,
+    failures: list[str],
+) -> list[dict[str, object]]:
+    """Validate committed handoffs and return informational control-plane drift."""
+
+    control_plane_drift: list[dict[str, object]] = []
+    reports_root = root / "onboarding_reports"
+    if not reports_root.exists():
+        fail("committed onboarding_reports root is missing", failures)
+        return control_plane_drift
+    schema_root = root / "schemas"
+    for workflow_path in sorted(reports_root.glob("*/workflow.json")):
+        workflow_id = workflow_path.parent.name
+        try:
+            _validate_with_schema(
+                workflow_path,
+                schema_root / "workflow-record.schema.json",
+                WorkflowRecord,
+            )
+            workflow = WorkflowRecord.model_validate_json(workflow_path.read_text())
+            for reference in workflow.accepted_phase_paths:
+                _validate_with_schema(
+                    root / reference.handoff_path,
+                    schema_root / "phase-handoff.schema.json",
+                    PhaseHandoffManifest,
+                )
+            validation = validate_workflow(root, workflow_id)
+            if validation["control_plane_drift"] is True:
+                control_plane_drift.append(
+                    {
+                        "workflow_id": workflow_id,
+                        "canonical_skill_drift": validation["canonical_skill_drift"],
+                        "project_spec_drift": validation["project_spec_drift"],
+                        "historical_control_planes": validation["historical_control_planes"],
+                        "current_control_plane": validation["current_control_plane"],
+                    }
+                )
+        except Exception as exc:
+            fail(f"invalid onboarding workflow {workflow_id}: {exc}", failures)
+    for path in reports_root.rglob("*"):
+        if not path.is_file():
+            continue
+        if path.suffix not in {".diff", ".json", ".md"}:
+            fail(f"forbidden onboarding report artifact: {path.relative_to(root)}", failures)
+    return control_plane_drift
 
 
 def root_dependency_errors(root: Path) -> list[str]:
@@ -613,11 +1092,26 @@ def main() -> int:
         if not (ROOT / relative).exists():
             fail(f"missing required path: {relative}", failures)
 
+    worktree_patch = subprocess.run(
+        [sys.executable, "scripts/check_worktree_patch.py", "--json"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if worktree_patch.returncode != 0:
+        try:
+            detail = json.loads(worktree_patch.stdout)
+        except json.JSONDecodeError:
+            detail = worktree_patch.stderr.strip() or worktree_patch.stdout.strip()
+        fail(f"staged-equivalent worktree validation failed: {detail}", failures)
+
     if list(ROOT.glob("**/*backbone*.json")):
         fail("legacy backbone JSON files are present", failures)
     failures.extend(numbered_stage_errors(ROOT))
     failures.extend(root_dependency_errors(ROOT))
     validate_integration_artifacts(ROOT, failures)
+    control_plane_drift = validate_onboarding_reports(ROOT, failures)
     if subprocess.run(
         ["git", "ls-files", "._*"], cwd=ROOT, check=False, capture_output=True, text=True
     ).stdout:
@@ -675,11 +1169,21 @@ def main() -> int:
         "model-card": ROOT / "schemas/model-card.schema.json",
         "environment": ROOT / "schemas/environment.schema.json",
         "environment-sources": ROOT / "schemas/environment-sources.schema.json",
+        "environment-materialization-result": ROOT
+        / "schemas/environment-materialization-result.schema.json",
+        "environment-dependency-closure-result": ROOT
+        / "schemas/environment-dependency-closure-result.schema.json",
+        "environment-verification-result": ROOT
+        / "schemas/environment-verification-result.schema.json",
         "checkpoint": ROOT / "schemas/checkpoint.schema.json",
         "embedding": ROOT / "schemas/embedding.schema.json",
         "verification-report": ROOT / "schemas/verification-report.schema.json",
+        "runtime-verification-target": ROOT / "schemas/runtime-verification-target.schema.json",
         "analysis-report": ROOT / "schemas/analysis-report.schema.json",
         "environment-resolution-report": ROOT / "schemas/environment-resolution-report.schema.json",
+        "workflow-record": ROOT / "schemas/workflow-record.schema.json",
+        "phase-handoff": ROOT / "schemas/phase-handoff.schema.json",
+        "cleanup-receipt": ROOT / "schemas/cleanup-receipt.schema.json",
     }
     for path in valid_dir.glob("*.json"):
         kind = path.name.split(".")[0]
@@ -805,6 +1309,7 @@ def main() -> int:
         "validate_analysis_report.py",
         "validate_skill_artifacts.py",
         "render_analysis_report.py",
+        "extract_pdf_text.py",
         "common.py",
     }
     for name in sorted(required_references):
@@ -930,7 +1435,7 @@ def main() -> int:
     runtime_module = (ROOT / "src/torch_dae/environment/runtime.py").read_text()
     if "_write_local_wheel" in env_manager or "wheel_record_hash" in env_manager:
         fail("handwritten local wheel implementation remains present", failures)
-    if '"uv",\n                    "build"' not in env_manager:
+    if '"uv",\n                "build"' not in env_manager:
         fail("local torch-dae wheel is not built through uv/build backend", failures)
     if "source-builds/torch-dae/current" in source_manager:
         fail("stale hard-coded local wheel cache lookup remains", failures)
@@ -955,10 +1460,30 @@ def main() -> int:
         "local_package_content_digest",
         "local_package_build_inputs",
         'src_root = repository_root / "src" / "torch_dae"',
-        "git:{head.stdout.strip()}:content:",
+        "content-sha256:",
+        "local_package_provenance",
     ):
         if required not in fingerprint_module:
             fail(f"local package identity coverage is missing: {required}", failures)
+    locking_module = (ROOT / "src/torch_dae/environment/locking.py").read_text()
+    for required in (
+        "ManagedDirectoryLock",
+        "ManagedLockTimeoutError",
+        "stale_after_seconds",
+        "owner_token",
+        "os.kill(pid, 0)",
+    ):
+        if required not in locking_module:
+            fail(f"managed cache locking coverage is missing: {required}", failures)
+    for required in (
+        "local_wheel_cache_key",
+        "ManagedDirectoryLock",
+        "os.replace(build_dir, wheel_dir)",
+        ".build-{os.getpid()}",
+        "LOCAL_WHEEL_SOURCE_DATE_EPOCH",
+    ):
+        if required not in env_manager:
+            fail(f"concurrency-safe local wheel caching is missing: {required}", failures)
     if '["git", "clone", source.url, str(checkout)]' in source_manager:
         fail("Git source acquisition still clones directly into the final cache path", failures)
     for required in (
@@ -1071,7 +1596,11 @@ def main() -> int:
     ):
         if required not in checkpoint_module:
             fail(f"checkpoint failure normalization is missing: {required}", failures)
-    report: dict[str, Any] = {"ok": not failures, "failures": failures}
+    report: dict[str, Any] = {
+        "ok": not failures,
+        "failures": failures,
+        "historical_control_plane_drift": control_plane_drift,
+    }
     report_dir = ROOT / ".torch-dae/reports"
     report_dir.mkdir(parents=True, exist_ok=True)
     (report_dir / "repository-validation.json").write_text(json.dumps(report, indent=2))
@@ -1080,7 +1609,13 @@ def main() -> int:
         for item in failures:
             print(f"FAIL: {item}")
         return 1
-    print("Repository validation passed")
+    if control_plane_drift:
+        print(
+            "Repository validation passed; historical control-plane drift reported for: "
+            + ", ".join(str(item["workflow_id"]) for item in control_plane_drift)
+        )
+    else:
+        print("Repository validation passed; no historical control-plane drift")
     return 0
 
 

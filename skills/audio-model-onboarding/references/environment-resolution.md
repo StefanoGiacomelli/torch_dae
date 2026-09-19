@@ -16,14 +16,76 @@ Use `generate_environment_candidates.py` to produce ordered unverified candidate
 arbitrary Cartesian search. Trial only explicitly selected candidates and use the environment APIs
 and CLI to materialize or verify isolated model-specific environments.
 
-Successful resolution may prepare `environments/<card-id>/environment.json`, `pyproject.toml`,
+Successful resolution may prepare `environments/<environment-id>/environment.json`, `pyproject.toml`,
 `uv.lock`, `sources.json`, and `verify_environment.py`.
+
+Every package imported directly by the selected minimal runtime source surface is a direct
+dependency. Do not rely on transitive installation. When dependencies are exactly pinned, the
+verification script checks every declared direct dependency and exact version.
+
+The environment manager installs the local package wheel with dependency resolution disabled after
+locked-project synchronization. Before creating an environment, validate the wheel's active
+`Requires-Dist` set against only packages reachable from the accepted lock for the selected
+Python/platform. A reachable transitive lock entry is sufficient under this policy; an orphan lock
+entry is not. Keep optional extras inactive unless explicitly selected, perform no network access,
+and preserve missing versus incompatible requirement evidence separately. Passing this preflight
+proves lock completeness only, not environment verification.
+
+Local package identity is the content-addressed SHA-256 identity of deterministic wheel build
+inputs. Git HEAD and cleanliness are recorded only as separate informational provenance and never
+affect package identity, environment fingerprint, wheel-cache key, offline reuse, or eligibility.
+The identity must remain available outside a Git repository. Same-identity wheel-cache creation is
+inter-process safe, bounded, stale-lock aware, process-temporary, and atomically published; distinct
+identities do not share a global lock. Manual serialization is not the required race workaround.
+
+When multiple tuples may share future source, identify the minimum files and symbols and compare
+candidate revisions for byte identity, symbol identity, and semantic differences. Select one common
+revision only when it preserves every required variant; otherwise retain tuple-specific provenance.
+Chronological proximity never establishes checkpoint equivalence.
+
+Tuples share environment evidence only when direct dependencies are equivalent, selected source APIs
+are compatible, import/constructor trials pass for every tuple, platform and interpreter match, and
+the reused evidence and differences are documented.
+
+A constructor trial establishes dependency resolution, source import, class construction, and
+parameter-device placement only. It does not establish checkpoint compatibility, forward
+correctness, output correctness, embedding correctness, inference equivalence, or runtime
+verification.
+
+Resolve-environment has two successful completion states. **Draft resolution complete** means a
+candidate was selected, its isolated import/constructor trial passed, environment drafts and locks
+validate, production materialization prerequisites are intentionally absent, and no fingerprint or
+lifecycle promotion is claimed; `integrate` may be next. **Environment lifecycle resolved** requires
+canonical materialization, successful verification, fingerprint and report reference, and every
+strict lifecycle prerequisite. Draft completion is not failure and must not be promoted to
+`environment_resolved`.
+
+Optional host diagnostics are portable and non-blocking. A failed optional CPU-brand or
+platform-detail command is recorded separately from model-trial success. Sandbox, DNS,
+package-index, authentication, and rate-limit failures retain their original logs and classification.
+One identical evidence-motivated rerun is permitted when policy allows; preserve both outcomes and
+do not hide an external failure by changing generic code.
+
+The repository root `.venv` is expected control-plane runtime state. Create or synchronize it with
+`uv sync --all-groups --frozen`, and run analysis utilities with `uv run`; this is not model
+environment materialization. `pypdf` belongs to the root only as bounded document-analysis tooling.
+Model dependencies remain prohibited from the root and are resolved under `.torch-dae/environments/`
+through the model-environment subsystem. Report root environment creation when observed, but do not
+classify the `.venv` itself as contamination. Bytecode and tool caches remain ignored and excluded
+from audit archives.
+
 Official-package resolution requires exact `source_package_name` and `source_package_version`
 evidence that matches the selected candidate. Accepted identity provenance is verified upstream
-`package_metadata` or locally observed `environments/<card-id>/pyproject.toml`, `uv.lock`, or
+`package_metadata` or locally observed `environments/<environment-id>/pyproject.toml`, `uv.lock`, or
 `environment.json`; `sources.json`, `verify_environment.py`, arbitrary files, inference, and runtime
 observations cannot prove package identity. Remaining
 source-strategy decision gates block `environment_resolved`; resolved choices belong in decision
 records. Diagnostic references use `.torch-dae`-relative
-`reports/environments/<card-id>/<fingerprint>/<report>.json`, while committed verification reports
-use `verification_reports/<card-id>/<report>.json`.
+`reports/environments/<environment-id>/<fingerprint>/<report>.json`. Accepted normalized
+environment evidence belongs in the verify handoff tree and must retain passed status plus the
+matching fingerprint; only checkpoint-specific runtime reports use
+`verification_reports/<card-id>/<report>.json`. Failed environment evidence remains diagnostic and
+cannot promote lifecycle state.
+A successful environment result additionally requires nonempty import and smoke observations, only
+passed observations, and unique names across both collections. Missing, failed, or unsupported
+required observations cannot accompany successful global status.

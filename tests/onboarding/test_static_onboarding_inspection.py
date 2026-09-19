@@ -110,6 +110,100 @@ def test_hidden_checkpoint_helper_is_detected(repo_root: Path) -> None:
     ]
 
 
+def test_checkpoint_inspection_skips_binary_and_preserves_text_candidates(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "mixed-repository"
+    root.mkdir()
+    (root / "paper.pdf").write_bytes(b"%PDF-1.7\n" + b"A" * 2048)
+    (root / "weights.bin").write_bytes(b"\x01" * 2048)
+    (root / "README.md").write_text(
+        "Checkpoint: https://example.invalid/releases/audio-model.pth\n"
+    )
+    (root / "extensionless").write_text(
+        "Alternate: https://example.invalid/releases/extensionless.ckpt\n"
+    )
+    (root / "malformed.txt").write_bytes(b"safe prefix\n" + b"\xff\xfe")
+
+    first = inspect_checkpoints(root)
+    second = inspect_checkpoints(root)
+
+    assert first == second
+    urls = {item["url"] for item in first["candidates"] if item["kind"] == "checkpoint_url"}
+    assert urls == {
+        "https://example.invalid/releases/audio-model.pth",
+        "https://example.invalid/releases/extensionless.ckpt",
+    }
+    assert first["skipped_files"] == [
+        {"path": "malformed.txt", "reason": "invalid_utf8"},
+        {"path": "paper.pdf", "reason": "unsupported_binary_type:pdf"},
+        {"path": "weights.bin", "reason": "binary_control_bytes"},
+    ]
+
+
+def test_output_inspection_preserves_lexical_ownership_and_spans(tmp_path: Path) -> None:
+    root = tmp_path / "repository"
+    root.mkdir()
+    (root / "models.py").write_text(
+        "def forward(value):\n"
+        "    module_logits = value\n"
+        "    return {'module': module_logits}\n"
+        "\n"
+        "class EncoderA:\n"
+        "    def forward(self, value):\n"
+        "        shared_features = value\n"
+        "        def nested():\n"
+        "            nested_features = value\n"
+        "            return Result(named=nested_features)\n"
+        "        return {'a': shared_features}\n"
+        "\n"
+        "class EncoderB:\n"
+        "    class Inner:\n"
+        "        def forward(self, value):\n"
+        "            shared_features = value\n"
+        "            logits, pooled_features = value, value\n"
+        "            return Output(logits=logits, pooled=pooled_features)\n"
+    )
+
+    result = inspect_output_candidates(root)
+    forwards = [item for item in result["candidates"] if item["kind"] == "forward_return"]
+    assert [
+        (
+            item["enclosing_class"],
+            item["qualified_symbol"],
+            item["candidate_keys"],
+            item["line_start"],
+            item["line_end"],
+        )
+        for item in forwards
+    ] == [
+        (None, "forward", ["module"], 1, 3),
+        ("EncoderA", "EncoderA.forward", ["a"], 6, 11),
+        (
+            "EncoderB.Inner",
+            "EncoderB.Inner.forward",
+            ["logits", "pooled"],
+            15,
+            18,
+        ),
+    ]
+    tensor_candidates = [
+        item for item in result["candidates"] if item["kind"] == "tensor_name_candidate"
+    ]
+    shared = [item for item in tensor_candidates if item["symbol"] == "shared_features"]
+    assert {
+        (item["enclosing_class"], item["qualified_symbol"], item["method_symbol"])
+        for item in shared
+    } == {
+        ("EncoderA", "EncoderA.forward", "forward"),
+        ("EncoderB.Inner", "EncoderB.Inner.forward", "forward"),
+    }
+    nested = next(item for item in tensor_candidates if item["symbol"] == "nested_features")
+    assert nested["qualified_symbol"] == "EncoderA.forward.nested"
+    assert nested["method_symbol"] == "nested"
+    assert nested["enclosing_class"] == "EncoderA"
+
+
 def test_unpinned_dependencies_generate_ranked_risky_candidate(repo_root: Path) -> None:
     root = fixture(repo_root, "unpinned_dependencies")
     dependencies = inspect_dependencies(root)

@@ -61,6 +61,10 @@ class EnvironmentMaterializationError(TorchDaeError):
     """Raised when environment creation fails."""
 
 
+class EnvironmentDependencyClosureError(EnvironmentMaterializationError):
+    """Raised before materialization when the accepted lock cannot satisfy the local wheel."""
+
+
 class EnvironmentVerificationError(TorchDaeError):
     """Raised when environment verification fails."""
 
@@ -83,6 +87,22 @@ class CheckpointAcquisitionError(TorchDaeError):
 
 class CheckpointHashMismatchError(CheckpointAcquisitionError):
     """Raised when a checkpoint hash does not match the specification."""
+
+
+class CheckpointAuthorityResolutionError(CheckpointAcquisitionError):
+    """Raised when authoritative provider metadata is unsafe, incomplete, or inconsistent."""
+
+
+class CheckpointSizeMismatchError(CheckpointAcquisitionError):
+    """Raised when observed bytes differ from an authoritative exact size."""
+
+
+class CheckpointPublishedChecksumMismatchError(CheckpointHashMismatchError):
+    """Raised when local bytes disagree with a provider-published checksum."""
+
+
+class CheckpointResponseTooLargeError(CheckpointAcquisitionError):
+    """Raised when an acquisition exceeds its independent resource-safety ceiling."""
 
 
 class CheckpointNotFoundError(CheckpointAcquisitionError):

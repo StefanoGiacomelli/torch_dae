@@ -20,11 +20,12 @@ jobs:
         with:
           python-version: "3.12"
       - run: uv lock --check
-      - run: uv sync --all-groups --frozen
+      - run: uv sync --all-groups --extra profiling --frozen
       - run: uv run ruff format --check
       - run: uv run ruff check
       - run: uv run mypy src scripts
       - run: uv run python scripts/generate_schemas.py --check
+      - run: uv run python scripts/generate_profiling_schema.py --check
       - run: uv run python scripts/validate_repository.py
       - run: uv run python skills/audio-model-onboarding/scripts/validate_skill_artifacts.py . --json
       - run: uv run python -c "import torch_dae; import torch_dae.onboarding"
@@ -42,13 +43,14 @@ jobs:
       - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           python-version: ${{ matrix.python-version }}
-      - run: uv sync --all-groups --frozen
+      - run: uv sync --python ${{ matrix.python-version }} --all-groups --extra profiling --frozen
       - name: Verify matrix interpreter
         run: >-
-          uv run python -c "import sys;
+          uv run --python ${{ matrix.python-version }} --all-groups --extra profiling --frozen
+          python -c "import sys;
           expected=tuple(map(int, '${{ matrix.python-version }}'.split('.')));
           assert sys.version_info[:2] == expected, (sys.version, expected)"
-      - run: uv run pytest -q
+      - run: uv run --python ${{ matrix.python-version }} --all-groups --extra profiling --frozen pytest -q
 
   coverage:
     runs-on: ubuntu-latest
@@ -66,7 +68,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: mkdir -p .torch-dae
-      - run: uv sync --all-groups --frozen
+      - run: uv sync --all-groups --extra profiling --frozen
       - run: |
           uv run pytest -q \
             --cov=torch_dae \

@@ -58,20 +58,52 @@ def render_analysis_markdown(report: AnalysisReport) -> str:
         lines.append("- none")
     lines.extend(["", "## Checkpoint Candidates", ""])
     for checkpoint in report.checkpoint_candidates:
-        lines.append(
-            f"- `{checkpoint.checkpoint_id}`: {checkpoint.source_type} "
-            f"[{checkpoint.status.value}] evidence={','.join(checkpoint.evidence_ids) or 'none'}"
-        )
+        lines.append(f"- `{checkpoint.checkpoint_id}`")
+        _field(lines, "filename", checkpoint.filename)
+        _field(lines, "model variant or variant scope", checkpoint.model_variant)
+        _field(lines, "source type", checkpoint.source_type)
+        _field(lines, "URL or source reference", checkpoint.url)
+        _field(lines, "loader", checkpoint.loader)
+        for checksum in checkpoint.published_checksums:
+            lines.append(
+                "  - published checksum: "
+                f"{checksum.algorithm.value}:{checksum.digest} "
+                f"[{checksum.verification_state}] evidence={checksum.evidence_id}"
+            )
+            _field(lines, "checksum provenance note", checksum.provenance_note, indent=4)
+        _field(lines, "legacy hash evidence", checkpoint.hash_evidence)
+        _field(lines, "expression status", checkpoint.expression_status)
+        _field(lines, "helper symbol", checkpoint.helper_symbol)
+        if checkpoint.unresolved_components is not None:
+            _field(
+                lines,
+                "unresolved components",
+                ",".join(checkpoint.unresolved_components) or "none",
+            )
+        _field(lines, "access or licensing notes", checkpoint.access_or_license_notes)
+        _field(lines, "claim status", checkpoint.status.value)
+        _field(lines, "unresolved reason", checkpoint.unresolved_reason)
+        _field(lines, "evidence IDs", ",".join(checkpoint.evidence_ids) or "none")
     if not report.checkpoint_candidates:
         lines.append("- none")
     lines.extend(["", "## Embedding Candidates", ""])
     for embedding in report.embedding_candidates:
-        decision = " decision-required" if embedding.requires_user_decision else ""
-        lines.append(
-            f"- `{embedding.embedding_id}`: {embedding.semantic_kind} "
-            f"[{embedding.status.value}]{decision} "
-            f"evidence={','.join(embedding.evidence_ids) or 'none'}"
+        lines.append(f"- `{embedding.embedding_id}`")
+        _field(lines, "tensor origin", embedding.tensor_origin)
+        _field(lines, "semantic kind", embedding.semantic_kind)
+        _field(lines, "shape semantics", embedding.shape_semantics)
+        _field(lines, "batch dimension", embedding.batch_dimension)
+        _field(lines, "time dimension", embedding.time_dimension)
+        _field(lines, "variant scope", _scope_values(embedding.variant_ids))
+        _field(lines, "checkpoint scope", _scope_values(embedding.checkpoint_ids))
+        _field(
+            lines,
+            "decision requirement",
+            "required" if embedding.requires_user_decision else "not required",
         )
+        _field(lines, "status", embedding.status.value)
+        _field(lines, "unresolved reason", embedding.unresolved_reason)
+        _field(lines, "evidence IDs", ",".join(embedding.evidence_ids) or "none")
     if not report.embedding_candidates:
         lines.append("- none")
     lines.extend(["", "## Source Strategy Candidates", ""])
@@ -128,7 +160,28 @@ def render_analysis_markdown(report: AnalysisReport) -> str:
 
 
 def _claim(claim: EvidenceBackedClaim) -> str:
-    return (
+    rendered = (
         f"{claim.statement} [{claim.status.value}] "
         f"evidence={','.join(claim.evidence_ids) or 'none'}"
     )
+    scope_parts = []
+    if claim.variant_ids:
+        scope_parts.append(f"variants={','.join(claim.variant_ids)}")
+    if claim.checkpoint_ids:
+        scope_parts.append(f"checkpoints={','.join(claim.checkpoint_ids)}")
+    return f"{rendered} scope={';'.join(scope_parts)}" if scope_parts else rendered
+
+
+def _field(
+    lines: list[str],
+    label: str,
+    value: object | None,
+    *,
+    indent: int = 2,
+) -> None:
+    if value is not None:
+        lines.append(f"{' ' * indent}- {label}: {value}")
+
+
+def _scope_values(values: tuple[str, ...]) -> str:
+    return ",".join(values) if values else "report-wide"

@@ -4,6 +4,189 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Profiling v1 implementation
+
+- Added CodeCarbon (`>=2.8.0,<3`) and `psutil` (`>=6,<7`) as an explicit, reproducible root `uv`
+  `profiling` optional-dependency group (`uv sync --extra profiling`); resolved
+  `codecarbon==2.8.4`, `psutil==6.1.1`. Neither dependency is installed into any accepted
+  model-runtime environment.
+- Implemented the Profiling v1 subsystem under `src/torch_dae/profiling/`: strict typed
+  contracts for Technical Cards, hash-derived identity (measurement-value-free), deterministic
+  seeded white-noise synthetic input, the timing/statistics engine (10 warmups / 50 measured
+  observations, recomputable summaries), the empirical minimum-input search (halving/doubling plus
+  bisection, with an explicit downward-sweep monotonicity check), privacy-safe hardware and
+  execution-context fingerprints, a real `EnergyBackend` abstraction with a geolocation-free
+  `CodeCarbonEnergyBackend`, host-RAM sampling, CUDA/MPS accelerator-memory evidence, raw
+  lossless `.npz` assets (no pickle), and strict Technical Card validation.
+- Added `src/torch_dae/profiling_worker.py` (executes inside the model's own materialized
+  environment) and `src/torch_dae/profiling_executor.py` (root-side campaign orchestration and
+  Technical Card assembly), mirroring the existing `runtime_worker`/`runtime_executor` isolation
+  pattern.
+- Added CLI: `torch-dae model profile` and `torch-dae technical-card validate|inspect|list`.
+- Added the `skills/audio-model-profiling` skill (plan/profile/validate) as the canonical,
+  non-onboarding entry point for profiling work.
+- Candidate Technical Card evidence is never written into the official `technical_cards/` tree by
+  this implementation; promotion remains a separate, later, human-reviewed step.
+- Discovered and fixed a checkpoint-cache interaction: `CheckpointManager.ensure_checkpoint`'s
+  strict specification-fingerprint cache check can force a network re-download of an
+  already-correct cached checkpoint payload whenever that fingerprint has legitimately drifted
+  since the checkpoint was first acquired, rewriting `checkpoint-materialization.json` with fresh
+  non-deterministic provenance (a new timestamp and command-log references) and invalidating the
+  byte-pinned local cross-check that already-accepted `verification_reports/*.json` perform
+  against it. `torch_dae.profiling_executor._resolve_checkpoint_read_only` now reuses an
+  already-hash-valid cached payload read-only, without going through that cache-mutating path, and
+  falls back to the manager only for a genuine first-time acquisition (regression test:
+  `tests/test_profiling_checkpoint_reuse.py`). No committed file was affected by the earlier
+  interaction; see the final review report for the residual local-only impact this caused before
+  the fix landed.
+
+### Profiling and Technical Card normative specification
+
+- Defined profiling as an optional repeatable evidence workflow outside Model Card onboarding.
+- Defined immutable device-specific Technical Cards plus compact lossless `.npz` raw evidence.
+- Defined seeded white-noise profiling, 10 warmups/50 measurements, batch scaling,
+  minimum-input discovery, host RAM/device-memory observations, optional FLOP/MAC evidence, and
+  CodeCarbon measured/estimated energy provenance.
+- Marked schema-1 `profiled`/embedded Model Card profiling fields as legacy compatibility only.
+
+### Canonical lifecycle finalization and cross-agent review packaging
+
+- Added `scripts/onboarding_handoff.py finalize`, the single canonical end-of-task path. It
+  composes existing `validate`, `bundle`, and `cleanup` primitives with the bounded set of required
+  repository gates (`validate_repository.py`, `validate_skill_artifacts.py`, `check_worktree_patch.py
+  --json`, `git diff --check`), reused via subprocess rather than duplicated. Ordering: evidence
+  validation, required gates, cleanup preflight (dry-run; blocks on unmanaged workspace content),
+  the deterministic review bundle (embedding the gates, lifecycle state, evidence-invariance summary,
+  and cleanup preflight as archive metadata), then optional real cleanup execution, then one
+  `finalize-result.json` exposing every absolute artifact path, the workflow/lifecycle state,
+  evidence-invariance status, and cleanup status/receipt. Any required-gate failure, unaccepted
+  phase, evidence drift, or unmanaged workspace content fails the call outright.
+- Added `scripts/onboarding_handoff.py run-manifest create`, the single canonical *allocator* for a
+  managed workspace run: it atomically creates `run_root` and its manifest together and returns the
+  absolute path, rather than registering a workspace created independently beforehand.
+- Hardened `cleanup`/`finalize` to distinguish a genuinely legacy workflow (no workspace content at
+  all, returning a structured, successful `not_applicable` result) from unmanaged workspace content
+  (a run directory present without its own manifest), which now blocks cleanup and finalize instead
+  of being silently guessed at or deleted.
+- Corrected evidence-invariance reporting to distinguish unchanged phase-local evidence from validly
+  superseded shared artifacts, instead of describing both as simply "unchanged".
+- Updated the canonical `audio-model-onboarding` skill, its request/response templates, and related
+  docs with an explicit agent completion contract: every successfully completed lifecycle mode must
+  allocate workspaces only through `run-manifest create`, run `finalize`, and report lifecycle state,
+  validation-gate status, evidence invariance, cleanup status, limitations, and absolute artifact
+  paths, supporting independent cross-agent/cross-LLM review.
+
+### Stable local-package identity and concurrent wheel caching
+
+- Made local package identity content-addressed over wheel build inputs so Git commits, HEAD-only
+  changes, and evidence/report changes do not alter package identity, environment fingerprints, or
+  wheel-cache keys; Git state is retained only as separate informational provenance.
+- Added bounded cross-platform inter-process locking, safe stale-lock recovery, process-specific
+  build paths, deterministic timestamps, and atomic publication for shared local wheel caches.
+- Added real process-level regression coverage for same-identity contention, failed builders,
+  waiter recovery, stale/live locks, identity-scoped parallelism, final-state validation, and
+  read-only audit generation.
+
+### Environment wheel dependency closure
+
+- Added a deterministic card-independent preflight that validates active local-wheel runtime
+  requirements against direct and transitive packages reachable from each accepted lock before
+  environment creation; missing and incompatible requirements remain separate structured evidence.
+- Corrected all three PANNs environment projects with the six derived package-runtime pins and
+  canonically regenerated their locks without changing Python or numerical runtime pins.
+- Made local wheel builds offline, linked successful preflight evidence into materialization
+  results, and added marker, extras, normalization, reachability, ordering, reuse, and isolation
+  regressions.
+
+### Authoritative checkpoint acquisition
+
+- Added strict schema `2.0.0` checkpoint authority contracts with Zenodo metadata-only resolution,
+  exact file/size identity, algorithm-tagged MD5 and SHA-256 evidence, and bounded response
+  provenance while preserving legacy schema `1.0.0` sources.
+- Enforced exact size, every published checksum, independently observed SHA-256, and maximum-byte
+  ceilings before content-addressed cache installation; offline reuse now revalidates bytes,
+  authority checksums, specification fingerprint, and cached metadata provenance.
+- Added card-independent checkpoint `resolve`, `ensure-spec`, and `info-spec` CLI operations, a
+  dedicated safe provider-filename grammar including metric-bearing `=`, and authority-aware runtime
+  target/report validation.
+- Documented the Python 3.11 all-groups setup gate, category-based cleanup retention, and read-only
+  final Git inventory for intentionally non-writable repository metadata.
+
+### Historical control-plane provenance
+
+- Treated accepted handoff skill and specification hashes as immutable historical provenance, so
+  later generic control-plane hardening no longer retroactively invalidates accepted workflows.
+- Kept exact current-hash enforcement for pending promotion candidates and atomic mismatch failure,
+  while permitting later phases to consume prerequisites created under older control planes.
+- Added deterministic validation, discovery, repository-report, and bundle metadata that separates
+  per-phase historical hashes from current hashes and reports skill and specification drift.
+
+### Card-independent environment lifecycle
+
+- Made accepted environment definitions the authority for direct resolution, materialization, and
+  infrastructure verification; retained card-based entry points as delegating conveniences.
+- Added strict materialization, environment-verification, and runtime-target contracts and schemas,
+  deterministic evidence-complete fingerprints, and matching final-card evidence requirements.
+- Separated environment evidence from checkpoint-specific runtime reports and added explicit
+  `resolve`, `materialize`, and environment-ID `verify` CLI operations.
+- Added verify and card onboarding phases to the accepted lifecycle contract without promoting or
+  changing any existing model workflow handoff.
+
+### Verification evidence completeness
+
+- Required successful environment results to contain nonempty, uniquely named import and smoke
+  observations with passed status only; failed results remain partial diagnostic evidence.
+- Added schema `2.0.0` runtime-target required and optional check contracts, target-aware report
+  coverage enforcement, and exact repository/model-card target binding while preserving conservative
+  legacy readability.
+- Corrected remaining environment-ID authority documentation and retained card-oriented environment
+  commands as compatibility conveniences.
+
+### Staged-equivalent whitespace validation
+
+- Added exact `.gitattributes` whitespace exemptions for the byte-preserved PANNs vendored
+  substrate and deterministic source-reduction patch without weakening validation elsewhere.
+- Added a temporary-index working-tree validator so untracked non-ignored outputs receive the same
+  whitespace gate as the future staged commit while the real Git index remains unchanged.
+- Added Git-fixture regressions for tracked, untracked, ignored, deleted, renamed, exempt, and
+  non-exempt paths plus temporary-index cleanup on success and failure.
+
+### Onboarding phase-handoff hardening
+
+- Added strict cross-phase artifact supersession for shared repository outputs, including ordered
+  lineage validation, protected canonical paths, atomic pending-handoff validation, historical
+  discovery status, and bundle metadata resolving the latest accepted file.
+- Closed promotion to an exact declared-artifact allowlist, with byte-preserving rejection of
+  unreferenced JSON, Markdown, nested runtime content, and symlinks.
+- Made cleanup conflict-aware and all-or-nothing for retained paths and existing external outputs;
+  pre-deletion protection covers supplied and symlink-resolved path topology, and durable atomic
+  receipts include finalized source manifests and explicit conflict and retention inventories.
+- Added explicit bundle cleanliness and normalization result fields plus deterministic SHA-256
+  sidecars, while documenting the intentional self-exclusions of the bundled artifact manifest.
+- Added strict workflow and phase-handoff contracts, generated schemas, committed
+  `onboarding_reports/`, local prerequisite discovery, atomic promotion, explicit supersession, and
+  accepted three-tuple analyze/resolve-environment migration fixtures.
+- Added deterministic normalized review bundles with working-tree evidence, artifact hashes,
+  declared/actual inventory checks, and external result metadata.
+- Added managed workflow workspaces and manifest-scoped cleanup that preserves reusable caches,
+  materialized environments, checkpoints, and external audit outputs by default.
+- Clarified direct dependency closure, shared source/environment evidence, constructor-trial scope,
+  external execution failures, and successful draft environment resolution without lifecycle
+  promotion.
+- Preserved `verification_reports/` exclusively for checkpoint-specific runtime observations.
+
+### Analyze-skill hardening
+
+- Made checkpoint discovery binary-safe with deterministic skipped-file reporting and retained valid
+  textual candidates when unrelated binary or malformed files are present.
+- Added class-qualified output candidates with lexical method ownership and source spans.
+- Added backward-compatible variant/checkpoint scopes, structured host-published checksum metadata,
+  strict reference validation, regenerated schemas, and more complete Markdown reports.
+- Added bounded local PDF text-layer extraction through the lightweight root `pypdf` dependency,
+  without OCR, external processes, network retrieval, or model-runtime dependencies.
+- Documented best-effort source revision evidence, metadata-only authoritative checkpoint-host
+  analysis, and locked root-environment execution semantics.
+
 ### Documentation and release metadata
 
 - Added Zenodo concept and version DOI metadata, the `0.1.0` release date, and a concept DOI badge.

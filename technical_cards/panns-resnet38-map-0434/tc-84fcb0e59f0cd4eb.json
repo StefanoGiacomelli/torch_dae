@@ -1,0 +1,574 @@
+{
+  "technical_card_schema_version": "1.0.0",
+  "identity": {
+    "technical_card_id": "tc-84fcb0e59f0cd4eb",
+    "identity_digest_sha256": "84fcb0e59f0cd4eb4610fb7a06804237d1bd7389cd9c435120266c2e8542ef58",
+    "nonce": "3d211d80aa32eac41c7d1ea3abc6b276"
+  },
+  "model": {
+    "model_card_id": "panns-resnet38-map-0434",
+    "model_card_path": "model_cards/panns/panns-resnet38-map-0434.json",
+    "model_card_sha256": "fe8e1818900dd35d236d0bb0acadb80a2bf5b2c30678b879d6d747d12616292b",
+    "model_card_status": "runtime_verified",
+    "checkpoint_id": "panns-resnet38-map-0434",
+    "checkpoint_sha256": "39454db77d80e6e482fb1428537d1a65d3bb87d3aa70660fb4d13d5af90b2f97",
+    "wrapper_entry_point": "torch_dae.models.panns:PannsResNet38Map0434"
+  },
+  "profiler": {
+    "profiler_implementation_version": "1.0.0",
+    "profiling_protocol_id": "audio-inference-v1",
+    "profiling_protocol_version": "1.0.0",
+    "torch_dae_package_version": "0.1.0",
+    "torch_dae_content_identity": "content-sha256:088d157241a902fdb13c320c9265c5c66534f75a22070c9f68af7732ceccaf4b",
+    "torch_dae_repository_head": "a10d80f5f481f6e05906e614abff62e66d7ecc04",
+    "torch_dae_repository_dirty": false,
+    "runtime_classification": "canonical",
+    "codecarbon_version": "2.8.4",
+    "psutil_version": "6.1.1"
+  },
+  "contributor": {
+    "display_name": null,
+    "github_handle": null
+  },
+  "hardware": {
+    "cpu_model": "Apple M4 Pro",
+    "cpu_architecture": "arm64",
+    "physical_cores": 14,
+    "logical_cores": 14,
+    "total_ram_bytes": 25769803776,
+    "accelerator_vendor": "apple",
+    "accelerator_model": "Apple GPU (MPS)",
+    "accelerator_memory_bytes": null,
+    "backend_capabilities": []
+  },
+  "software": {
+    "os_name": "Darwin",
+    "os_version": "25.5.0",
+    "python_implementation": "CPython",
+    "python_version": "3.12.13",
+    "torch_version": "2.13.0",
+    "cuda_runtime_version": null,
+    "cuda_driver_version": null,
+    "cudnn_version": null,
+    "mps_backend_info": "pytorch-mps built=True"
+  },
+  "device": {
+    "backend": "mps",
+    "device_index": null,
+    "device_label": "mps"
+  },
+  "execution_context": {
+    "hardware_fingerprint": "f5ec38488a099a140b41816fb8ee9a3091724273463b0792105faecc266ccddb",
+    "execution_context_fingerprint": "12720e84b3ed719f57c776edd16290d000cda873e9bfd9dc7bc8b1a710dd9e96",
+    "os_name": "Darwin",
+    "os_version": "25.5.0",
+    "python_version": "3.12.13",
+    "torch_version": "2.13.0",
+    "torch_dae_content_identity": "content-sha256:088d157241a902fdb13c320c9265c5c66534f75a22070c9f68af7732ceccaf4b",
+    "device_backend": "mps",
+    "native_precision": "float32",
+    "thread_regime": null,
+    "profiling_protocol_id": "audio-inference-v1",
+    "profiling_protocol_version": "1.0.0",
+    "profiler_implementation_version": "1.0.0"
+  },
+  "precision": {
+    "dtype": "float32",
+    "autocast": false
+  },
+  "synthetic_input": {
+    "distribution": "uniform",
+    "low": -1.0,
+    "high": 1.0,
+    "dtype": "float32",
+    "prng_implementation": "numpy.random.Generator(PCG64)",
+    "seed": 1337,
+    "sample_rate": 32000,
+    "sample_count": 320000,
+    "batch_size": 1,
+    "channel_count": 1,
+    "tensor_sha256": null
+  },
+  "canonical_duration_seconds": 10.0,
+  "canonical_duration_source": "protocol_default",
+  "architecture": {
+    "total_parameters": 74866703,
+    "trainable_parameters": 73783247,
+    "non_trainable_parameters": 1083456,
+    "parameter_bytes": 299466812,
+    "buffer_bytes": 102208,
+    "state_dict_tensor_bytes": 299569020,
+    "dtype_distribution": {
+      "torch.float32": 74892175,
+      "torch.int64": 40
+    },
+    "module_count": 136,
+    "flops_macs_status": "unavailable",
+    "flops": null,
+    "macs": null,
+    "counting_backend": null,
+    "counting_backend_version": null,
+    "counting_convention": null,
+    "unaccounted_operations": []
+  },
+  "cold_start": {
+    "initialization_ns": 1501936375,
+    "checkpoint_loading_ns": 65153417,
+    "device_placement_ns": 101977791,
+    "first_inference_ns": 191270042,
+    "limitations": []
+  },
+  "minimum_input_search": {
+    "status": "found",
+    "minimum_sample_count": 9920,
+    "minimum_duration_seconds": 0.31,
+    "probe_sample_counts_tested": [
+      1,
+      2,
+      4,
+      9,
+      19,
+      39,
+      78,
+      156,
+      312,
+      625,
+      1250,
+      2500,
+      5000,
+      7500,
+      8750,
+      9375,
+      9687,
+      9843,
+      9882,
+      9901,
+      9911,
+      9916,
+      9918,
+      9919,
+      9920,
+      9921,
+      10000,
+      20000,
+      40000,
+      80000,
+      160000,
+      320000
+    ],
+    "probe_records": [
+      {
+        "probe_order": 0,
+        "sample_count": 320000,
+        "succeeded": true
+      },
+      {
+        "probe_order": 1,
+        "sample_count": 160000,
+        "succeeded": true
+      },
+      {
+        "probe_order": 2,
+        "sample_count": 80000,
+        "succeeded": true
+      },
+      {
+        "probe_order": 3,
+        "sample_count": 40000,
+        "succeeded": true
+      },
+      {
+        "probe_order": 4,
+        "sample_count": 20000,
+        "succeeded": true
+      },
+      {
+        "probe_order": 5,
+        "sample_count": 10000,
+        "succeeded": true
+      },
+      {
+        "probe_order": 6,
+        "sample_count": 5000,
+        "succeeded": false
+      },
+      {
+        "probe_order": 7,
+        "sample_count": 2500,
+        "succeeded": false
+      },
+      {
+        "probe_order": 8,
+        "sample_count": 1250,
+        "succeeded": false
+      },
+      {
+        "probe_order": 9,
+        "sample_count": 625,
+        "succeeded": false
+      },
+      {
+        "probe_order": 10,
+        "sample_count": 312,
+        "succeeded": false
+      },
+      {
+        "probe_order": 11,
+        "sample_count": 156,
+        "succeeded": false
+      },
+      {
+        "probe_order": 12,
+        "sample_count": 78,
+        "succeeded": false
+      },
+      {
+        "probe_order": 13,
+        "sample_count": 39,
+        "succeeded": false
+      },
+      {
+        "probe_order": 14,
+        "sample_count": 19,
+        "succeeded": false
+      },
+      {
+        "probe_order": 15,
+        "sample_count": 9,
+        "succeeded": false
+      },
+      {
+        "probe_order": 16,
+        "sample_count": 4,
+        "succeeded": false
+      },
+      {
+        "probe_order": 17,
+        "sample_count": 2,
+        "succeeded": false
+      },
+      {
+        "probe_order": 18,
+        "sample_count": 1,
+        "succeeded": false
+      },
+      {
+        "probe_order": 19,
+        "sample_count": 7500,
+        "succeeded": false
+      },
+      {
+        "probe_order": 20,
+        "sample_count": 8750,
+        "succeeded": false
+      },
+      {
+        "probe_order": 21,
+        "sample_count": 9375,
+        "succeeded": false
+      },
+      {
+        "probe_order": 22,
+        "sample_count": 9687,
+        "succeeded": false
+      },
+      {
+        "probe_order": 23,
+        "sample_count": 9843,
+        "succeeded": false
+      },
+      {
+        "probe_order": 24,
+        "sample_count": 9921,
+        "succeeded": true
+      },
+      {
+        "probe_order": 25,
+        "sample_count": 9882,
+        "succeeded": false
+      },
+      {
+        "probe_order": 26,
+        "sample_count": 9901,
+        "succeeded": false
+      },
+      {
+        "probe_order": 27,
+        "sample_count": 9911,
+        "succeeded": false
+      },
+      {
+        "probe_order": 28,
+        "sample_count": 9916,
+        "succeeded": false
+      },
+      {
+        "probe_order": 29,
+        "sample_count": 9918,
+        "succeeded": false
+      },
+      {
+        "probe_order": 30,
+        "sample_count": 9919,
+        "succeeded": false
+      },
+      {
+        "probe_order": 31,
+        "sample_count": 9920,
+        "succeeded": true
+      }
+    ],
+    "boundary_verified": true,
+    "below_boundary_verified": true,
+    "notes": null
+  },
+  "conditions": [
+    {
+      "condition_id": "canonical-b1",
+      "duration_seconds": 10.0,
+      "duration_source": "protocol_default",
+      "batch_size": 1,
+      "sample_count": 320000,
+      "status": "success",
+      "unsupported_reason": null,
+      "timing": {
+        "sample_count": 50,
+        "mean_ns": 24539960.14,
+        "stddev_ns": 17066544.834018953,
+        "min_ns": 13317084,
+        "max_ns": 127810500,
+        "p50_ns": 21611083.5,
+        "p90_ns": 28148671.1,
+        "p95_ns": 46371902.599999934,
+        "p99_ns": 94231024.90999986,
+        "coefficient_of_variation": 0.6954593543206526,
+        "throughput_items_per_second": 40.74986244048561,
+        "forward_calls_per_second": 40.74986244048561,
+        "real_time_factor": 0.002453996014,
+        "speed_factor": 407.4986244048561
+      },
+      "raw_timing_array": "raw_ns__canonical-b1"
+    },
+    {
+      "condition_id": "canonical-b2",
+      "duration_seconds": 10.0,
+      "duration_source": "protocol_default",
+      "batch_size": 2,
+      "sample_count": 320000,
+      "status": "success",
+      "unsupported_reason": null,
+      "timing": {
+        "sample_count": 50,
+        "mean_ns": 48057902.46,
+        "stddev_ns": 6792045.229957718,
+        "min_ns": 38045292,
+        "max_ns": 66244916,
+        "p50_ns": 47271916.5,
+        "p90_ns": 56524241.0,
+        "p95_ns": 60285389.65,
+        "p99_ns": 66207410.91,
+        "coefficient_of_variation": 0.14133045518603182,
+        "throughput_items_per_second": 41.61646467331067,
+        "forward_calls_per_second": 20.808232336655333,
+        "real_time_factor": 0.0024028951230000003,
+        "speed_factor": 416.1646467331067
+      },
+      "raw_timing_array": "raw_ns__canonical-b2"
+    },
+    {
+      "condition_id": "canonical-b4",
+      "duration_seconds": 10.0,
+      "duration_source": "protocol_default",
+      "batch_size": 4,
+      "sample_count": 320000,
+      "status": "success",
+      "unsupported_reason": null,
+      "timing": {
+        "sample_count": 50,
+        "mean_ns": 86719949.22,
+        "stddev_ns": 13928162.299790466,
+        "min_ns": 67552500,
+        "max_ns": 130980583,
+        "p50_ns": 83042375.5,
+        "p90_ns": 99897737.80000003,
+        "p95_ns": 118053860.74999997,
+        "p99_ns": 128577459.82999998,
+        "coefficient_of_variation": 0.1606108216744464,
+        "throughput_items_per_second": 46.125488263979406,
+        "forward_calls_per_second": 11.531372065994852,
+        "real_time_factor": 0.0021679987305,
+        "speed_factor": 461.25488263979406
+      },
+      "raw_timing_array": "raw_ns__canonical-b4"
+    },
+    {
+      "condition_id": "canonical-b8",
+      "duration_seconds": 10.0,
+      "duration_source": "protocol_default",
+      "batch_size": 8,
+      "sample_count": 320000,
+      "status": "success",
+      "unsupported_reason": null,
+      "timing": {
+        "sample_count": 50,
+        "mean_ns": 149119672.46,
+        "stddev_ns": 10212326.219898604,
+        "min_ns": 133007834,
+        "max_ns": 180581084,
+        "p50_ns": 148062563.0,
+        "p90_ns": 161031391.7,
+        "p95_ns": 165353183.45,
+        "p99_ns": 176474393.51,
+        "coefficient_of_variation": 0.06848409771445794,
+        "throughput_items_per_second": 53.648186507021244,
+        "forward_calls_per_second": 6.7060233133776554,
+        "real_time_factor": 0.0018639959057500002,
+        "speed_factor": 536.4818650702124
+      },
+      "raw_timing_array": "raw_ns__canonical-b8"
+    },
+    {
+      "condition_id": "minimum-b1",
+      "duration_seconds": 0.31,
+      "duration_source": "empirical_minimum",
+      "batch_size": 1,
+      "sample_count": 9920,
+      "status": "success",
+      "unsupported_reason": null,
+      "timing": {
+        "sample_count": 50,
+        "mean_ns": 11371706.7,
+        "stddev_ns": 1958987.1936546827,
+        "min_ns": 8832916,
+        "max_ns": 20673584,
+        "p50_ns": 11065791.5,
+        "p90_ns": 14235821.200000001,
+        "p95_ns": 14692820.799999999,
+        "p99_ns": 17870477.25999999,
+        "coefficient_of_variation": 0.17226852972339524,
+        "throughput_items_per_second": 87.93754766819654,
+        "forward_calls_per_second": 87.93754766819654,
+        "real_time_factor": 0.03668292483870968,
+        "speed_factor": 27.26063977714093
+      },
+      "raw_timing_array": "raw_ns__minimum-b1"
+    }
+  ],
+  "host_memory": {
+    "total_ram_bytes": 25769803776,
+    "rss_before_model_load_bytes": 213827584,
+    "rss_after_model_load_bytes": 1005535232,
+    "rss_before_resource_pass_bytes": 1342128128,
+    "rss_sampled_peak_bytes": 1342128128,
+    "rss_sampled_peak_is_sampled": true,
+    "rss_after_resource_pass_bytes": 1342128128,
+    "uss_bytes": null,
+    "pss_bytes": null,
+    "sampling_method": "periodic parent-process psutil.Process(child_pid).memory_info().rss polling (interval=0.05s); a sampled maximum, not an exact allocator peak"
+  },
+  "accelerator_memory": {
+    "backend": "mps",
+    "cuda_current_allocated_bytes": null,
+    "cuda_peak_allocated_bytes": null,
+    "cuda_current_reserved_bytes": null,
+    "cuda_peak_reserved_bytes": null,
+    "mps_current_allocated_bytes": 302143232,
+    "mps_driver_allocated_bytes": 1204682752,
+    "unified_memory_note": "Apple unified memory: host RSS, MPS tensor allocation, and Metal/driver allocation are separate measurement surfaces and are never summed."
+  },
+  "energy": {
+    "measurement_kind": "hardware_measured",
+    "codecarbon_version": "2.8.4",
+    "cpu_energy_kwh": 0.000033848832019679375,
+    "accelerator_energy_kwh": 0.00004343868122239938,
+    "ram_energy_kwh": 0.00010563954666504289,
+    "total_energy_kwh": 0.00018292705990712152,
+    "average_power_watts": 21.826925055910582,
+    "measurement_duration_seconds": 30.170874457980972,
+    "measurement_interval_seconds": 1.0,
+    "measurement_scope": "wall-clock duration of the isolated resource-pass subprocess, including model construction and checkpoint loading overhead; not scoped to individual inferences",
+    "privilege_used": true,
+    "coverage_complete": true,
+    "unaccounted_components": [],
+    "limitations": [
+      "CodeCarbon selected Apple PowerMetrics; local sudo privilege was used for hardware-counter access. torch-dae does not read, store, or persist the sudo credential."
+    ],
+    "failure_reason": null
+  },
+  "raw_measurements": {
+    "path": "tc-84fcb0e59f0cd4eb.npz",
+    "sha256": "1850e73a47cdd7de587ea5eb4186a3a45bd0e2587488b6c208a565651fe91ef2",
+    "media_type": "application/x-npz",
+    "arrays": [
+      {
+        "name": "raw_ns__canonical-b1",
+        "dtype": "int64",
+        "shape": [
+          50
+        ]
+      },
+      {
+        "name": "raw_ns__canonical-b2",
+        "dtype": "int64",
+        "shape": [
+          50
+        ]
+      },
+      {
+        "name": "raw_ns__canonical-b4",
+        "dtype": "int64",
+        "shape": [
+          50
+        ]
+      },
+      {
+        "name": "raw_ns__canonical-b8",
+        "dtype": "int64",
+        "shape": [
+          50
+        ]
+      },
+      {
+        "name": "raw_ns__minimum-b1",
+        "dtype": "int64",
+        "shape": [
+          50
+        ]
+      }
+    ]
+  },
+  "coverage": {
+    "tested_conditions": [
+      "canonical-b1",
+      "canonical-b2",
+      "canonical-b4",
+      "canonical-b8",
+      "minimum-b1"
+    ],
+    "unsupported_conditions": [],
+    "not_tested_conditions": [],
+    "architecture_status": "unavailable",
+    "energy_status": "hardware_measured",
+    "host_memory_available": true,
+    "accelerator_memory_available": true
+  },
+  "comparability": {
+    "protocol_id": "audio-inference-v1",
+    "protocol_version": "1.0.0",
+    "execution_context_fingerprint": "12720e84b3ed719f57c776edd16290d000cda873e9bfd9dc7bc8b1a710dd9e96",
+    "runtime_classification": "canonical",
+    "comparable_only_within_same_execution_context": true
+  },
+  "limitations": [
+    "FLOPs/MACs coverage: unavailable in Profiling v1"
+  ],
+  "campaign": {
+    "campaign_id": "profiling-193d87460a13471abefae4655c7901e4",
+    "run_id": "f9e1723bdf724e118da6203161c69f26"
+  },
+  "supersession": {
+    "supersedes": null,
+    "supersede_reason": null
+  },
+  "created_at": "2026-09-18T22:51:00.284457+00:00"
+}

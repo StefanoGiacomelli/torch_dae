@@ -29,8 +29,13 @@ Lifecycle
    * - ``runtime_verified``
      - Checkpoint requirements above plus a repository-relative ``verification_report``.
    * - ``profiled``
-     - Runtime requirements above plus architectural, inference, and energy profiling sections all
-       marked ``profiled``, each with a report path.
+     - Legacy schema-1 compatibility state. The current validator still requires runtime evidence and
+       all three embedded profiling sections when this value is read, but new workflows must not
+       create or promote cards to this state.
+
+For new onboarding, ``runtime_verified`` is terminal. Profiling v1 stores independent Technical
+Cards and leaves accepted Model Card bytes unchanged. ``profiled`` and the embedded profiling
+sections remain documented here because they are still readable schema-1 contracts.
 
 The lifecycle is monotonic as a documentation convention, but the contract validates the required
 state rather than performing promotion or reading referenced files.
@@ -68,7 +73,7 @@ Other enums
      - Unresolved work, completed resolution, knowingly accepted issue, or inapplicable issue.
    * - ``ProfilingStatus``
      - ``not_profiled`` / ``profiled``
-     - No completed report, or a completed report whose repository-relative path is required.
+     - Legacy schema-1 compatibility enum. New Technical Card profiling does not mutate this field.
 
 Field contract matrix
 ---------------------
@@ -153,7 +158,7 @@ Every listed field is public and serialized. A field is required unless a defaul
      - Declared and observed support stay distinct.
    * - ``ProfilingSection``
      - ``status``, ``report=None``
-     - ``profiled`` requires a repository-relative report.
+     - Legacy compatibility field. New profiling evidence lives in independent Technical Cards.
 
 ``ModelCard`` additionally requires ``schema_version``, ``card_id``, ``card_status``, ``identity``,
 ``checkpoint``, ``sources``, ``scientific_reference``, ``description``, ``tasks``, ``datasets``,

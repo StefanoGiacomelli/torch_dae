@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "environment_id": "synthetic-environment",
+  "environment_spec_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "project_file_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "lockfile_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "source_manifest_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "verification_script_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "environment_fingerprint": "8888888888888888888888888888888888888888888888888888888888888888",
+  "local_package_identity": "content-sha256:9999999999999999999999999999999999999999999999999999999999999999",
+  "package_content_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+  "repository_head": null,
+  "repository_dirty": null,
+  "local_package_wheel_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "interpreter": "CPython 3.12.13",
+  "platform": "macos-arm64",
+  "managed_identifier": "environments/synthetic-environment/fingerprint",
+  "status": "created",
+  "dependency_installation_status": "complete",
+  "source_preparation_status": "complete",
+  "lifecycle_state": "materialized",
+  "warnings": [],
+  "failure_classification": null,
+  "started_at": "2026-07-31T00:00:00Z",
+  "completed_at": "2026-07-31T00:00:01Z",
+  "materialization_record": {
+    "path": "environments/synthetic-environment/materialization.json",
+    "sha256": "6666666666666666666666666666666666666666666666666666666666666666"
+  },
+  "dependency_closure_preflight": {
+    "path": "reports/environments/synthetic-environment/preflight.json",
+    "sha256": "7777777777777777777777777777777777777777777777777777777777777777"
+  }
+}

@@ -1,0 +1,478 @@
+{
+  "schema_version": "1.0.0",
+  "card_id": "panns-wavegram-logmel-cnn14-map-0439",
+  "card_status": "runtime_verified",
+  "identity": {
+    "model_name": "PANNs",
+    "model_family": "PANNs",
+    "variant": "Wavegram_Logmel_Cnn14",
+    "checkpoint_name": "AudioSet Wavegram_Logmel_Cnn14 (mAP=0.439)",
+    "framework": "pytorch",
+    "wrapper_entry_point": "torch_dae.models.panns:PannsWavegramLogmelCnn14Map0439"
+  },
+  "checkpoint": {
+    "schema_version": "2.0.0",
+    "checkpoint_id": "panns-wavegram-logmel-cnn14-map-0439",
+    "source_type": "https",
+    "url": null,
+    "repository_id": null,
+    "package": null,
+    "package_version": null,
+    "revision": null,
+    "release_tag": null,
+    "filename": "Wavegram_Logmel_Cnn14_mAP=0.439.pth",
+    "local_path": null,
+    "expected_sha256": null,
+    "observed_sha256": "6c1c917d780967c40bbfd0f20027bd394a7da72453ca716745fe8657206200ae",
+    "authority": {
+      "provider": "zenodo",
+      "record_id": "3987831",
+      "filename": "Wavegram_Logmel_Cnn14_mAP=0.439.pth",
+      "expected_size_bytes": 328692198,
+      "published_checksums": [
+        {
+          "algorithm": "md5",
+          "digest": "17fa9ab65af3c0eb5ffbc5f65552c4e1"
+        }
+      ],
+      "record_url": "https://zenodo.org/records/3987831",
+      "provenance_status": "authoritative_provider_declared"
+    },
+    "format": "PyTorch checkpoint mapping containing model state-dictionary",
+    "loader": "torch.load(path, map_location=device)['model'] followed by strict model.load_state_dict",
+    "license": {
+      "name": "CC-BY-4.0",
+      "url": "https://zenodo.org/records/3987831",
+      "status": "officially_reported"
+    }
+  },
+  "checkpoint_specification_fingerprint": "0ddaf605ec97562f4e02a39d87b959887b32428cf85b0c798156f002c98259c4",
+  "checkpoint_materialization": {
+    "path": "onboarding_reports/panns-audioset-three-tuple/card/checkpoint-materializations/panns-wavegram-logmel-cnn14-map-0439.json",
+    "sha256": "c1fb6ae3b308361b2f46f7f4e0a3e4832e7e01dc6bd40325fe12eeffed478b75"
+  },
+  "sources": {
+    "official_repository": {
+      "source_id": "official-repository",
+      "kind": "repository",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn",
+      "package": null,
+      "revision": "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0",
+      "path": null,
+      "evidence_status": "officially_reported"
+    },
+    "implementation": {
+      "source_id": "implementation",
+      "kind": "repository",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn",
+      "package": null,
+      "revision": "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0",
+      "path": "pytorch/models.py",
+      "evidence_status": "officially_reported"
+    },
+    "checkpoint": {
+      "source_id": "checkpoint-zenodo",
+      "kind": "package",
+      "url": "https://zenodo.org/records/3987831",
+      "package": null,
+      "revision": null,
+      "path": null,
+      "evidence_status": "officially_reported"
+    },
+    "wrapper": {
+      "source_id": "wrapper",
+      "kind": "local",
+      "url": null,
+      "package": null,
+      "revision": null,
+      "path": "src/torch_dae/models/panns/model.py",
+      "evidence_status": "observed"
+    }
+  },
+  "scientific_reference": {
+    "title": "PANNs: Large-Scale Pretrained Audio Neural Networks for Audio Pattern Recognition",
+    "doi": "10.1109/TASLP.2020.3030497",
+    "official_publication": "https://doi.org/10.1109/TASLP.2020.3030497",
+    "authors": [
+      "Q. Kong",
+      "Y. Cao",
+      "T. Iqbal",
+      "Y. Wang",
+      "W. Wang",
+      "M. D. Plumbley"
+    ],
+    "year": 2020
+  },
+  "description": {
+    "architecture": "Wavegram_Logmel_Cnn14: a learned waveform branch and a frozen STFT/log-mel branch at 32 kHz (1024-sample analysis window, 320-sample hop, 64 mel bins, 50-14000 Hz), concatenating their 64-channel feature maps into a 128-channel tensor before the remaining CNN14 blocks, then global max-plus-mean pooling, a 2048-dimensional fully connected representation, and a 527-class AudioSet head.",
+    "preprocessing": "Frozen STFT and log-mel feature extraction at 32000 Hz with a Hann analysis window (the source paper describes a Hamming window; this discrepancy is not resolved). Wrapper preprocessing performs no automatic resampling, downmixing, amplitude normalization, cropping, padding, or truncation; inputs must already satisfy the checkpoint's exact native sample rate and mono-channel contract.",
+    "training_objective": "Multilabel audio tagging on AudioSet's 527 sound-event classes, trained with a sigmoid/binary-cross-entropy objective over clip-level labels (officially reported by the paper; not locally reproduced).",
+    "checkpoint_behavior": "This checkpoint-specific card represents exactly Wavegram_Logmel_Cnn14 loaded from the authoritative Zenodo-hosted file Wavegram_Logmel_Cnn14_mAP=0.439.pth (record 3987831). Strict state-dictionary loading, forward/probability/embedding contracts, determinism, and CPU/MPS device placement were locally verified; published AudioSet mAP was not locally reproduced.",
+    "implementation": "Integrated through a shared PANNs wrapper adapter (src/torch_dae/models/panns/model.py::_PannsAudioTagger) over a minimally vendored selection of the official source, preserving upstream forward semantics."
+  },
+  "tasks": {
+    "pretraining": [
+      "audio_tagging"
+    ],
+    "finetuning": [],
+    "official_evaluation": [
+      "audio_tagging"
+    ],
+    "supported_inference": [
+      "audio_tagging",
+      "embedding_extraction"
+    ]
+  },
+  "datasets": {
+    "training": [
+      {
+        "name": "AudioSet",
+        "version": null,
+        "subset": "full_train",
+        "split": "train",
+        "role": "training",
+        "source_status": "officially_reported",
+        "evidence_ids": [
+          "ev-paper-panns"
+        ]
+      }
+    ],
+    "validation": [],
+    "testing": [
+      {
+        "name": "AudioSet",
+        "version": null,
+        "subset": "eval",
+        "split": "evaluation",
+        "role": "evaluation",
+        "source_status": "officially_reported",
+        "evidence_ids": [
+          "ev-paper-panns"
+        ]
+      }
+    ]
+  },
+  "reported_metrics": [
+    {
+      "task": "audio_tagging",
+      "dataset": "AudioSet",
+      "split": "evaluation",
+      "metric": "mAP",
+      "value": 0.439,
+      "unit": null,
+      "protocol": "Officially reported upstream evaluation protocol; not locally reproduced by this verification.",
+      "checkpoint_specific": true,
+      "source_status": "officially_reported",
+      "evidence_ids": [
+        "ev-paper-panns",
+        "ev-zenodo-authority"
+      ]
+    }
+  ],
+  "usage": {
+    "recommended_environment": {
+      "environment_id": "panns-wavegram-logmel-cnn14-map-0439",
+      "specification": "environments/panns-wavegram-logmel-cnn14-map-0439/environment.json",
+      "lockfile": "environments/panns-wavegram-logmel-cnn14-map-0439/uv.lock",
+      "verified": true,
+      "fingerprint": "9c2cf158bc69fed87690a237b66fff9501f789e4b1db72c57b80983877330f36",
+      "verification_result": "onboarding_reports/panns-audioset-three-tuple/verify/environment-results/panns-wavegram-logmel-cnn14-map-0439.json",
+      "verification_result_sha256": "e04d71ade63f109b6828d1bdd6466c7fee2f3625ac088d8821c80b0a57dd1e4c"
+    },
+    "installation_commands": [
+      "torch-dae env materialize panns-wavegram-logmel-cnn14-map-0439",
+      "torch-dae env verify panns-wavegram-logmel-cnn14-map-0439"
+    ],
+    "checkpoint_loading": [
+      "torch-dae model verify --target onboarding_reports/panns-audioset-three-tuple/verify/runtime-targets/panns-wavegram-logmel-cnn14-map-0439-runtime-target.json --offline"
+    ],
+    "smoke_test_command": "torch-dae model verify --target onboarding_reports/panns-audioset-three-tuple/verify/runtime-targets/panns-wavegram-logmel-cnn14-map-0439-runtime-target.json --offline"
+  },
+  "input": {
+    "shape": "B,C,T",
+    "sample_rate_hz": 32000,
+    "dtype": "float32",
+    "valid_lengths_shape": "B",
+    "channels": "strict mono (C=1)",
+    "resampling": "not supported; automatic resampling is unsupported by this integration",
+    "padding": "not supported; valid_lengths is accepted only when every value equals T, padded batches with unequal valid lengths are rejected",
+    "normalization": "none; caller must supply already-normalized floating-point waveforms"
+  },
+  "outputs": {
+    "primary": {
+      "name": "logits",
+      "kind": "tensor",
+      "semantic_kind": "classification_logits",
+      "rank": 2,
+      "layout": "B,527",
+      "dimensions": [
+        "B",
+        "527"
+      ],
+      "dtype": "float32",
+      "granularity": "clipwise",
+      "task_head_relation": "raw pre-sigmoid fc_audioset output"
+    },
+    "components": [
+      {
+        "name": "logits",
+        "kind": "tensor",
+        "semantic_kind": "classification_logits",
+        "rank": 2,
+        "layout": "B,527",
+        "dimensions": [
+          "B",
+          "527"
+        ],
+        "dtype": "float32",
+        "granularity": "clipwise",
+        "task_head_relation": "raw pre-sigmoid fc_audioset output"
+      },
+      {
+        "name": "probabilities",
+        "kind": "tensor",
+        "semantic_kind": "multilabel_probability",
+        "rank": 2,
+        "layout": "B,527",
+        "dimensions": [
+          "B",
+          "527"
+        ],
+        "dtype": "float32",
+        "granularity": "clipwise",
+        "task_head_relation": "sigmoid(logits)"
+      },
+      {
+        "name": "embedding",
+        "kind": "tensor",
+        "semantic_kind": "embedding",
+        "rank": 2,
+        "layout": "B,2048",
+        "dimensions": [
+          "B",
+          "2048"
+        ],
+        "dtype": "float32",
+        "granularity": "clipwise",
+        "task_head_relation": "post-fc1 pre-classifier representation"
+      }
+    ],
+    "probability_output": {
+      "name": "probabilities",
+      "kind": "tensor",
+      "semantic_kind": "multilabel_probability",
+      "rank": 2,
+      "layout": "B,527",
+      "dimensions": [
+        "B",
+        "527"
+      ],
+      "dtype": "float32",
+      "granularity": "clipwise",
+      "task_head_relation": "sigmoid(logits)"
+    }
+  },
+  "embeddings": {
+    "default_embedding_id": "panns-official-post-fc1-embedding",
+    "items": [
+      {
+        "schema_version": "1.0.0",
+        "embedding_id": "panns-official-post-fc1-embedding",
+        "name": "Official post-fc1 clipwise embedding",
+        "description": "Upstream-named [B,2048] representation: ReLU(fc1) followed by dropout (identity in eval mode), immediately before fc_audioset.",
+        "officially_defined": true,
+        "default": true,
+        "network_location": "fc1 output (pre-classifier, post-dropout)",
+        "layout": "B,D",
+        "dimension": 2048,
+        "granularity": "clipwise",
+        "temporal_hop_seconds": null,
+        "pooling": "global max plus average pooling before fc1",
+        "projection": "none",
+        "normalization": "none",
+        "task_head_relation": "before fc_audioset classifier",
+        "dtype": "float32",
+        "status": "verified",
+        "selection_rationale": "Upstream explicitly names and returns this tensor as 'embedding' and uses it for downstream transfer; it is the only embedding exposed by default per the accepted runtime-verification target.",
+        "evidence_ids": [
+          "ev-verify-report",
+          "ev-analyze-report"
+        ]
+      }
+    ]
+  },
+  "capabilities": {
+    "random_initialization": {
+      "supported": true,
+      "reason": null
+    },
+    "checkpoint_loading": {
+      "supported": true,
+      "reason": null
+    },
+    "probabilities": {
+      "supported": true,
+      "reason": null
+    },
+    "embeddings": {
+      "supported": true,
+      "reason": null
+    }
+  },
+  "device_support": {
+    "upstream_declared": [
+      "cpu",
+      "cuda"
+    ],
+    "locally_tested": [
+      "cpu",
+      "mps"
+    ],
+    "known_limitations": [
+      "CUDA is unverified locally; declared upstream only.",
+      "Linux/non-macOS platforms are unverified locally."
+    ]
+  },
+  "runtime_verification_target": "onboarding_reports/panns-audioset-three-tuple/verify/runtime-targets/panns-wavegram-logmel-cnn14-map-0439-runtime-target.json",
+  "runtime_verification_target_sha256": "9243cb025140aa5d0b1a719b974f2e28ca6abbdd29ba73f1cccc9770d6dc0903",
+  "verification_report": "verification_reports/panns-wavegram-logmel-cnn14-map-0439/runtime-verification.json",
+  "verification_report_sha256": "afc1af3bf64ee9cc4db69c9813e6c7e96b0d2db878db23d26ef539c63466b280",
+  "architectural_profiling": {
+    "status": "not_profiled",
+    "report": null
+  },
+  "inference_profiling": {
+    "status": "not_profiled",
+    "report": null
+  },
+  "energy_profiling": {
+    "status": "not_profiled",
+    "report": null
+  },
+  "limitations": [
+    "Published AudioSet mAP is officially reported and was not locally reproduced.",
+    "Automatic resampling is not supported; input must match the exact native sample rate.",
+    "Padded batches with unequal valid_lengths are not supported.",
+    "Duration constraint: T >= 10236 samples and T % 640 in 0..319 or 636..639 (Wavegram/log-mel branch alignment).",
+    "Exact checkpoint-to-source historical equivalence remains unresolved.",
+    "The paper Hamming versus selected-source Hann window discrepancy remains unresolved.",
+    "CUDA and non-macOS platforms remain locally unverified."
+  ],
+  "issues": [
+    {
+      "issue_id": "checkpoint-source-equivalence",
+      "kind": "provenance",
+      "status": "open",
+      "description": "Exact checkpoint-to-source historical equivalence remains unresolved for this checkpoint.",
+      "impact": "The selected reproducible source revision is a chronology candidate, not a proven byte-identical training source."
+    },
+    {
+      "issue_id": "window-function-discrepancy",
+      "kind": "scientific_metadata",
+      "status": "open",
+      "description": "The selected upstream source implements a Hann analysis window; the PANNs paper describes a Hamming window.",
+      "impact": "A minor discrepancy between the reported and implemented analysis window remains unresolved and unquantified."
+    }
+  ],
+  "evidence": [
+    {
+      "evidence_id": "ev-paper-panns",
+      "kind": "paper",
+      "status": "officially_reported",
+      "url": "https://doi.org/10.1109/TASLP.2020.3030497",
+      "revision": null,
+      "path": null,
+      "symbol": null,
+      "description": "Kong et al., 'PANNs: Large-Scale Pretrained Audio Neural Networks for Audio Pattern Recognition', IEEE/ACM TASLP 28 (2020), 2880-2894.",
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-official-repository",
+      "kind": "repository_source",
+      "status": "officially_reported",
+      "url": "https://github.com/qiuqiangkong/audioset_tagging_cnn",
+      "revision": "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0",
+      "path": "pytorch/models.py",
+      "symbol": "Wavegram_Logmel_Cnn14",
+      "description": "Official PANNs implementation repository; selected revision defines Wavegram_Logmel_Cnn14, its frontend, and its forward semantics.",
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-zenodo-authority",
+      "kind": "checkpoint_authority",
+      "status": "officially_reported",
+      "url": "https://zenodo.org/records/3987831",
+      "revision": null,
+      "path": null,
+      "symbol": null,
+      "description": "Zenodo record 3987831 publishes authoritative size and MD5 checksum metadata for Wavegram_Logmel_Cnn14_mAP=0.439.pth.",
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-analyze-report",
+      "kind": "analysis_report",
+      "status": "observed",
+      "url": null,
+      "revision": null,
+      "path": "onboarding_reports/panns-audioset-three-tuple/analyze/panns-technical-analysis.json",
+      "symbol": null,
+      "description": "Accepted analyze-phase technical report recording architecture, preprocessing, embedding-candidate, and checkpoint-source evidence for this tuple.",
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-verify-report",
+      "kind": "runtime_observation",
+      "status": "observed",
+      "url": null,
+      "revision": null,
+      "path": "verification_reports/panns-wavegram-logmel-cnn14-map-0439/runtime-verification.json",
+      "symbol": null,
+      "description": "Checkpoint-specific accepted runtime-verification report: strict state-dictionary loading, forward/probability/embedding contract observation, and CPU/MPS device checks.",
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-environment-result",
+      "kind": "runtime_observation",
+      "status": "observed",
+      "url": null,
+      "revision": null,
+      "path": "onboarding_reports/panns-audioset-three-tuple/verify/environment-results/panns-wavegram-logmel-cnn14-map-0439.json",
+      "symbol": null,
+      "description": "Promoted EnvironmentVerificationResult (status=passed, lifecycle_state=environment_verified) for this checkpoint's isolated environment.",
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-integration-report",
+      "kind": "source_file",
+      "status": "observed",
+      "url": null,
+      "revision": null,
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json",
+      "symbol": null,
+      "description": "Accepted integration report documenting the shared PANNs wrapper adapter, waveform contract, and output/embedding mapping.",
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-window-discrepancy",
+      "kind": "repository_source",
+      "status": "unresolved",
+      "url": null,
+      "revision": null,
+      "path": "docs/models/panns.md",
+      "symbol": null,
+      "description": "The selected upstream source implements a Hann analysis window while the PANNs paper describes a Hamming window; this discrepancy is not resolved.",
+      "rationale": null
+    },
+    {
+      "evidence_id": "ev-checkpoint-source-equivalence",
+      "kind": "repository_source",
+      "status": "unresolved",
+      "url": null,
+      "revision": null,
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/source-provenance.json",
+      "symbol": null,
+      "description": "The exact historical source revision used to train this checkpoint could not be proven equivalent to the selected reproducible source revision; chronology evidence only.",
+      "rationale": null
+    }
+  ]
+}

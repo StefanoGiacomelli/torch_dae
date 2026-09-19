@@ -71,6 +71,35 @@ TEXT_SUFFIXES = {
     ".yaml",
     ".yml",
 }
+BINARY_SUFFIXES = {
+    ".7z",
+    ".bmp",
+    ".bz2",
+    ".dmg",
+    ".doc",
+    ".docx",
+    ".elf",
+    ".gif",
+    ".gz",
+    ".ico",
+    ".jpeg",
+    ".jpg",
+    ".mp3",
+    ".mp4",
+    ".npy",
+    ".npz",
+    ".ogg",
+    ".pdf",
+    ".png",
+    ".so",
+    ".tar",
+    ".wav",
+    ".webp",
+    ".xls",
+    ".xlsx",
+    ".zip",
+}
+TEXT_SAMPLE_BYTES = 4096
 SUPPORTED_SYMLINK_ARTIFACTS = {
     "pyproject.toml",
     "setup.py",
@@ -196,6 +225,107 @@ class InspectionBudget:
         Budget charging is performed separately by :meth:`visit_file`.
         """
         self._text_cache[key] = text
+
+
+class _OutputCandidateVisitor(ast.NodeVisitor):
+    """Collect output candidates with explicit lexical ownership."""
+
+    def __init__(self, path: str) -> None:
+        self.path = path
+        self.candidates: list[dict[str, Any]] = []
+        self._lexical_stack: list[str] = []
+        self._class_contexts: list[str] = []
+        self._method_contexts: list[str | None] = []
+        self._forward_stack: list[dict[str, Any] | None] = []
+        self._embedding_words = (
+            "embedding",
+            "feature",
+            "latent",
+            "pooled",
+            "logit",
+            "classifier",
+        )
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        self._lexical_stack.append(node.name)
+        self._class_contexts.append(".".join(self._lexical_stack))
+        self._method_contexts.append(None)
+        self.generic_visit(node)
+        self._method_contexts.pop()
+        self._class_contexts.pop()
+        self._lexical_stack.pop()
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        self._visit_function(node)
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        self._visit_function(node)
+
+    def visit_Return(self, node: ast.Return) -> None:
+        active = self._forward_stack[-1] if self._forward_stack else None
+        if active is not None:
+            active["candidate_keys"].extend(_return_keys(node.value))
+        self.generic_visit(node)
+
+    def visit_Assign(self, node: ast.Assign) -> None:
+        for target in node.targets:
+            for name in _assignment_names(target):
+                self._record_tensor_name(name, node)
+        self.generic_visit(node)
+
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        for name in _assignment_names(node.target):
+            self._record_tensor_name(name, node)
+        self.generic_visit(node)
+
+    def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+        qualified_symbol = ".".join((*self._lexical_stack, node.name))
+        candidate: dict[str, Any] | None = None
+        if node.name in {"forward", "__call__"}:
+            candidate = {
+                "kind": "forward_return",
+                "path": self.path,
+                "symbol": node.name,
+                "candidate_keys": [],
+                "semantic_status": "candidate_only",
+                "enclosing_class": self._class_contexts[-1] if self._class_contexts else None,
+                "qualified_symbol": qualified_symbol,
+                "method_symbol": node.name,
+                "line_start": node.lineno,
+                "line_end": node.end_lineno or node.lineno,
+            }
+            self.candidates.append(candidate)
+        self._lexical_stack.append(node.name)
+        self._method_contexts.append(node.name)
+        self._forward_stack.append(candidate)
+        self.generic_visit(node)
+        self._forward_stack.pop()
+        self._method_contexts.pop()
+        self._lexical_stack.pop()
+        if candidate is not None:
+            candidate["candidate_keys"] = sorted(set(candidate["candidate_keys"]))
+
+    def _record_tensor_name(
+        self,
+        name: str,
+        node: ast.Assign | ast.AnnAssign,
+    ) -> None:
+        if not any(word in name.lower() for word in self._embedding_words):
+            return
+        owner = ".".join(self._lexical_stack) if self._lexical_stack else name
+        self.candidates.append(
+            {
+                "kind": "tensor_name_candidate",
+                "path": self.path,
+                "symbol": name,
+                "semantic_status": "candidate_only",
+                "enclosing_class": self._class_contexts[-1] if self._class_contexts else None,
+                "qualified_symbol": owner,
+                "method_symbol": self._method_contexts[-1] if self._method_contexts else None,
+                "line_start": node.lineno,
+                "line_end": node.end_lineno or node.lineno,
+            }
+        )
 
 
 def repository_root(path: Path) -> Path:
@@ -696,7 +826,6 @@ def inspect_output_candidates(
     """
 
     outputs: list[dict[str, Any]] = []
-    embedding_words = ("embedding", "feature", "latent", "pooled", "logit", "classifier")
     root = repository_root(root)
     budget = budget or InspectionBudget()
     for item in iter_static_files(root, budget=budget):
@@ -705,35 +834,20 @@ def inspect_output_candidates(
         if item.skipped_reason:
             continue
         tree = _parse_ast(safe_child(root, item.path), root, budget)
-        for node in ast.walk(tree):
-            if isinstance(node, ast.FunctionDef) and node.name in {"forward", "__call__"}:
-                returns: list[str] = []
-                for child in ast.walk(node):
-                    if isinstance(child, ast.Return):
-                        returns.extend(_return_keys(child.value))
-                outputs.append(
-                    {
-                        "kind": "forward_return",
-                        "path": item.path,
-                        "symbol": node.name,
-                        "candidate_keys": sorted(set(returns)),
-                    }
-                )
-            elif isinstance(node, ast.Assign):
-                for target in node.targets:
-                    if isinstance(target, ast.Name) and any(
-                        word in target.id for word in embedding_words
-                    ):
-                        outputs.append(
-                            {
-                                "kind": "tensor_name_candidate",
-                                "path": item.path,
-                                "symbol": target.id,
-                                "semantic_status": "candidate_only",
-                            }
-                        )
+        visitor = _OutputCandidateVisitor(item.path)
+        visitor.visit(tree)
+        outputs.extend(visitor.candidates)
     return {
-        "candidates": sorted(outputs, key=lambda item: (item["path"], item["kind"], item["symbol"]))
+        "candidates": sorted(
+            outputs,
+            key=lambda item: (
+                item["path"],
+                item["kind"],
+                item["line_start"],
+                item["qualified_symbol"],
+                item["symbol"],
+            ),
+        )
     }
 
 
@@ -759,6 +873,7 @@ def inspect_checkpoints(root: Path, *, budget: InspectionBudget | None = None) -
     """
 
     candidates: list[dict[str, Any]] = []
+    skipped_files: list[dict[str, str]] = []
     root = repository_root(root)
     budget = budget or InspectionBudget()
     for item in iter_static_files(root, budget=budget):
@@ -769,9 +884,17 @@ def inspect_checkpoints(root: Path, *, budget: InspectionBudget | None = None) -
             candidates.append({"kind": "local_checkpoint_like_file", "path": item.path})
         if item.kind not in {"python_source", "documentation", "file"}:
             continue
-        if not _looks_textual(path):
+        skipped_reason = _text_skip_reason(path)
+        if skipped_reason is not None:
+            skipped_files.append({"path": item.path, "reason": skipped_reason})
             continue
-        text = _read_text_file(path, root, budget)
+        try:
+            text = _read_text_file(path, root, budget)
+        except OnboardingInspectionError as exc:
+            if "unsupported file encoding" not in str(exc):
+                raise
+            skipped_files.append({"path": item.path, "reason": "invalid_utf8"})
+            continue
         for url in sorted(set(re.findall(r"https?://[^\s'\"<>]+", text))):
             if any(suffix in url for suffix in CHECKPOINT_SUFFIXES):
                 candidates.append(
@@ -793,7 +916,13 @@ def inspect_checkpoints(root: Path, *, budget: InspectionBudget | None = None) -
             candidates.append({"kind": "sha256", "path": item.path, "sha256": sha})
         if item.kind == "python_source":
             candidates.extend(_checkpoint_helpers(item.path, text))
-    return {"candidates": sorted(candidates, key=lambda item: json.dumps(item, sort_keys=True))}
+    return {
+        "candidates": sorted(candidates, key=lambda item: json.dumps(item, sort_keys=True)),
+        "skipped_files": sorted(
+            skipped_files,
+            key=lambda item: (item["path"], item["reason"]),
+        ),
+    }
 
 
 def generate_environment_candidates(
@@ -971,10 +1100,11 @@ def generate_environment_candidates(
                 ),
                 predicted_failure_risks=tuple(sorted(set(risks), key=lambda item: item.value)),
                 trial_command_plan=(
-                    "Prepare environments/<card-id>/pyproject.toml using selected pinned versions.",
+                    "Prepare environments/<environment-id>/pyproject.toml using selected pinned "
+                    "versions.",
                     "Run uv lock inside the model-specific environment artifact directory.",
-                    "Use torch-dae env ensure <card-id> after the environment and checkpoint "
-                    "artifacts are committed.",
+                    "Use torch-dae env materialize <environment-id> after the accepted environment "
+                    "definition is committed.",
                 ),
             )
         )
@@ -1366,11 +1496,26 @@ def _return_keys(node: ast.AST | None) -> list[str]:
         return values
     if isinstance(node, ast.Name):
         return [node.id]
+    if isinstance(node, ast.Attribute):
+        return [node.attr]
     if isinstance(node, ast.Tuple | ast.List):
         sequence_values: list[str] = []
         for child in node.elts:
             sequence_values.extend(_return_keys(child))
         return sequence_values
+    if isinstance(node, ast.Call):
+        keyword_names = [keyword.arg for keyword in node.keywords if keyword.arg is not None]
+        if keyword_names:
+            return keyword_names
+        return [_attribute_name(node.func)] if _attribute_name(node.func) else []
+    return []
+
+
+def _assignment_names(node: ast.AST) -> list[str]:
+    if isinstance(node, ast.Name):
+        return [node.id]
+    if isinstance(node, ast.Tuple | ast.List):
+        return [name for child in node.elts for name in _assignment_names(child)]
     return []
 
 
@@ -2203,7 +2348,7 @@ def _read_text_file(path: Path, root: Path, budget: InspectionBudget) -> str:
     cached = budget.cached_text(key)
     if cached is not None:
         return cached
-    if not _looks_textual(path):
+    if _text_skip_reason(path) is not None:
         raise OnboardingInspectionError(f"unsupported file encoding or binary file: {path}")
     try:
         with path.open("r", encoding="utf-8") as stream:
@@ -2217,12 +2362,44 @@ def _read_text_file(path: Path, root: Path, budget: InspectionBudget) -> str:
 
 
 def _looks_textual(path: Path) -> bool:
+    return _text_skip_reason(path) is None
+
+
+def _text_skip_reason(path: Path) -> str | None:
     try:
         with path.open("rb") as stream:
-            sample = stream.read(1024)
+            sample = stream.read(TEXT_SAMPLE_BYTES)
     except (OSError, PermissionError) as exc:
         raise OnboardingInspectionError(f"failed to inspect {path}: {exc}") from exc
-    return b"\x00" not in sample
+    suffix = path.suffix.lower()
+    if suffix == ".pdf" or sample.startswith(b"%PDF-"):
+        return "unsupported_binary_type:pdf"
+    if suffix in BINARY_SUFFIXES:
+        return f"unsupported_binary_type:{suffix.lstrip('.')}"
+    signatures = (
+        (b"\x89PNG\r\n\x1a\n", "png"),
+        (b"\xff\xd8\xff", "jpeg"),
+        (b"GIF87a", "gif"),
+        (b"GIF89a", "gif"),
+        (b"PK\x03\x04", "zip"),
+        (b"\x1f\x8b", "gzip"),
+        (b"\x7fELF", "elf"),
+    )
+    for signature, label in signatures:
+        if sample.startswith(signature):
+            return f"unsupported_binary_type:{label}"
+    if b"\x00" in sample:
+        return "binary_control_bytes"
+    try:
+        decoded = sample.decode("utf-8")
+    except UnicodeDecodeError:
+        return "invalid_utf8"
+    disallowed_controls = sum(
+        1 for character in decoded if ord(character) < 32 and character not in "\b\t\n\f\r"
+    )
+    if disallowed_controls > max(1, len(decoded) // 100):
+        return "binary_control_bytes"
+    return None
 
 
 def _budget_key(root: Path, path: Path) -> str:

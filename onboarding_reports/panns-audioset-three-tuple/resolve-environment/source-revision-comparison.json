@@ -1,0 +1,52 @@
+{
+  "analysis_report_discrepancy": "The accepted analysis says the requested class bodies were unchanged between 802432 and current HEAD. Byte-level inspection shows Cnn14_16k changed. The accepted report remains unchanged; this new local observation is recorded here.",
+  "byte_identity": {
+    "license_checkpoint_era_candidates": true,
+    "license_current_matches_checkpoint_era": false,
+    "metadata/class_labels_indices.csv_all_three": true,
+    "pytorch/models.py_all_three": false,
+    "pytorch/pytorch_utils.py_all_three": true,
+    "requirements.txt_all_three": true
+  },
+  "checkpoint_era_chronological_and_comparative_revision": "802432669263a31af0c448dd8d7b677af3815c01",
+  "current_default_branch_comparative_revision": "d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4",
+  "exact_checkpoint_equivalence": "unresolved",
+  "label_mapping_file_inspected_but_not_implemented": "metadata/class_labels_indices.csv",
+  "minimal_runtime_source_files": [
+    "pytorch/models.py",
+    "pytorch/pytorch_utils.py"
+  ],
+  "official_repository": "https://github.com/qiuqiangkong/audioset_tagging_cnn",
+  "primary_checkpoint_era_candidate": "802432669263a31af0c448dd8d7b677af3815c01",
+  "provenance_file": "LICENSE.MIT",
+  "selected_common_future_vendored_source_revision": "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0",
+  "sha256_by_revision": {
+    "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0": {
+      "LICENSE.MIT": "98c2ef776f248a1363e9230ceee291673a0fca3f2bf3ca364ddcb51d3efd0e80",
+      "metadata/class_labels_indices.csv": "cdd1049833c4b86127c2773ac0d14a2754b6a6d0d1798002ed5c66e699708429",
+      "pytorch/models.py": "58e9664b3731fd420f77b3be163504c1edeefc9c92c71696e1ed3dbdd60a1453",
+      "pytorch/pytorch_utils.py": "1464fcfbfc0fe4c55f690f6b39e1c80eeed5de1e7fd1b7fd30334d304de7dbe9",
+      "requirements.txt": "bd83dee9f25ba80099e03d0de926afdb8e2af05754219dda0540b58ecbc55fe1"
+    },
+    "802432669263a31af0c448dd8d7b677af3815c01": {
+      "LICENSE.MIT": "98c2ef776f248a1363e9230ceee291673a0fca3f2bf3ca364ddcb51d3efd0e80",
+      "metadata/class_labels_indices.csv": "cdd1049833c4b86127c2773ac0d14a2754b6a6d0d1798002ed5c66e699708429",
+      "pytorch/models.py": "139fab57b8fb8a7d797101c3dc75f02b4ec71d82b9424400bd8609840fcaa283",
+      "pytorch/pytorch_utils.py": "1464fcfbfc0fe4c55f690f6b39e1c80eeed5de1e7fd1b7fd30334d304de7dbe9",
+      "requirements.txt": "bd83dee9f25ba80099e03d0de926afdb8e2af05754219dda0540b58ecbc55fe1"
+    },
+    "d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4": {
+      "LICENSE.MIT": "7e540655d851d9737fafaa9f0cbd064c3a29bdfe5e937ee07a09360f85161975",
+      "metadata/class_labels_indices.csv": "cdd1049833c4b86127c2773ac0d14a2754b6a6d0d1798002ed5c66e699708429",
+      "pytorch/models.py": "7f9af440395ace5160bbb51d654a0dc35fb887fbf5edecb12da61ff6efb306d9",
+      "pytorch/pytorch_utils.py": "1464fcfbfc0fe4c55f690f6b39e1c80eeed5de1e7fd1b7fd30334d304de7dbe9",
+      "requirements.txt": "bd83dee9f25ba80099e03d0de926afdb8e2af05754219dda0540b58ecbc55fe1"
+    }
+  },
+  "source_revision_decision": "Use 58d0e624a2055fb1f2b5fb06369ecd726cfe64e0 as the common future vendored-source revision for all three tuple drafts. It preserves the native-16-kHz Cnn14_16k implementation, while ResNet38, Wavegram_Logmel_Cnn14, pytorch_utils.py, and LICENSE.MIT are unchanged relative to 802432669263a31af0c448dd8d7b677af3815c01. Retain 802432669263a31af0c448dd8d7b677af3815c01 as chronological and comparative evidence. Do not claim checkpoint equivalence.",
+  "symbol_level_result": {
+    "Cnn14_16k_between_checkpoint_era_candidates": "changed: later candidate asserts native 16 kHz parameters and removes the earlier factor-two parameter/input downsampling",
+    "ResNet38_between_checkpoint_era_candidates": "unchanged",
+    "Wavegram_Logmel_Cnn14_between_checkpoint_era_candidates": "unchanged"
+  }
+}

@@ -1,0 +1,1015 @@
+{
+  "allowed_next_modes": [
+    "verify"
+  ],
+  "artifact_supersessions": [
+    {
+      "new_sha256": "f29ea6262f3bcb2f241e00b157991dce7a602bdef9fc3dbe98a5292a5e4d6729",
+      "path": "environments/panns-cnn14-16k-map-0438/sources.json",
+      "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+      "prior_originating_phase": "resolve-environment",
+      "prior_sha256": "2d5c42a3ac7a94d55d2c5bf6aac22eb2b7b6d1efa356582cc9db23cbfdc68df4",
+      "reason": "Integrate records the selected vendored production source paths in the previously draft source manifest."
+    },
+    {
+      "new_sha256": "ae2a3282db09ad74cc25bee9813d834d3f95007b91e061158020bce4aa0347db",
+      "path": "environments/panns-cnn14-16k-map-0438/verify_environment.py",
+      "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+      "prior_originating_phase": "resolve-environment",
+      "prior_sha256": "f776272f55c43a7da9f8f06d71e7e25ff982d32b927aa8814e52d0b3cea3be97",
+      "reason": "Integrate replaces the constructor-only draft verifier with the fixed public Cnn14_16k wrapper verification."
+    },
+    {
+      "new_sha256": "0ba554a609371bc950b80f0525e7fe4a0b2c3d38c7814711da3b0d665389b994",
+      "path": "environments/panns-resnet38-map-0434/sources.json",
+      "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+      "prior_originating_phase": "resolve-environment",
+      "prior_sha256": "da5f3221b2e8e59a99f90ea95c868ea637e445580b33a3270b77ad2e429567bd",
+      "reason": "Integrate records the selected vendored production source paths in the previously draft source manifest."
+    },
+    {
+      "new_sha256": "ff660209698988256f3d5a7b829630659317c47bee9f488129e143006ebc57aa",
+      "path": "environments/panns-resnet38-map-0434/verify_environment.py",
+      "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+      "prior_originating_phase": "resolve-environment",
+      "prior_sha256": "2c5d31f2621a49098156d9d7fad355e23e50386d28a9774d475fa0e1aad4e5a2",
+      "reason": "Integrate replaces the constructor-only draft verifier with the fixed public ResNet38 wrapper verification."
+    },
+    {
+      "new_sha256": "a76db3dc217ad376d5b0cecedf03c067f2da2414d057ec563e3503ebf329f08f",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/sources.json",
+      "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+      "prior_originating_phase": "resolve-environment",
+      "prior_sha256": "b5333be614396cad2afa3def3d5a701faf446b35629bf24a042a8eeae0473b6f",
+      "reason": "Integrate records the selected vendored production source paths in the previously draft source manifest."
+    },
+    {
+      "new_sha256": "ffde27bdb9eaa17946c17ed15146eb5be0ff9ef5cf3a70f115ba9f0980a39297",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/verify_environment.py",
+      "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+      "prior_originating_phase": "resolve-environment",
+      "prior_sha256": "fba1a1276a75952b2bf033702e4f9a720733c4fdb1cb59dcdeee1c82ecd4ad72",
+      "reason": "Integrate replaces the constructor-only draft verifier with the fixed public Wavegram_Logmel_Cnn14 wrapper verification."
+    },
+    {
+      "new_sha256": "80474b42e952af2d056f9cd402727891df658ceb5b17f9f58180571e2bcfec9a",
+      "path": "environments/panns-cnn14-16k-map-0438/pyproject.toml",
+      "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+      "prior_originating_phase": "resolve-environment",
+      "prior_sha256": "59a1399c96acc50a45c71695d144ae56a4d9a3c681a69d01a82250f419d2ed22",
+      "reason": "Integrate supersedes the incomplete PANNs environment definition or lock with the validated local-wheel runtime dependency closure."
+    },
+    {
+      "new_sha256": "d08d9781a18fafcc7f19dd122646ba0d3c035c11d249d03fd0f6d72e7249e738",
+      "path": "environments/panns-cnn14-16k-map-0438/uv.lock",
+      "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+      "prior_originating_phase": "resolve-environment",
+      "prior_sha256": "535d270366411a972789b3fb1f2855d73aa6da20a05caa9dc581e7bbd4d6350d",
+      "reason": "Integrate supersedes the incomplete PANNs environment definition or lock with the validated local-wheel runtime dependency closure."
+    },
+    {
+      "new_sha256": "f163a0e81e8c883d694284f1331d63a451966a008f2f2d69bfef90c3bbe0be01",
+      "path": "environments/panns-resnet38-map-0434/pyproject.toml",
+      "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+      "prior_originating_phase": "resolve-environment",
+      "prior_sha256": "e5de0c5067e5497d942b5a10b286bbe54c2c5164bcc8db1ed6607720a2a6d89f",
+      "reason": "Integrate supersedes the incomplete PANNs environment definition or lock with the validated local-wheel runtime dependency closure."
+    },
+    {
+      "new_sha256": "0fca8d79f42fb767530dec3b3d649aad9389627b27263f403082acf83760f187",
+      "path": "environments/panns-resnet38-map-0434/uv.lock",
+      "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+      "prior_originating_phase": "resolve-environment",
+      "prior_sha256": "41b7659d99062bc9ccd39f6d3ac7810b6b3a123e148eb0394fba9190508f893b",
+      "reason": "Integrate supersedes the incomplete PANNs environment definition or lock with the validated local-wheel runtime dependency closure."
+    },
+    {
+      "new_sha256": "5825e7d135916a78cd896eda8ef11936e8797986166c62bb0675821fdc943061",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/pyproject.toml",
+      "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+      "prior_originating_phase": "resolve-environment",
+      "prior_sha256": "3d87cbac074cec790cb550485ae045d48a1fe7d524786749c6f3a38b06bd7a51",
+      "reason": "Integrate supersedes the incomplete PANNs environment definition or lock with the validated local-wheel runtime dependency closure."
+    },
+    {
+      "new_sha256": "bd266ff4ef9fa581fc65c9c906a37ac32b884545c32b7edd9bbcf5565c7b1af1",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/uv.lock",
+      "prior_handoff_sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c",
+      "prior_originating_phase": "resolve-environment",
+      "prior_sha256": "1e7c1234ede269ddaa2debf349b8eb1a925bd185ca791cf064117d33d6521433",
+      "reason": "Integrate supersedes the incomplete PANNs environment definition or lock with the validated local-wheel runtime dependency closure."
+    }
+  ],
+  "canonical_skill_fingerprint": "50c00d3a7fa1a0b6b966fe668f9214fa7b8654cbd9168aa49c1a176ecafb4235",
+  "handoff_status": "accepted",
+  "input_artifacts": [
+    {
+      "canonical_role": "analyze-handoff",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "analyze",
+      "path": "onboarding_reports/panns-audioset-three-tuple/analyze/handoff.json",
+      "sha256": "dee4f8fcfbc20a47d5c86ebce71e2c25a745b6f19faf5a1b4efc510cf29cece2"
+    },
+    {
+      "canonical_role": "resolve-environment-handoff",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "resolve-environment",
+      "path": "onboarding_reports/panns-audioset-three-tuple/resolve-environment/handoff.json",
+      "sha256": "54ff5a6dcd6b034319624499f4e1bdbd1a49b9ff895bd5fcad52a59f5e73a92c"
+    }
+  ],
+  "lifecycle_promotion": null,
+  "output_artifacts": [
+    {
+      "canonical_role": "scoped-git-whitespace-policy",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": ".gitattributes",
+      "sha256": "0f45c8a113b3e086384363473c822b8035e126bb858c5e6af08e31ed4a471290"
+    },
+    {
+      "canonical_role": "whitespace-validation-changelog",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "CHANGELOG.md",
+      "sha256": "69a22dc3df52dfc2a40e3a8329bdc224b4972f6c48162b7a47c453700bf48456"
+    },
+    {
+      "canonical_role": "repository-validation-readme",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "README.md",
+      "sha256": "49f0b4acfe9393cd3b0d5cd56587ee8330c5f3862065a42a5ab15356400fc94f"
+    },
+    {
+      "canonical_role": "documentation",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "docs/api/environment-lifecycle.rst",
+      "sha256": "913ce90be4e9e87a109df0d2978c9c9d882f8a02e14825e45d7354295871a76f"
+    },
+    {
+      "canonical_role": "documentation",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "docs/api/public-api.toml",
+      "sha256": "441b0c94ef784527dcd05aa0ee7055f51c0aef641b1247c3ff03c3a659a020a9"
+    },
+    {
+      "canonical_role": "repository-validation-documentation",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "docs/development/testing.md",
+      "sha256": "031a091aa9171e3f23093a943cf3a70b672344de7d7833ca22ea7b5a2f662662"
+    },
+    {
+      "canonical_role": "documentation",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "docs/environment-management.md",
+      "sha256": "e9caaf8a3d961e4f9d5cf43ad78ad31016ee113c4bbebcc4fa99674db8f1177a"
+    },
+    {
+      "canonical_role": "panns-doc-index",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "docs/index.md",
+      "sha256": "dd9bdd0ef7fb3a2844beeefbd959d126dccc7e8231b93867270c5f5cc59b002c"
+    },
+    {
+      "canonical_role": "panns-model-documentation",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "docs/models/panns.md",
+      "sha256": "c5c5970910293ce67f9e91d727c11ad6c58e8b5c6a8f5ba02204cf2d0e73fe9d"
+    },
+    {
+      "canonical_role": "documentation",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "docs/reference/cli.md",
+      "sha256": "03a055451ea208999fd2ec4e5782b8c6936acddfedaf931f7c3c28775bb332da"
+    },
+    {
+      "canonical_role": "integrate-validation-documentation",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "docs/skill/integrate.md",
+      "sha256": "245f38d179aac117df4b05c0ea5e6b7035a036782c1ee047a2ce91b76da030b6"
+    },
+    {
+      "canonical_role": "documentation",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "docs/user-guide/environments.md",
+      "sha256": "318b4a8591b1626fe9e8843e5cfcaff60d7b8bae04cd56892fe7346466527728"
+    },
+    {
+      "canonical_role": "environment-definition",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "environments/panns-cnn14-16k-map-0438/pyproject.toml",
+      "sha256": "80474b42e952af2d056f9cd402727891df658ceb5b17f9f58180571e2bcfec9a"
+    },
+    {
+      "canonical_role": "environment-sources",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "environments/panns-cnn14-16k-map-0438/sources.json",
+      "sha256": "f29ea6262f3bcb2f241e00b157991dce7a602bdef9fc3dbe98a5292a5e4d6729"
+    },
+    {
+      "canonical_role": "environment-definition",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "environments/panns-cnn14-16k-map-0438/uv.lock",
+      "sha256": "d08d9781a18fafcc7f19dd122646ba0d3c035c11d249d03fd0f6d72e7249e738"
+    },
+    {
+      "canonical_role": "environment-verification-script",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "environments/panns-cnn14-16k-map-0438/verify_environment.py",
+      "sha256": "ae2a3282db09ad74cc25bee9813d834d3f95007b91e061158020bce4aa0347db"
+    },
+    {
+      "canonical_role": "environment-definition",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "environments/panns-resnet38-map-0434/pyproject.toml",
+      "sha256": "f163a0e81e8c883d694284f1331d63a451966a008f2f2d69bfef90c3bbe0be01"
+    },
+    {
+      "canonical_role": "environment-sources",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "environments/panns-resnet38-map-0434/sources.json",
+      "sha256": "0ba554a609371bc950b80f0525e7fe4a0b2c3d38c7814711da3b0d665389b994"
+    },
+    {
+      "canonical_role": "environment-definition",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "environments/panns-resnet38-map-0434/uv.lock",
+      "sha256": "0fca8d79f42fb767530dec3b3d649aad9389627b27263f403082acf83760f187"
+    },
+    {
+      "canonical_role": "environment-verification-script",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "environments/panns-resnet38-map-0434/verify_environment.py",
+      "sha256": "ff660209698988256f3d5a7b829630659317c47bee9f488129e143006ebc57aa"
+    },
+    {
+      "canonical_role": "environment-definition",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/pyproject.toml",
+      "sha256": "5825e7d135916a78cd896eda8ef11936e8797986166c62bb0675821fdc943061"
+    },
+    {
+      "canonical_role": "environment-sources",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/sources.json",
+      "sha256": "a76db3dc217ad376d5b0cecedf03c067f2da2414d057ec563e3503ebf329f08f"
+    },
+    {
+      "canonical_role": "environment-definition",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/uv.lock",
+      "sha256": "bd266ff4ef9fa581fc65c9c906a37ac32b884545c32b7edd9bbcf5565c7b1af1"
+    },
+    {
+      "canonical_role": "environment-verification-script",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/verify_environment.py",
+      "sha256": "ffde27bdb9eaa17946c17ed15146eb5be0ff9ef5cf3a70f115ba9f0980a39297"
+    },
+    {
+      "canonical_role": "coverage-validation-closure",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/coverage-validation-closure.json",
+      "sha256": "949b1c6a6d50bf8c9babff92ceb99faa3ae692ab54f9604470ed82da43ee09a3"
+    },
+    {
+      "canonical_role": "integration-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-dependency-closure-summary.json",
+      "sha256": "08139a0f21be8a5b32f6c48ad4724971e7222a5eb12429ef3e9ef353c0cb3b56"
+    },
+    {
+      "canonical_role": "environment-materialization-result",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-materialization-result.json",
+      "sha256": "59e5d0566e8f1ec32aa0ec5c87d7e8df947a9f0f88cf51aa63dfa545d2c30f8b"
+    },
+    {
+      "canonical_role": "integration-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-materialization-results.json",
+      "sha256": "0f9bc6d0f06781df479d3fd88735a2f89aceebab3e6d74c5272930edd9f57a70"
+    },
+    {
+      "canonical_role": "integration-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-offline-reuse-result.json",
+      "sha256": "2870c028bc026a84949ea1853daea259b712dfbf6d43e147354ed77f375822fd"
+    },
+    {
+      "canonical_role": "environment-dependency-closure-result",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-preflight/panns-cnn14-16k-map-0438.json",
+      "sha256": "17404133cc88b18db7157b2262cc3595eb4795cb5552b7bd86d8a346db8501cf"
+    },
+    {
+      "canonical_role": "environment-dependency-closure-result",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-preflight/panns-resnet38-map-0434.json",
+      "sha256": "b558fef37ad157239b41a8fcfb1cee56e89defe731161344e9b03a99ecd38c20"
+    },
+    {
+      "canonical_role": "environment-dependency-closure-result",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-preflight/panns-wavegram-logmel-cnn14-map-0439.json",
+      "sha256": "a588487a6d3c85da16339c0494ecd87c0c60c84ef2ad882ed2d3f8885ab37054"
+    },
+    {
+      "canonical_role": "environment-verification-result",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-results/panns-cnn14-16k-map-0438.json",
+      "sha256": "06611fda86fc5c2e44764ac1c2d49d061eabb59aa7497be6a6fe1b6fa837a017"
+    },
+    {
+      "canonical_role": "environment-verification-result",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-results/panns-resnet38-map-0434.json",
+      "sha256": "3b60468f90444cf60efdb7eea63c0daeac207e3ebac508f67cb553271e5e8f9d"
+    },
+    {
+      "canonical_role": "environment-verification-result",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-results/panns-wavegram-logmel-cnn14-map-0439.json",
+      "sha256": "b4615a56cab03005bc9e383b6e5ae1ea076f403343208fcec9e8121ebd1271e2"
+    },
+    {
+      "canonical_role": "integration-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-supersession-validation-report.json",
+      "sha256": "55db94753468611202dfba587c945054f2caa24ee1b8d5a08c6f34d21fd7aa6f"
+    },
+    {
+      "canonical_role": "integration-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/handoff.1682fc586ab4aa34518213c9df58d298a914fc8a339f86051aa7cdbd92a064fc.superseded.json",
+      "sha256": "1682fc586ab4aa34518213c9df58d298a914fc8a339f86051aa7cdbd92a064fc"
+    },
+    {
+      "canonical_role": "integration-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/handoff.859a4dc806b7349fe923d24784c46d2873f386a40f049572b75bbdba9b1becf9.superseded.json",
+      "sha256": "859a4dc806b7349fe923d24784c46d2873f386a40f049572b75bbdba9b1becf9"
+    },
+    {
+      "canonical_role": "integration-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json",
+      "sha256": "e419c297302ad315e2ef4cfcd4ad3b5a66871ddb64215b8390c3f4dc279ab412"
+    },
+    {
+      "canonical_role": "integration-report-markdown",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.md",
+      "sha256": "1385a010550f7664534208cdc768e953c9c5a6399c47c11e862fca857e951e3d"
+    },
+    {
+      "canonical_role": "integration-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/lock-regeneration-report.json",
+      "sha256": "b5e189e91bb7a60cdbfb609c685180bf9ab068f1a8f8120c71e47e42f5fa480c"
+    },
+    {
+      "canonical_role": "integration-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/package-wheel-requirements.json",
+      "sha256": "df96e618e0b848bc3601d1936ee22b77bc22ed13c895ad2fdbe494ff9943f178"
+    },
+    {
+      "canonical_role": "integration-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/problem-adaptation-ledger.json",
+      "sha256": "415f9713acd4835668b79bb9f7e70fa6508375a58c87040128f4dfd7ee994d72"
+    },
+    {
+      "canonical_role": "source-provenance-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/source-provenance.json",
+      "sha256": "af092c8e6cb8d7dd538bd65f48a020ff068cb3715766d87a94d5b02125bbdecf"
+    },
+    {
+      "canonical_role": "source-reduction-diff",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/source-reduction.diff",
+      "sha256": "d1d8ceec68cc059b563ba9abb5ceac71b2275a592c14308fa558f48f61798033"
+    },
+    {
+      "canonical_role": "source-transformation-record",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/source-transformation.json",
+      "sha256": "3b23b39bc9b524554c6528871299bae408435fac94a96080cf289046ec525ed8"
+    },
+    {
+      "canonical_role": "supersession-validation-report",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/supersession-validation-report.json",
+      "sha256": "553ee300bd993b63d2c65da5d31ab53de42825e8ce810b288534aacd44a17373"
+    },
+    {
+      "canonical_role": "synthetic-integration-result",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/synthetic-integration-result.json",
+      "sha256": "48851c3737139b9626bec430f1d9c8a15d43a1f706a8e072812efa5d0ab234a3"
+    },
+    {
+      "canonical_role": "whitespace-validation-closure",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "onboarding_reports/panns-audioset-three-tuple/integrate/whitespace-validation-closure.json",
+      "sha256": "1e9ef459579916e0de9cf5e017788b0082026a7158e330feff0b4b76eb8c1591"
+    },
+    {
+      "canonical_role": "root-coverage-policy",
+      "external_label": null,
+      "media_type": "application/toml",
+      "originating_phase": "integrate",
+      "path": "pyproject.toml",
+      "sha256": "89d505568611bd617b13ef921cf930d394460480b1fe18e4ebf6e10babf53635"
+    },
+    {
+      "canonical_role": "schema",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "schemas/environment-dependency-closure-result.schema.json",
+      "sha256": "2ce8f6a8adea931b1e9589bffab23cb722b2de69904fdbc369442d4ae19031c2"
+    },
+    {
+      "canonical_role": "schema",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "schemas/environment-materialization-result.schema.json",
+      "sha256": "92109516d06f3c360c0fa3d2c553abe4de95fe71c47dcbe3b2c6d6c170cf595e"
+    },
+    {
+      "canonical_role": "schema",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "schemas/environment-verification-result.schema.json",
+      "sha256": "7551461d762d2b85437fa4ce076c695bf7040ce9760953a2e05826600a9cc0eb"
+    },
+    {
+      "canonical_role": "phase-handoff-schema",
+      "external_label": null,
+      "media_type": "application/schema+json",
+      "originating_phase": "integrate",
+      "path": "schemas/phase-handoff.schema.json",
+      "sha256": "4a57e31482613bcd2afcb449d8d3244cd6746d5060099260694c033650dc0d27"
+    },
+    {
+      "canonical_role": "staged-equivalent-validator",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "scripts/check_worktree_patch.py",
+      "sha256": "a63edfa7adf5220b4f01e32b22b50b1de3421bf47da23779399a15a7f0c24eee"
+    },
+    {
+      "canonical_role": "implementation",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "scripts/generate_schemas.py",
+      "sha256": "56cdc863e6ac2a74f0b876065b8189d1a20ae5a4b743f1d8bafb20c8e8542ab0"
+    },
+    {
+      "canonical_role": "repository-validator",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "scripts/validate_repository.py",
+      "sha256": "f9a08e11c602889de7f1b23d615cebe160073d048666f010f14dccdc4a89a2bd"
+    },
+    {
+      "canonical_role": "canonical-onboarding-skill",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "skills/audio-model-onboarding/SKILL.md",
+      "sha256": "e3f99b7a16a07872e361cbeb1b16da08901d2df9dda61b3232921c12d19d6a77"
+    },
+    {
+      "canonical_role": "documentation",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "skills/audio-model-onboarding/references/environment-resolution.md",
+      "sha256": "37058626287f3db5ae944a629074f52998b03a8566ed2479a4fb85b9eb5db597"
+    },
+    {
+      "canonical_role": "documentation",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "skills/audio-model-onboarding/references/failure-classification.md",
+      "sha256": "7eb0388015bea5540025763366e5196bbfecb22a3a1750f1d415aa51673e978b"
+    },
+    {
+      "canonical_role": "integrate-validation-reference",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "skills/audio-model-onboarding/references/integration-planning.md",
+      "sha256": "686414ac145d93efc3e2afc4281b345b4cc618ebf284a89e330df072e0b7c5cb"
+    },
+    {
+      "canonical_role": "agent-request-template",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "skills/audio-model-onboarding/templates/agent-request.md",
+      "sha256": "d67cb9cbcd52e55e5c5d07872b5dd37186344562ab1f96073af595ebba8bc6f6"
+    },
+    {
+      "canonical_role": "agent-response-template",
+      "external_label": null,
+      "media_type": "text/markdown",
+      "originating_phase": "integrate",
+      "path": "skills/audio-model-onboarding/templates/agent-response.md",
+      "sha256": "0f88805e63bec8862eb63644a47dfe532f09aee635715264c93e8b56d262efad"
+    },
+    {
+      "canonical_role": "implementation",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/cli/environment.py",
+      "sha256": "73641f307a8af2a02f0ee7e4734b729d5209f16b031abf7ca381f726622e2ee9"
+    },
+    {
+      "canonical_role": "repository-path-contract",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/contracts.py",
+      "sha256": "60700af566c3d999211d809ab5e1fca9a540a116704822548e44a2caa7cb8a98"
+    },
+    {
+      "canonical_role": "implementation",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/core/errors.py",
+      "sha256": "32e18d2a75a22d093c7587364990fa5cc303fb88c6e56526ab812d15470861fc"
+    },
+    {
+      "canonical_role": "implementation",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/environment/__init__.py",
+      "sha256": "7123ad39cb486af1430418e31f1c8baca36281b16ff258c2139857b71070bc6a"
+    },
+    {
+      "canonical_role": "implementation",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/environment/dependency_closure.py",
+      "sha256": "4c644284cf0bc647eb0cde8cc9a10efbcca6141b9fe5af019f540a5a83e0940d"
+    },
+    {
+      "canonical_role": "implementation",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/environment/manager.py",
+      "sha256": "6d4454e36e47a76b95015c8f56481a1637153b1fc37342d9da194f3773a15bd5"
+    },
+    {
+      "canonical_role": "implementation",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/environment/results.py",
+      "sha256": "47e9249308051e294d665b9d9d19b59b6906ff1c389035cf346bca3cf0263a1a"
+    },
+    {
+      "canonical_role": "implementation",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/environment/runtime.py",
+      "sha256": "b33ce1f7c90abe0352ab47d2d91215559f799e991ce99e3ea9853e4045c97ebd"
+    },
+    {
+      "canonical_role": "panns-package-root",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/__init__.py",
+      "sha256": "64f045c5543a6f47bd47bee1d199d27b609b3627fe16bf8c261dc685e68623b1"
+    },
+    {
+      "canonical_role": "panns-public-api",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/__init__.py",
+      "sha256": "34589b3c3f45be2fb745e4a0312f26aa634c8e342cbb4b3bd2cfeaae817a71b0"
+    },
+    {
+      "canonical_role": "panns-vendored-license",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/_vendor/LICENSE.MIT",
+      "sha256": "98c2ef776f248a1363e9230ceee291673a0fca3f2bf3ca364ddcb51d3efd0e80"
+    },
+    {
+      "canonical_role": "panns-vendored-package",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/_vendor/__init__.py",
+      "sha256": "b0e64b7f7ec4e2a7d6bacedbc78fd60163ec8514c27f71d878c77e273176982f"
+    },
+    {
+      "canonical_role": "panns-vendored-models",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/_vendor/models.py",
+      "sha256": "9fd2d078c9dbc47843919c61ba94943844f1a74cd92e56d5873d2d51d7e748a5"
+    },
+    {
+      "canonical_role": "panns-vendored-utilities",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/_vendor/pytorch_utils.py",
+      "sha256": "447880ffe7a6bd3e2dadb336d38267d6b20a38f48cc1e094f220af44d237ea23"
+    },
+    {
+      "canonical_role": "panns-identities",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/identities.py",
+      "sha256": "6f00c8c70c21e1a0eceb1ac6d0d2cdcd2f39800b0251d3ae28072993c6bdfebd"
+    },
+    {
+      "canonical_role": "panns-label-loader",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/labels.py",
+      "sha256": "12f3b82971af1b80c370bd5dfd9ad8139c1a5e6188903b5a3425fd30dabbce38"
+    },
+    {
+      "canonical_role": "panns-wrapper",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/model.py",
+      "sha256": "b449979b3ac5edba8a202365c8b49859d05a71bb0225e7a0f870783f84ba3d56"
+    },
+    {
+      "canonical_role": "panns-resource-package",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/resources/__init__.py",
+      "sha256": "887f4aac8ddb70ce56ad464c360ed798020de2dd7c4ba41daf828da5f3ee1455"
+    },
+    {
+      "canonical_role": "panns-audioset-labels",
+      "external_label": null,
+      "media_type": "text/csv",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/models/panns/resources/class_labels_indices.csv",
+      "sha256": "cdd1049833c4b86127c2773ac0d14a2754b6a6d0d1798002ed5c66e699708429"
+    },
+    {
+      "canonical_role": "handoff-output-contract",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/onboarding/contracts.py",
+      "sha256": "6ba3e487f008295a5e6232517d23f06b975a1b3cb39786266eef366c60c323c3"
+    },
+    {
+      "canonical_role": "same-phase-handoff-preservation",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "src/torch_dae/onboarding/handoff.py",
+      "sha256": "290195b67ba3bfa9c9d73705eab59f3a5834eab03700e22297ca64f4cbffab4d"
+    },
+    {
+      "canonical_role": "regression-test",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "tests/cli/test_environment_checkpoint_cli.py",
+      "sha256": "3c53545ca95a97462a65a620f170d929702045b1365bffe996f368844d2180bd"
+    },
+    {
+      "canonical_role": "regression-test",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "tests/environment/test_dependency_closure.py",
+      "sha256": "672cfe296c43af3bc4a07b2044aeea2048237021816bc27284394cc6fa5ae495"
+    },
+    {
+      "canonical_role": "regression-test",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "tests/environment/test_environment_materialization.py",
+      "sha256": "d625f7a9b759e169a853341abb94e3bd345c77f8adf4d29b0e41d096c8139191"
+    },
+    {
+      "canonical_role": "regression-test",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "tests/fixtures/valid/environment-dependency-closure-result.synthetic.json",
+      "sha256": "b748798f1a2a245f05fad0b4be8c1ecb3d73d1823e77160b7243b6b47cad915f"
+    },
+    {
+      "canonical_role": "regression-test",
+      "external_label": null,
+      "media_type": "application/json",
+      "originating_phase": "integrate",
+      "path": "tests/fixtures/valid/environment-materialization-result.synthetic.json",
+      "sha256": "954d85bd5427d25c2e3d788d12e795250b3c319caee7417a41ef3227f16b95d6"
+    },
+    {
+      "canonical_role": "panns-metadata-tests",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "tests/models/test_panns_metadata.py",
+      "sha256": "024469dc14bcafab15fc5c49e28331ee345f4825dbb3873e436a4a00c063bf1d"
+    },
+    {
+      "canonical_role": "panns-runtime-tests",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "tests/models/test_panns_runtime.py",
+      "sha256": "e105079422f4fbdc8a3d0f5ce165d0e5b7e00c195febd0ac84830e0174c19524"
+    },
+    {
+      "canonical_role": "handoff-closure-regression-tests",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "tests/onboarding/test_handoff_management.py",
+      "sha256": "2ae6f71761d5cbdc09252d22903ab7e0c71edd42a708ad44e9714451dbb8e9ae"
+    },
+    {
+      "canonical_role": "regression-test",
+      "external_label": null,
+      "media_type": "text/plain",
+      "originating_phase": "integrate",
+      "path": "tests/schemas/test_schemas.py",
+      "sha256": "c9489421b43b2f829d569cac2d3fb3cc235f60924cda6ccff2ed000fb280e3b9"
+    },
+    {
+      "canonical_role": "staged-equivalent-regression-tests",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "tests/test_check_worktree_patch.py",
+      "sha256": "952be957d4d3396060b4504397c1bcba81b096609953cf534b7c954e3e78ca84"
+    },
+    {
+      "canonical_role": "panns-public-metadata-tests",
+      "external_label": null,
+      "media_type": "text/x-python",
+      "originating_phase": "integrate",
+      "path": "tests/test_public_metadata.py",
+      "sha256": "5d7a39ac98ffc0665487451d17eb7f8a14a9bfecc613fa04e57a92978980a251"
+    }
+  ],
+  "phase": "integrate",
+  "project_spec_sha256": "18594dd04abad98eefa82499a0664b648aeed66cbd96402893557654294787bf",
+  "repository_commit": "56258501cdc334cdfb511058bc362a45dd81c27c",
+  "schema_version": "1.0.0",
+  "superseded_handoff_sha256": "b9e9762e934564206cdad0baab6eecd4f11c00d12791af439214ad92b4c8c28b",
+  "target_card_ids": [
+    "panns-cnn14-16k-map-0438",
+    "panns-resnet38-map-0434",
+    "panns-wavegram-logmel-cnn14-map-0439"
+  ],
+  "target_checkpoint_ids": [
+    "panns-cnn14-16k-map-0438",
+    "panns-resnet38-map-0434",
+    "panns-wavegram-logmel-cnn14-map-0439"
+  ],
+  "target_variant_ids": [
+    "panns-cnn14-16k",
+    "panns-resnet38",
+    "panns-wavegram-logmel-cnn14"
+  ],
+  "unresolved_items_carried_forward": [
+    {
+      "description": "Exact checkpoint-to-source equivalence remains unresolved for all three tuples.",
+      "item_id": "risk-checkpoint-source-equivalence",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    },
+    {
+      "description": "Cnn14_16k source semantics differ from the retained chronological comparison revision.",
+      "item_id": "risk-cnn14-16k-source-semantics",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    },
+    {
+      "description": "The paper Hamming versus selected-source Hann window discrepancy remains unresolved.",
+      "item_id": "risk-window-function",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    },
+    {
+      "description": "Checkpoint acquisition, hashing, loading, and inspection remain unperformed.",
+      "item_id": "risk-checkpoint-acquisition",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    },
+    {
+      "description": "Padded variable-length batch semantics remain unsupported.",
+      "item_id": "risk-padded-batch-semantics",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    },
+    {
+      "description": "Temporal embedding timing and Wavegram/log-mel branch embedding contracts remain unresolved.",
+      "item_id": "risk-temporal-embedding",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    },
+    {
+      "description": "CUDA, MPS, Linux, and other Python/platform combinations remain unverified.",
+      "item_id": "risk-platform-coverage",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    },
+    {
+      "description": "Checkpoint compatibility and pretrained numerical behavior remain unverified.",
+      "item_id": "risk-pretrained-runtime",
+      "source_artifact_path": "onboarding_reports/panns-audioset-three-tuple/integrate/integration-report.json"
+    }
+  ],
+  "user_decisions_consumed": [
+    {
+      "decision": "Use a minimal vendored adaptation for the production source substrate.",
+      "decision_id": "d-source-strategy",
+      "selected_option": "minimal-vendored-adaptation"
+    },
+    {
+      "decision": "Use one common source revision while preserving tuple-specific checkpoint-equivalence uncertainty.",
+      "decision_id": "d-common-source-revision",
+      "selected_option": "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0"
+    },
+    {
+      "decision": "Use the observed modern dependency stack for all three tuple integrations.",
+      "decision_id": "d-shared-environment-stack",
+      "selected_option": "python-3.12.13-numpy-2.4.6-torch-2.13.0-torchlibrosa-0.1.0"
+    },
+    {
+      "decision": "Keep environment lifecycle state unpromoted because integrate mode cannot create the missing model cards.",
+      "decision_id": "d-no-lifecycle-promotion",
+      "selected_option": "draft-resolution-complete"
+    },
+    {
+      "decision": "Recover and complete the existing production integration without beginning verify or card.",
+      "decision_id": "d-integrate-recovery-authorized",
+      "selected_option": "preserve-existing-integration"
+    }
+  ],
+  "validation_summary": {
+    "checks": [
+      "repository and accepted-handoff baseline",
+      "strict artifact-supersession contract and focused regressions",
+      "six prior and new environment artifact hashes",
+      "PANNs lazy metadata and public identity validation",
+      "three isolated environment verification scripts",
+      "random-weight logits, probabilities, and 2048-dimensional embedding",
+      "0.64, 1.0, and 2.0 second duration sweep for all variants",
+      "explicit minimum and Wavegram alignment validation",
+      "complete upstream, selected range, AST node, and integrated source hashes",
+      "deterministic source-reduction diff reproduction",
+      "zero checkpoint and pretrained inference activity",
+      "exact PANNs .gitattributes rules report whitespace unset",
+      "staged-equivalent complete working-tree whitespace validation passed",
+      "real Git index hash remained unchanged",
+      "focused staged-equivalent validator regressions passed",
+      "repeated same-phase supersession preserves complete handoff history",
+      "root coverage excludes only isolated PANNs runtime and vendored source",
+      "pre-promotion line and branch coverage thresholds passed",
+      "local wheel active runtime requirements reconciled with root lock",
+      "three dependency-closure preflights passed before materialization",
+      "three card-independent environment materializations and verifications passed",
+      "three exact fingerprints reused offline without package reinstall",
+      "six environment definition and lock supersessions validated",
+      "local wheel active runtime requirements reconciled with root lock",
+      "three dependency-closure preflights passed before materialization",
+      "three card-independent environment materializations and verifications passed",
+      "three exact fingerprints reused offline without package reinstall",
+      "six environment definition and lock supersessions validated",
+      "local wheel active runtime requirements reconciled with root lock",
+      "three dependency-closure preflights passed before materialization",
+      "three card-independent environment materializations and verifications passed",
+      "three exact fingerprints reused offline without package reinstall",
+      "six environment definition and lock supersessions validated"
+    ],
+    "errors": [],
+    "passed": true
+  },
+  "workflow_id": "panns-audioset-three-tuple"
+}

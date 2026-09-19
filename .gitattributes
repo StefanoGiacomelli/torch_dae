@@ -1,0 +1,7 @@
+# Preserve upstream byte-level formatting in the selected PANNs vendored substrate.
+src/torch_dae/models/panns/_vendor/LICENSE.MIT -whitespace
+src/torch_dae/models/panns/_vendor/models.py -whitespace
+src/torch_dae/models/panns/_vendor/pytorch_utils.py -whitespace
+
+# Preserve whitespace represented by the deterministic upstream-reduction patch.
+onboarding_reports/panns-audioset-three-tuple/integrate/source-reduction.diff -whitespace

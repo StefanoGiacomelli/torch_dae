@@ -15,7 +15,9 @@ from pydantic import Field, HttpUrl, field_validator, model_validator
 from torch_dae.cards.models import ModelCardLifecycle
 from torch_dae.contracts import (
     GIT_REVISION_PATTERN,
+    REPO_RELATIVE_OR_DOTFILE_PATTERN,
     REPO_RELATIVE_PATTERN,
+    SHA256_PATTERN,
     CanonicalId,
     StrictBaseModel,
     ensure_repository_relative,
@@ -135,6 +137,10 @@ class FailureClassification(StrEnum):
     RUNTIME_FAILURE = "runtime_failure"
     PLATFORM_INCOMPATIBILITY = "platform_incompatibility"
     ACCESS_OR_AUTHENTICATION_BLOCKER = "access_or_authentication_blocker"
+    SANDBOX_OR_EXECUTION_POLICY = "sandbox_or_execution_policy"
+    NETWORK_OR_DNS = "network_or_dns"
+    PACKAGE_INDEX = "package_index"
+    RATE_LIMIT = "rate_limit"
     INSUFFICIENT_EVIDENCE = "insufficient_evidence"
 
 
@@ -157,6 +163,18 @@ class DependencyKind(StrEnum):
     EDITABLE = "editable"
     LOCAL_PATH = "local_path"
     LOCKED = "locked"
+    UNKNOWN = "unknown"
+
+
+class PublishedChecksumAlgorithm(StrEnum):
+    """Algorithms accepted for checkpoint-host checksum metadata."""
+
+    MD5 = "md5"
+    SHA1 = "sha1"
+    SHA256 = "sha256"
+    SHA512 = "sha512"
+    BLAKE2B = "blake2b"
+    OTHER = "other"
     UNKNOWN = "unknown"
 
 
@@ -240,11 +258,17 @@ class EvidenceItem(StrictBaseModel):
 
 
 class EvidenceBackedClaim(StrictBaseModel):
-    """A claim that cannot silently promote inference to verified fact."""
+    """A claim that cannot silently promote inference to verified fact.
+
+    Empty scope tuples mean that the claim applies across the repository-level report. Nonempty
+    scopes are resolved by :class:`AnalysisReport` against declared variants and checkpoints.
+    """
 
     statement: str
     status: ClaimStatus
     evidence_ids: tuple[CanonicalId, ...] = ()
+    variant_ids: tuple[CanonicalId, ...] = ()
+    checkpoint_ids: tuple[CanonicalId, ...] = ()
     rationale: str | None = None
 
     @model_validator(mode="after")
@@ -262,6 +286,7 @@ class EvidenceBackedClaim(StrictBaseModel):
             raise ValueError(f"{self.status.value} claims require evidence references")
         if self.status == ClaimStatus.REASONED_INFERENCE and not self.rationale:
             raise ValueError("reasoned inference claims require rationale")
+        _validate_unique_scope_ids(self.variant_ids, self.checkpoint_ids)
         return self
 
 
@@ -301,6 +326,47 @@ class VariantCandidate(StrictBaseModel):
         return self
 
 
+class PublishedChecksum(StrictBaseModel):
+    """Host-published checkpoint checksum that has not been locally verified.
+
+    The record intentionally cannot represent local payload verification. A later SHA-256
+    acquisition check remains a separate lifecycle operation even when another published digest is
+    available.
+    """
+
+    algorithm: PublishedChecksumAlgorithm
+    digest: str
+    evidence_id: CanonicalId
+    verification_state: Literal["published_not_locally_verified"] = "published_not_locally_verified"
+    provenance_note: str | None = None
+
+    @model_validator(mode="after")
+    def validate_digest(self) -> PublishedChecksum:
+        lengths = {
+            PublishedChecksumAlgorithm.MD5: 32,
+            PublishedChecksumAlgorithm.SHA1: 40,
+            PublishedChecksumAlgorithm.SHA256: 64,
+            PublishedChecksumAlgorithm.SHA512: 128,
+            PublishedChecksumAlgorithm.BLAKE2B: 128,
+        }
+        expected = lengths.get(self.algorithm)
+        if expected is not None and re.fullmatch(rf"[0-9a-f]{{{expected}}}", self.digest) is None:
+            raise ValueError(
+                f"{self.algorithm.value} digest must contain exactly {expected} lowercase hex "
+                "characters"
+            )
+        if (
+            self.algorithm
+            in {
+                PublishedChecksumAlgorithm.OTHER,
+                PublishedChecksumAlgorithm.UNKNOWN,
+            }
+            and not self.provenance_note
+        ):
+            raise ValueError("other or unknown checksum algorithms require provenance_note")
+        return self
+
+
 class CheckpointCandidate(StrictBaseModel):
     """Candidate checkpoint metadata."""
 
@@ -311,6 +377,7 @@ class CheckpointCandidate(StrictBaseModel):
     model_variant: str | None = None
     loader: str | None = None
     hash_evidence: str | None = None
+    published_checksums: tuple[PublishedChecksum, ...] = ()
     access_or_license_notes: str | None = None
     helper_symbol: str | None = None
     expression_status: str | None = None
@@ -324,6 +391,11 @@ class CheckpointCandidate(StrictBaseModel):
         _validate_candidate_evidence(self.status, self.evidence_ids, self.unresolved_reason)
         if self.source_type == "https" and self.helper_symbol and not self.expression_status:
             raise ValueError("checkpoint helper candidates require expression_status")
+        checksum_identities = [
+            (checksum.algorithm, checksum.digest) for checksum in self.published_checksums
+        ]
+        if len(checksum_identities) != len(set(checksum_identities)):
+            raise ValueError("published checksum algorithm/digest pairs must be unique")
         return self
 
 
@@ -344,7 +416,10 @@ class SourceStrategyCandidate(StrictBaseModel):
 
 
 class EmbeddingCandidate(StrictBaseModel):
-    """Candidate embedding tensor whose semantics require evidence."""
+    """Candidate embedding tensor whose semantics require evidence.
+
+    Empty variant and checkpoint scopes mean report-wide applicability.
+    """
 
     embedding_id: CanonicalId
     tensor_origin: str
@@ -363,12 +438,15 @@ class EmbeddingCandidate(StrictBaseModel):
     time_dimension: str | None
     status: ClaimStatus
     evidence_ids: tuple[CanonicalId, ...]
+    variant_ids: tuple[CanonicalId, ...] = ()
+    checkpoint_ids: tuple[CanonicalId, ...] = ()
     requires_user_decision: bool = False
     unresolved_reason: str | None = None
 
     @model_validator(mode="after")
     def candidate_requires_evidence_or_reason(self) -> EmbeddingCandidate:
         _validate_candidate_evidence(self.status, self.evidence_ids, self.unresolved_reason)
+        _validate_unique_scope_ids(self.variant_ids, self.checkpoint_ids)
         return self
 
 
@@ -529,6 +607,23 @@ class AnalysisReport(StrictBaseModel):
         if duplicate_errors:
             raise ValueError("; ".join(duplicate_errors))
 
+        variant_ids = {item.variant_id for item in self.variants}
+        checkpoint_ids = {item.checkpoint_id for item in self.checkpoint_candidates}
+        scope_errors: list[str] = []
+        for label, item in [("claim", claim) for claim in _iter_claims(self)] + [
+            ("embedding", embedding) for embedding in self.embedding_candidates
+        ]:
+            missing_variants = sorted(set(item.variant_ids) - variant_ids)
+            missing_checkpoints = sorted(set(item.checkpoint_ids) - checkpoint_ids)
+            if missing_variants:
+                scope_errors.append(f"{label} variant scope is unresolved: {missing_variants}")
+            if missing_checkpoints:
+                scope_errors.append(
+                    f"{label} checkpoint scope is unresolved: {missing_checkpoints}"
+                )
+        if scope_errors:
+            raise ValueError("; ".join(scope_errors))
+
         compatibility_errors: list[str] = []
         for claim in _iter_claims(self):
             compatibility_errors.extend(_evidence_compatibility_errors(claim, evidence_by_id))
@@ -552,6 +647,16 @@ class AnalysisReport(StrictBaseModel):
                     checkpoint.unresolved_reason,
                 )
             )
+            for checksum in checkpoint.published_checksums:
+                compatibility_errors.extend(
+                    _evidence_status_compatibility_errors(
+                        "published checksum",
+                        ClaimStatus.VERIFIED_UPSTREAM_FACT,
+                        (checksum.evidence_id,),
+                        evidence_by_id,
+                        checksum.provenance_note,
+                    )
+                )
         for source_strategy in self.source_strategy_candidates:
             compatibility_errors.extend(
                 _evidence_status_compatibility_errors(
@@ -991,6 +1096,458 @@ class EnvironmentResolutionReport(StrictBaseModel):
         return self
 
 
+class OnboardingPhase(StrEnum):
+    """Committed onboarding phases, including checkpoint-specific verification."""
+
+    ANALYZE = "analyze"
+    RESOLVE_ENVIRONMENT = "resolve-environment"
+    INTEGRATE = "integrate"
+    VERIFY = "verify"
+    CARD = "card"
+
+
+class WorkflowStatus(StrEnum):
+    """Lifecycle of one cross-conversation onboarding workflow."""
+
+    ACTIVE = "active"
+    COMPLETED = "completed"
+
+
+class HandoffStatus(StrEnum):
+    """Review status of one phase handoff."""
+
+    DRAFT = "draft"
+    ACCEPTED = "accepted"
+    SUPERSEDED = "superseded"
+
+
+class ArtifactOriginPhase(StrEnum):
+    """Origin recorded for an artifact reference."""
+
+    ANALYZE = "analyze"
+    RESOLVE_ENVIRONMENT = "resolve-environment"
+    INTEGRATE = "integrate"
+    VERIFY = "verify"
+    CARD = "card"
+    EXTERNAL = "external"
+
+
+class AcceptedPhaseReference(StrictBaseModel):
+    """Canonical accepted handoff path for one workflow phase."""
+
+    phase: OnboardingPhase
+    handoff_path: Annotated[str, Field(pattern=REPO_RELATIVE_PATTERN)]
+
+    @field_validator("handoff_path")
+    @classmethod
+    def handoff_path_repository_relative(cls, value: str) -> str:
+        return ensure_repository_relative(value) or value
+
+
+class WorkflowRecord(StrictBaseModel):
+    """Committed identity and accepted-phase index for an onboarding workflow."""
+
+    schema_version: Literal["1.0.0"]
+    workflow_id: CanonicalId
+    model_family: str
+    target_variant_ids: tuple[CanonicalId, ...]
+    target_checkpoint_ids: tuple[CanonicalId, ...]
+    target_card_ids: tuple[CanonicalId, ...] = ()
+    created_repository_commit: Annotated[str, Field(pattern=GIT_REVISION_PATTERN)]
+    current_accepted_phase: OnboardingPhase | None = None
+    accepted_phase_paths: tuple[AcceptedPhaseReference, ...] = ()
+    status: WorkflowStatus
+
+    @model_validator(mode="after")
+    def validate_phase_index(self) -> WorkflowRecord:
+        phases = [item.phase for item in self.accepted_phase_paths]
+        if len(phases) != len(set(phases)):
+            raise ValueError("accepted workflow phases must be unique")
+        if self.current_accepted_phase is not None and self.current_accepted_phase not in phases:
+            raise ValueError("current_accepted_phase must have an accepted phase path")
+        if len(self.target_variant_ids) != len(set(self.target_variant_ids)):
+            raise ValueError("target variant IDs must be unique")
+        if len(self.target_checkpoint_ids) != len(set(self.target_checkpoint_ids)):
+            raise ValueError("target checkpoint IDs must be unique")
+        if len(self.target_card_ids) != len(set(self.target_card_ids)):
+            raise ValueError("target card IDs must be unique")
+        expected_prefix = f"onboarding_reports/{self.workflow_id}/"
+        for reference in self.accepted_phase_paths:
+            expected = f"{expected_prefix}{reference.phase.value}/handoff.json"
+            if reference.handoff_path != expected:
+                raise ValueError(f"accepted handoff path must be {expected}")
+        return self
+
+
+class HandoffArtifactReference(StrictBaseModel):
+    """Hash-addressed local or external artifact used by a phase handoff."""
+
+    path: Annotated[str | None, Field(pattern=REPO_RELATIVE_OR_DOTFILE_PATTERN)] = None
+    sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    media_type: Annotated[str, Field(pattern=r"^[a-z0-9.+-]+/[a-z0-9.+-]+$")]
+    originating_phase: ArtifactOriginPhase
+    canonical_role: CanonicalId | None = None
+    external_label: CanonicalId | None = None
+
+    @field_validator("path")
+    @classmethod
+    def path_repository_relative(cls, value: str | None) -> str | None:
+        return ensure_repository_relative(value)
+
+    @model_validator(mode="after")
+    def validate_location(self) -> HandoffArtifactReference:
+        if (self.path is None) == (self.external_label is None):
+            raise ValueError("artifact reference requires exactly one of path or external_label")
+        if self.path is None and self.originating_phase != ArtifactOriginPhase.EXTERNAL:
+            raise ValueError("digest-only artifacts must have external origin")
+        if self.path is not None and self.external_label is not None:
+            raise ValueError("local artifacts must not carry an external label")
+        return self
+
+
+class ArtifactSupersession(StrictBaseModel):
+    """One explicit transition between accepted repository artifact states."""
+
+    path: Annotated[str, Field(pattern=REPO_RELATIVE_PATTERN)]
+    prior_originating_phase: OnboardingPhase
+    prior_sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    new_sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    reason: str
+    prior_handoff_sha256: Annotated[str | None, Field(pattern=SHA256_PATTERN)] = None
+
+    @field_validator("path")
+    @classmethod
+    def path_repository_relative(cls, value: str) -> str:
+        return ensure_repository_relative(value) or value
+
+    @field_validator("reason")
+    @classmethod
+    def reason_has_content(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("artifact supersession reason must contain non-whitespace text")
+        return value
+
+    @model_validator(mode="after")
+    def hash_transition_changes_content(self) -> ArtifactSupersession:
+        if self.prior_sha256 == self.new_sha256:
+            raise ValueError("artifact supersession must change the artifact SHA-256")
+        return self
+
+
+class ConsumedUserDecision(StrictBaseModel):
+    """One task-specific user decision consumed by a phase."""
+
+    decision_id: CanonicalId
+    decision: str
+    selected_option: str
+
+
+class CarriedUnresolvedItem(StrictBaseModel):
+    """One unresolved item explicitly carried into a later phase."""
+
+    item_id: CanonicalId
+    description: str
+    source_artifact_path: Annotated[str | None, Field(pattern=REPO_RELATIVE_PATTERN)] = None
+
+    @field_validator("source_artifact_path")
+    @classmethod
+    def source_path_repository_relative(cls, value: str | None) -> str | None:
+        return ensure_repository_relative(value)
+
+
+class HandoffValidationSummary(StrictBaseModel):
+    """Deterministic validation outcome required for handoff acceptance."""
+
+    passed: bool
+    checks: tuple[str, ...]
+    errors: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def passed_has_no_errors(self) -> HandoffValidationSummary:
+        if self.passed and self.errors:
+            raise ValueError("passed validation summary must not contain errors")
+        if not self.passed and not self.errors:
+            raise ValueError("failed validation summary requires errors")
+        return self
+
+
+class PhaseHandoffManifest(StrictBaseModel):
+    """Committed, hash-addressed handoff from one onboarding phase."""
+
+    schema_version: Literal["1.0.0"]
+    workflow_id: CanonicalId
+    phase: OnboardingPhase
+    handoff_status: HandoffStatus
+    repository_commit: Annotated[str, Field(pattern=GIT_REVISION_PATTERN)]
+    project_spec_sha256: Annotated[
+        str,
+        Field(
+            pattern=SHA256_PATTERN,
+            description=(
+                "SHA-256 of project_spec.md when this phase candidate was prepared; after "
+                "acceptance this value is immutable historical provenance."
+            ),
+        ),
+    ]
+    canonical_skill_fingerprint: Annotated[
+        str,
+        Field(
+            pattern=SHA256_PATTERN,
+            description=(
+                "Canonical onboarding-skill fingerprint when this phase candidate was prepared; "
+                "after acceptance this value is immutable historical provenance."
+            ),
+        ),
+    ]
+    input_artifacts: tuple[HandoffArtifactReference, ...] = ()
+    output_artifacts: tuple[HandoffArtifactReference, ...]
+    artifact_supersessions: tuple[ArtifactSupersession, ...] = ()
+    target_variant_ids: tuple[CanonicalId, ...]
+    target_checkpoint_ids: tuple[CanonicalId, ...]
+    target_card_ids: tuple[CanonicalId, ...] = ()
+    user_decisions_consumed: tuple[ConsumedUserDecision, ...] = ()
+    unresolved_items_carried_forward: tuple[CarriedUnresolvedItem, ...] = ()
+    validation_summary: HandoffValidationSummary
+    allowed_next_modes: tuple[RecommendedNextMode, ...]
+    lifecycle_promotion: ModelCardLifecycle | None = None
+    superseded_handoff_sha256: Annotated[str | None, Field(pattern=SHA256_PATTERN)] = None
+
+    @model_validator(mode="after")
+    def validate_handoff_state(self) -> PhaseHandoffManifest:
+        if self.handoff_status == HandoffStatus.ACCEPTED and not self.validation_summary.passed:
+            raise ValueError("accepted handoffs require passed validation")
+        if not self.output_artifacts:
+            raise ValueError("phase handoffs require output artifacts")
+        if any(item.canonical_role is None for item in self.output_artifacts):
+            raise ValueError("output artifacts require canonical_role")
+        output_paths = [item.path for item in self.output_artifacts if item.path is not None]
+        if len(output_paths) != len(set(output_paths)):
+            raise ValueError("output artifact paths must be unique")
+        supersession_paths = [item.path for item in self.artifact_supersessions]
+        if len(supersession_paths) != len(set(supersession_paths)):
+            raise ValueError("artifact supersession paths must be unique within a handoff")
+        if len(self.allowed_next_modes) != len(set(self.allowed_next_modes)):
+            raise ValueError("allowed next modes must be unique")
+        for label, values in (
+            ("target variant", self.target_variant_ids),
+            ("target checkpoint", self.target_checkpoint_ids),
+            ("target card", self.target_card_ids),
+        ):
+            if len(values) != len(set(values)):
+                raise ValueError(f"{label} IDs must be unique")
+        expected_prefix = f"onboarding_reports/{self.workflow_id}/"
+        phase_prefix = f"{expected_prefix}{self.phase.value}/"
+        for artifact in (*self.input_artifacts, *self.output_artifacts):
+            if artifact.path and artifact.path.startswith("onboarding_reports/"):
+                if not artifact.path.startswith(expected_prefix):
+                    raise ValueError("handoff artifacts may not mix onboarding workflows")
+        allowed_external_output_roots = {
+            OnboardingPhase.ANALYZE: (),
+            OnboardingPhase.RESOLVE_ENVIRONMENT: ("environments/",),
+            OnboardingPhase.INTEGRATE: (
+                "docs/",
+                "environments/",
+                "model_cards/",
+                "src/",
+                "tests/",
+            ),
+            OnboardingPhase.VERIFY: ("verification_reports/",),
+            OnboardingPhase.CARD: ("model_cards/",),
+        }[self.phase]
+        allowed_exact_output_paths = {
+            OnboardingPhase.ANALYZE: (),
+            OnboardingPhase.RESOLVE_ENVIRONMENT: (),
+            OnboardingPhase.INTEGRATE: (
+                ".gitattributes",
+                "CHANGELOG.md",
+                "README.md",
+                "pyproject.toml",
+                "schemas/environment-dependency-closure-result.schema.json",
+                "schemas/environment-materialization-result.schema.json",
+                "schemas/environment-verification-result.schema.json",
+                "schemas/phase-handoff.schema.json",
+                "scripts/check_worktree_patch.py",
+                "scripts/generate_schemas.py",
+                "scripts/validate_repository.py",
+                "skills/audio-model-onboarding/SKILL.md",
+                "skills/audio-model-onboarding/references/environment-resolution.md",
+                "skills/audio-model-onboarding/references/failure-classification.md",
+                "skills/audio-model-onboarding/references/integration-planning.md",
+                "skills/audio-model-onboarding/templates/agent-request.md",
+                "skills/audio-model-onboarding/templates/agent-response.md",
+            ),
+            OnboardingPhase.VERIFY: (),
+            OnboardingPhase.CARD: (),
+        }[self.phase]
+        for artifact in self.output_artifacts:
+            if artifact.path is None or not (
+                artifact.path.startswith(phase_prefix)
+                or artifact.path.startswith(allowed_external_output_roots)
+                or artifact.path in allowed_exact_output_paths
+            ):
+                raise ValueError("output artifacts must be canonical for the handoff phase")
+        if not any(
+            artifact.path and artifact.path.startswith(phase_prefix)
+            for artifact in self.output_artifacts
+        ):
+            raise ValueError("handoff requires at least one phase-local canonical output")
+        phase_order = {
+            OnboardingPhase.ANALYZE: 0,
+            OnboardingPhase.RESOLVE_ENVIRONMENT: 1,
+            OnboardingPhase.INTEGRATE: 2,
+            OnboardingPhase.VERIFY: 3,
+            OnboardingPhase.CARD: 4,
+        }
+        output_by_path = {
+            artifact.path: artifact
+            for artifact in self.output_artifacts
+            if artifact.path is not None
+        }
+        protected_prefixes = (
+            ".git/",
+            ".torch-dae/",
+            ".venv/",
+            "checkpoints/",
+            "onboarding_reports/",
+            "reports/",
+            "schemas/",
+            "verification_reports/",
+        )
+        protected_names = {
+            ".env",
+            "credentials.json",
+            "project_spec.md",
+            "secrets.json",
+        }
+        for supersession in self.artifact_supersessions:
+            if phase_order[supersession.prior_originating_phase] >= phase_order[self.phase]:
+                raise ValueError("artifact supersession must move to a legal later workflow phase")
+            path_parts = set(supersession.path.split("/"))
+            credential_parts = {".env", "credentials", "credentials.json", "secrets.json"}
+            if (
+                supersession.path in protected_names
+                or supersession.path.startswith(protected_prefixes)
+                or not path_parts.isdisjoint(credential_parts)
+            ):
+                raise ValueError("protected canonical or runtime artifacts cannot be superseded")
+            output = output_by_path.get(supersession.path)
+            if output is None:
+                raise ValueError("superseded artifact must be declared as a current phase output")
+            if output.originating_phase.value != self.phase.value:
+                raise ValueError(
+                    "superseding output must originate in the containing handoff phase"
+                )
+            if output.sha256 != supersession.new_sha256:
+                raise ValueError("superseding output hash must match new_sha256")
+        return self
+
+
+class ManagedRunManifest(StrictBaseModel):
+    """Ignored runtime manifest for one managed onboarding phase execution."""
+
+    schema_version: Literal["1.0.0"]
+    run_id: CanonicalId
+    workflow_id: CanonicalId
+    phase: OnboardingPhase
+    started_at: datetime
+    repository_commit: Annotated[str, Field(pattern=GIT_REVISION_PATTERN)]
+    created_paths: tuple[str, ...]
+    reused_paths: tuple[str, ...] = ()
+    external_paths: tuple[str, ...] = ()
+    retained_paths: tuple[str, ...] = ()
+    retained_reasons: dict[str, str] = Field(default_factory=dict)
+    cleanup_result: dict[str, Any] | None = None
+
+
+class CleanupPathRecord(StrictBaseModel):
+    """One managed or external path retained by cleanup."""
+
+    path: str
+    category: str
+    reason: str
+    status: Literal[
+        "retained-existing-file",
+        "retained-existing-directory",
+        "retained-symlink",
+        "missing",
+    ]
+    sha256: Annotated[str | None, Field(pattern=SHA256_PATTERN)] = None
+
+    @model_validator(mode="after")
+    def hash_only_existing_files(self) -> CleanupPathRecord:
+        if self.status == "retained-existing-file" and self.sha256 is None:
+            raise ValueError("retained existing files require SHA-256")
+        if self.status != "retained-existing-file" and self.sha256 is not None:
+            raise ValueError("only retained existing files may carry SHA-256")
+        return self
+
+
+class CleanupRetentionConflict(StrictBaseModel):
+    """A retained path that would be removed by a planned deletion root."""
+
+    retained_path: str
+    deletion_root: str
+    reason: str
+    remediation: str
+
+
+class CleanupExternalProtectionConflict(StrictBaseModel):
+    """An existing external output that overlaps a planned deletion root."""
+
+    supplied_external_path: str
+    resolved_path: str
+    deletion_root: str
+    status: Literal[
+        "retained-existing-file",
+        "retained-existing-directory",
+        "retained-symlink",
+        "missing",
+    ]
+    reason: str
+    remediation: str
+
+
+class CleanupConsumedRunManifest(StrictBaseModel):
+    """A finalized run manifest embedded in a durable cleanup receipt."""
+
+    path: str
+    sha256: Annotated[str, Field(pattern=SHA256_PATTERN)]
+    manifest: ManagedRunManifest
+
+
+class CleanupReceipt(StrictBaseModel):
+    """Durable ignored-runtime receipt for one cleanup plan or execution."""
+
+    schema_version: Literal["1.0.0"]
+    workflow_id: CanonicalId
+    cleanup_operation_id: CanonicalId
+    time: datetime
+    mode: Literal["dry-run", "execute"]
+    run_manifests_consumed: tuple[CleanupConsumedRunManifest, ...]
+    planned_paths: tuple[str, ...]
+    removed_paths: tuple[str, ...]
+    retention_conflicts: tuple[CleanupRetentionConflict, ...] = ()
+    external_protection_conflicts: tuple[CleanupExternalProtectionConflict, ...] = ()
+    retained_managed_paths: tuple[CleanupPathRecord, ...] = ()
+    retained_external_paths: tuple[CleanupPathRecord, ...] = ()
+    repository_caches_retained: tuple[CleanupPathRecord, ...] = ()
+    package_caches_retained: tuple[CleanupPathRecord, ...] = ()
+    materialized_environments_retained: tuple[CleanupPathRecord, ...] = ()
+    checkpoint_caches_retained: tuple[CleanupPathRecord, ...] = ()
+    verified_removed: bool
+    errors: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def verified_removal_is_truthful(self) -> CleanupReceipt:
+        if self.mode == "dry-run" and (self.removed_paths or self.verified_removed):
+            raise ValueError("dry-run cleanup cannot remove or verify removal")
+        if (
+            self.errors or self.retention_conflicts or self.external_protection_conflicts
+        ) and self.verified_removed:
+            raise ValueError("cleanup with errors or protection conflicts cannot verify removal")
+        return self
+
+
 class SkillEvaluationScenario(StrictBaseModel):
     """Synthetic scenario evaluation input for deterministic skill harness tests."""
 
@@ -1053,6 +1610,10 @@ def _collect_evidence_references(value: Any) -> list[str]:
         references.extend(
             value.expected_compatibility_evidence if isinstance(value, EnvironmentCandidate) else ()
         )
+        if isinstance(value, CheckpointCandidate):
+            references.extend(checksum.evidence_id for checksum in value.published_checksums)
+    elif isinstance(value, PublishedChecksum):
+        references.append(value.evidence_id)
     elif isinstance(value, StrictBaseModel):
         for child in value.__dict__.values():
             references.extend(_collect_evidence_references(child))
@@ -1102,6 +1663,16 @@ def _validate_candidate_evidence(
             raise ValueError(
                 f"{status.value} candidates require unresolved_reason when unevidenced"
             )
+
+
+def _validate_unique_scope_ids(
+    variant_ids: tuple[str, ...],
+    checkpoint_ids: tuple[str, ...],
+) -> None:
+    if len(variant_ids) != len(set(variant_ids)):
+        raise ValueError("variant scope IDs must be unique")
+    if len(checkpoint_ids) != len(set(checkpoint_ids)):
+        raise ValueError("checkpoint scope IDs must be unique")
 
 
 def _duplicate_ids(*groups: tuple[str, list[str]]) -> list[str]:

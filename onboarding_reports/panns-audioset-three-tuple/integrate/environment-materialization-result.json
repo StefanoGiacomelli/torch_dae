@@ -1,0 +1,18 @@
+{
+  "checkpoint_activity": "none",
+  "environment_fingerprints": {
+    "panns-cnn14-16k-map-0438": "77a6c70f32a060ca52e69e7a768276c291e14b5ce6e7243ba3b80f8bd39eb05f",
+    "panns-resnet38-map-0434": "8366c858f14884301afd1db6b1fab3bcd594f3c1a5668d449eb63c3f10ed7fcc",
+    "panns-wavegram-logmel-cnn14-map-0439": "c4f3ab5be95c952ea18b750eba1b9a8c5f9fa720553521390c4d281bab198521"
+  },
+  "environment_materialization_succeeded": true,
+  "environment_verification_succeeded": true,
+  "lifecycle_promotion": null,
+  "local_package_identity": "content-sha256:7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+  "outcome": "stable-concurrent-materialization-complete",
+  "package_content_sha256": "7528b0536a7fe43404dbdecb10ed6af8a395e727d721b09bc3555d01a2d748d4",
+  "package_wheel_sha256": "218fbf4e5bfe576d8beed092d22c620c858b191a0164ddf6f7f8fa3940e33a31",
+  "schema_version": "1.0.0",
+  "verify_phase_started": false,
+  "workflow_id": "panns-audioset-three-tuple"
+}

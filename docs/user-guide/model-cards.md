@@ -4,9 +4,13 @@ One model card represents exactly one model-family, architecture variant, and ch
 identity, sources, scientific references, tasks, datasets, metrics, environment inputs, waveform and
 output contracts, embeddings, capabilities, device support, evidence, issues, and lifecycle state.
 
-Cards progress through `draft`, `analyzed`, `environment_resolved`, `checkpoint_verified`,
-`runtime_verified`, and `profiled`. A lifecycle state never substitutes for explicit unresolved
-issues or evidence provenance.
+New cards progress through `draft`, `analyzed`, `environment_resolved`, `checkpoint_verified`,
+and terminal `runtime_verified`. A lifecycle state never substitutes for explicit unresolved issues
+or evidence provenance.
+
+The schema-1 `profiled` value and embedded profiling fields remain legacy compatibility surface only.
+Profiling v1 never mutates an accepted Model Card; it appends independent Technical Cards that
+reference the Model Card and checkpoint.
 
 A **card** is a strict {class}`torch_dae.cards.ModelCard`, while a **wrapper** is the optional class
 named by `identity.wrapper_entry_point`. Read a card without importing its wrapper:

@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "environment_id": "synthetic-environment",
+  "package_wheel_identity": "torch-deepaudioembedding==0.1.0",
+  "package_wheel_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "python_version": "3.12.13",
+  "platform": "macos-arm64",
+  "installation_policy": "locked-project-closure-then-local-wheel-no-deps",
+  "active_runtime_requirements": ["packaging>=26"],
+  "satisfied_requirements": [
+    {
+      "requirement": "packaging>=26",
+      "normalized_name": "packaging",
+      "specifier": ">=26",
+      "marker": null,
+      "reachable_versions": ["26.2"]
+    }
+  ],
+  "missing_requirements": [],
+  "incompatible_requirements": [],
+  "lockfile_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "status": "passed",
+  "failure_classification": null,
+  "result_path": "reports/environments/synthetic-environment/preflight.json"
+}

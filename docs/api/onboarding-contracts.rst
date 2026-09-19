@@ -59,12 +59,22 @@ Enum values
      - ``requirement``, ``conda``, ``vcs``, ``direct_url``, ``editable``, ``local_path``,
        ``locked``, ``unknown``
      - Static declaration format, not an installation decision.
+   * - ``PublishedChecksumAlgorithm``
+     - ``md5``, ``sha1``, ``sha256``, ``sha512``, ``blake2b``, ``other``, ``unknown``
+     - Exact host-published algorithm; nonstandard or unknown values require an explanation.
+   * - ``OnboardingPhase``
+     - ``analyze``, ``resolve-environment``, ``integrate``, ``verify``, ``card``
+     - Accepted handoff phases; verify produces checkpoint-specific runtime evidence before card.
+   * - ``WorkflowStatus`` / ``HandoffStatus``
+     - ``active``, ``completed`` / ``draft``, ``accepted``, ``superseded``
+     - Workflow and phase-review state.
 
 ``FailureClassification`` values are ``python_constraint``, ``dependency_conflict``,
 ``resolution_failure``, ``removed_api``, ``deprecated_api``, ``binary_or_abi_incompatibility``,
 ``missing_binary_wheel``, ``torch_torchaudio_mismatch``, ``numpy_compatibility``,
 ``checkpoint_incompatibility``, ``source_build_failure``, ``import_failure``, ``runtime_failure``,
-``platform_incompatibility``, ``access_or_authentication_blocker``, and
+``platform_incompatibility``, ``access_or_authentication_blocker``,
+``sandbox_or_execution_policy``, ``network_or_dns``, ``package_index``, ``rate_limit``, and
 ``insufficient_evidence``. They normalize observed causes without exposing secrets or treating raw
 diagnostics as proof.
 
@@ -88,8 +98,8 @@ artifact locations.
      - Package name normalized; version valid; inference requires rationale; user decision/kind
        agrees with status.
    * - ``EvidenceBackedClaim``
-     - ``statement``, ``status``, ``evidence_ids=()``, ``rationale=None``
-     - Positive statuses require evidence; inference requires rationale.
+     - ``statement``, ``status``, evidence, optional variant/checkpoint scopes, rationale
+     - Positive statuses require evidence; inference requires rationale; scope IDs resolve uniquely.
    * - ``ReportSection``
      - ``summary``, ``claims=()``
      - Claims retain their own evidence policy.
@@ -101,16 +111,21 @@ artifact locations.
      - ID, name, status, evidence IDs, unresolved reason
      - Status requires compatible evidence or explicit unresolved reason.
    * - ``CheckpointCandidate``
-     - ID/source type; optional filename, URL, variant, loader, hash, notes, helper/expression;
-       evidence IDs, status, unresolved reason
-     - Helper-based HTTPS candidates require expression status.
+     - ID/source type; optional filename, URL, variant, loader, legacy hash, structured published
+       checksums, notes, helper/expression; evidence IDs, status, unresolved reason
+     - Helper-based HTTPS candidates require expression status; published checksums retain their
+       algorithm and cannot claim local verification.
+   * - ``PublishedChecksum``
+     - algorithm, digest, evidence ID, fixed published-not-locally-verified state, provenance note
+     - Known digest formats are strict; nonstandard algorithms require an explanation and evidence.
    * - ``SourceStrategyCandidate``
      - strategy, status, rationale, evidence IDs, decision flag, unresolved reason
      - Evidence and ambiguity must agree with status.
    * - ``EmbeddingCandidate``
-     - ID, origin, exact semantic kind, shape/batch/time semantics, status, evidence, decision flag,
-       unresolved reason
-     - Candidate semantics remain evidence-backed; no tensor is executed.
+     - ID, origin, exact semantic kind, shape/batch/time semantics, status, evidence,
+       variant/checkpoint scopes, decision flag, unresolved reason
+     - Candidate semantics remain evidence-backed; scopes resolve to report candidates; no tensor
+       is executed.
    * - ``OpenQuestion``
      - ID, classification, description, alternatives, evidence, deferred default, failure class
      - User-decision questions require at least two alternatives.
@@ -146,6 +161,33 @@ artifact locations.
      - Selected candidate exists; successful resolution requires exact principal versions, evidence,
        all five committed artifacts, materialization and verification success, fingerprint, valid
        report reference, and no unresolved blocker.
+   * - ``WorkflowRecord``
+     - schema/workflow identity, model and target scopes, creation commit, accepted phase paths,
+       current phase, status
+     - Canonical phase paths are unique, workflow-local, and agree with the current accepted phase.
+   * - ``PhaseHandoffManifest``
+     - workflow/phase/status, commit, specification and skill hashes, input/output artifacts, target
+       scopes, decisions, unresolved items, validation, next modes, optional lifecycle/handoff
+       supersession, artifact supersessions
+     - Accepted status requires passed validation; output roles and paths are canonical; workflows
+       cannot be mixed; artifact transitions require unique later outputs and protect canonical
+       control, report, schema, credential, checkpoint, and runtime paths.
+   * - ``ArtifactSupersession``
+     - repository-relative path, prior phase/hash, new hash, reason, optional prior handoff hash
+     - The full accepted workflow proves a unique ordered chain and validates current bytes only
+       against its latest declaration while retaining every historical record.
+   * - ``HandoffArtifactReference``
+     - local path or external label, SHA-256, media type, origin phase, optional canonical role
+     - Exactly one local or external identity is present; local paths are repository-relative.
+   * - ``ManagedRunManifest``
+     - run/workflow/phase identities, start time, repository commit, created/reused/external/retained
+       paths, retained reasons, optional cleanup result
+     - Ignored runtime control state scopes safe cleanup without making runtime paths canonical.
+   * - ``CleanupReceipt``
+     - operation/workflow identity, time and mode, finalized source manifests, planned/removed paths,
+       conflicts, retained managed/external paths and cache classes, verification, errors
+     - Atomically persisted outside deletable workspaces; dry runs never claim removal, and conflicts
+       or errors cannot claim verified cleanup.
    * - ``SkillEvaluationScenario``
      - scenario ID, ``synthetic=true``, optional expected strategy/failure/next mode, decision and
        embedding expectations, checkpoint IDs
@@ -191,6 +233,8 @@ compatible :class:`EvidenceItem`.
 
 .. autoclass:: torch_dae.onboarding.contracts.DependencyKind
 
+.. autoclass:: torch_dae.onboarding.contracts.PublishedChecksumAlgorithm
+
 .. autoclass:: torch_dae.onboarding.contracts.EvidenceItem
 
 .. autoclass:: torch_dae.onboarding.contracts.EvidenceBackedClaim
@@ -200,6 +244,8 @@ compatible :class:`EvidenceItem`.
 .. autoclass:: torch_dae.onboarding.contracts.RepositoryIdentity
 
 .. autoclass:: torch_dae.onboarding.contracts.VariantCandidate
+
+.. autoclass:: torch_dae.onboarding.contracts.PublishedChecksum
 
 .. autoclass:: torch_dae.onboarding.contracts.CheckpointCandidate
 
@@ -222,6 +268,32 @@ compatible :class:`EvidenceItem`.
 .. autoclass:: torch_dae.onboarding.contracts.EnvironmentCandidateGenerationResult
 
 .. autoclass:: torch_dae.onboarding.contracts.EnvironmentResolutionReport
+
+.. autoclass:: torch_dae.onboarding.contracts.OnboardingPhase
+
+.. autoclass:: torch_dae.onboarding.contracts.WorkflowStatus
+
+.. autoclass:: torch_dae.onboarding.contracts.HandoffStatus
+
+.. autoclass:: torch_dae.onboarding.contracts.ArtifactOriginPhase
+
+.. autoclass:: torch_dae.onboarding.contracts.AcceptedPhaseReference
+
+.. autoclass:: torch_dae.onboarding.contracts.WorkflowRecord
+
+.. autoclass:: torch_dae.onboarding.contracts.HandoffArtifactReference
+
+.. autoclass:: torch_dae.onboarding.contracts.ConsumedUserDecision
+
+.. autoclass:: torch_dae.onboarding.contracts.CarriedUnresolvedItem
+
+.. autoclass:: torch_dae.onboarding.contracts.HandoffValidationSummary
+
+.. autoclass:: torch_dae.onboarding.contracts.PhaseHandoffManifest
+
+.. autoclass:: torch_dae.onboarding.contracts.ManagedRunManifest
+
+.. autoclass:: torch_dae.onboarding.contracts.CleanupReceipt
 
 .. autoclass:: torch_dae.onboarding.contracts.SkillEvaluationScenario
 

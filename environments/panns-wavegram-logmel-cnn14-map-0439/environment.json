@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "environment_id": "panns-wavegram-logmel-cnn14-map-0439",
+  "model_card_id": "panns-wavegram-logmel-cnn14-map-0439",
+  "python": {
+    "constraint": "==3.12.13",
+    "resolved_version": "3.12.13"
+  },
+  "platforms": {
+    "resolved_on": [
+      "macos-26.5.2-arm64"
+    ],
+    "expected_compatible": [],
+    "verified": [
+      "macos-26.5.2-arm64-cpu-constructor-trial"
+    ]
+  },
+  "dependency_manager": "uv",
+  "lockfile": "environments/panns-wavegram-logmel-cnn14-map-0439/uv.lock",
+  "project_file": "environments/panns-wavegram-logmel-cnn14-map-0439/pyproject.toml",
+  "sources_file": "environments/panns-wavegram-logmel-cnn14-map-0439/sources.json",
+  "verification": {
+    "script": "environments/panns-wavegram-logmel-cnn14-map-0439/verify_environment.py"
+  }
+}

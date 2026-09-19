@@ -1,0 +1,307 @@
+{
+  "schema_version": "2.0.0",
+  "report_id": "panns-resnet38-map-0434-runtime-target-runtime",
+  "runtime_target_id": "panns-resnet38-map-0434-runtime-target",
+  "workflow_id": "panns-audioset-three-tuple",
+  "integrated_variant_id": "panns-resnet38",
+  "checkpoint_id": "panns-resnet38-map-0434",
+  "public_model_entry_point": "torch_dae.models.panns:PannsResNet38Map0434",
+  "integration_handoff_sha256": "ac39cb76a729970414bdc1ad8b3508760f5834d81dabb2da474d3e5efada1a59",
+  "environment_spec_sha256": "2855e171ef7184ffaa04fe8455fd7602c8b12ef1ecc9f8e4b048434a3c2fb594",
+  "source_manifest_sha256": "0ba554a609371bc950b80f0525e7fe4a0b2c3d38c7814711da3b0d665389b994",
+  "model_card_id": "panns-resnet38-map-0434",
+  "environment_id": "panns-resnet38-map-0434",
+  "environment_fingerprint": "d66ce6f1081759c455ca4923bafac2648bf34e49bf423b1d621c3beb93009ef9",
+  "created_at": "2026-09-15T17:54:20.076507Z",
+  "platform": "macos-arm64",
+  "device": "cpu",
+  "checkpoint_sha256": "39454db77d80e6e482fb1428537d1a65d3bb87d3aa70660fb4d13d5af90b2f97",
+  "checkpoint_specification_fingerprint": "3593bb8f23677810e355448467c4b9f0bbbcd20d58f88f92385b2244914e97ba",
+  "checkpoint_materialization": {
+    "path": ".torch-dae/checkpoints/panns-resnet38-map-0434/39454db77d80e6e482fb1428537d1a65d3bb87d3aa70660fb4d13d5af90b2f97/checkpoint-materialization.json",
+    "sha256": "ea2db98dabcca2126ba0aa3dc58931a1d1461dc47068f852765994606f14c141"
+  },
+  "input_contracts": [
+    "waveform[B,C,T]",
+    "sample_rate",
+    "valid_lengths[B]"
+  ],
+  "tensor_observations": [
+    {
+      "name": "logits",
+      "role": "output",
+      "component_path": "outputs.tensors.logits",
+      "shape": [
+        {
+          "name": "B",
+          "size": 1,
+          "dynamic": true,
+          "description": null
+        },
+        {
+          "name": "527",
+          "size": 527,
+          "dynamic": false,
+          "description": null
+        }
+      ],
+      "rank": 2,
+      "dtype": "float32",
+      "device": "cpu",
+      "lengths": null,
+      "temporal_metadata": null
+    },
+    {
+      "name": "probabilities",
+      "role": "output",
+      "component_path": "outputs.tensors.probabilities",
+      "shape": [
+        {
+          "name": "B",
+          "size": 1,
+          "dynamic": true,
+          "description": null
+        },
+        {
+          "name": "527",
+          "size": 527,
+          "dynamic": false,
+          "description": null
+        }
+      ],
+      "rank": 2,
+      "dtype": "float32",
+      "device": "cpu",
+      "lengths": null,
+      "temporal_metadata": null
+    },
+    {
+      "name": "embedding",
+      "role": "embedding",
+      "component_path": "outputs.tensors.embedding",
+      "shape": [
+        {
+          "name": "B",
+          "size": 1,
+          "dynamic": true,
+          "description": null
+        },
+        {
+          "name": "2048",
+          "size": 2048,
+          "dynamic": false,
+          "description": null
+        }
+      ],
+      "rank": 2,
+      "dtype": "float32",
+      "device": "cpu",
+      "lengths": null,
+      "temporal_metadata": null
+    }
+  ],
+  "embedding_results": [
+    "panns-official-post-fc1-embedding"
+  ],
+  "passed_capabilities": [
+    "random-initialization",
+    "checkpoint-authority-metadata",
+    "checkpoint-acquisition-integrity",
+    "checkpoint-offline-cache-reuse",
+    "checkpoint-deserialization",
+    "checkpoint-strict-state-dictionary-load",
+    "invalid-checkpoint-rejected",
+    "integrated-variant-agreement",
+    "canonical-waveform-input",
+    "batch-behavior",
+    "zero-input-behavior",
+    "duration-constraints",
+    "equal-valid-lengths",
+    "invalid-input-rejection",
+    "checkpoint-loaded-cpu-forward",
+    "checkpoint-output-contract",
+    "checkpoint-probability-contract",
+    "checkpoint-native-output-parity",
+    "checkpoint-default-embedding",
+    "audioset-label-contract",
+    "checkpoint-deterministic-evaluation",
+    "cpu-device-placement",
+    "checkpoint-differentiability",
+    "mps-native-execution"
+  ],
+  "unsupported_capabilities": [
+    "automatic-resampling",
+    "padded-variable-valid-lengths"
+  ],
+  "known_limitations": [
+    "Exact checkpoint-to-source historical equivalence remains unresolved.",
+    "The paper Hamming versus selected-source Hann window discrepancy remains unresolved.",
+    "Automatic resampling and arbitrary padded variable-length batches are not supported by the accepted integration.",
+    "CUDA and non-macOS platforms are outside this local verification scope.",
+    "panns-resnet38-map-0434 requires sample_rate=32000; automatic resampling is not supported",
+    "PANNs integration does not yet define padded-batch semantics; every valid_lengths value must equal the waveform time dimension T"
+  ],
+  "required_check_ids": [
+    "random-initialization",
+    "checkpoint-authority-metadata",
+    "checkpoint-acquisition-integrity",
+    "checkpoint-offline-cache-reuse",
+    "checkpoint-deserialization",
+    "checkpoint-strict-state-dictionary-load",
+    "invalid-checkpoint-rejected",
+    "integrated-variant-agreement",
+    "canonical-waveform-input",
+    "batch-behavior",
+    "zero-input-behavior",
+    "duration-constraints",
+    "equal-valid-lengths",
+    "invalid-input-rejection",
+    "checkpoint-loaded-cpu-forward",
+    "checkpoint-output-contract",
+    "checkpoint-probability-contract",
+    "checkpoint-native-output-parity",
+    "checkpoint-default-embedding",
+    "audioset-label-contract",
+    "checkpoint-deterministic-evaluation",
+    "cpu-device-placement",
+    "checkpoint-differentiability"
+  ],
+  "optional_check_ids": [
+    "automatic-resampling",
+    "padded-variable-valid-lengths",
+    "mps-native-execution"
+  ],
+  "checks": [
+    {
+      "name": "random-initialization",
+      "status": "passed",
+      "details": "Public from_random constructor and finite synthetic CPU forward passed."
+    },
+    {
+      "name": "checkpoint-authority-metadata",
+      "status": "passed",
+      "details": "Authority metadata validated by checkpoint manager."
+    },
+    {
+      "name": "checkpoint-acquisition-integrity",
+      "status": "passed",
+      "details": "Managed cache validated size, checksums and SHA-256."
+    },
+    {
+      "name": "checkpoint-offline-cache-reuse",
+      "status": "passed",
+      "details": "Offline manager revalidated retained bytes and provenance."
+    },
+    {
+      "name": "checkpoint-deserialization",
+      "status": "passed",
+      "details": "torch.load(weights_only=True, map_location='cpu'): model state mapping validated."
+    },
+    {
+      "name": "checkpoint-strict-state-dictionary-load",
+      "status": "passed",
+      "details": "Public load_checkpoint(strict=True): all keys matched; no missing/unexpected keys."
+    },
+    {
+      "name": "invalid-checkpoint-rejected",
+      "status": "passed",
+      "details": "Public strict loader rejects empty state-dictionary and missing model payload key."
+    },
+    {
+      "name": "integrated-variant-agreement",
+      "status": "passed",
+      "details": "Fixed wrapper/checkpoint/variant identities agree; wrong variant rejected."
+    },
+    {
+      "name": "canonical-waveform-input",
+      "status": "passed",
+      "details": "Checkpoint-loaded float32 [1,1,20480] forward; all tensors finite."
+    },
+    {
+      "name": "batch-behavior",
+      "status": "passed",
+      "details": "Two-item batch: finite [2,527]; first item agrees with single forward."
+    },
+    {
+      "name": "zero-input-behavior",
+      "status": "passed",
+      "details": "Zero waveform produces finite logits, probabilities and embedding."
+    },
+    {
+      "name": "duration-constraints",
+      "status": "passed",
+      "details": "Below 9920 samples rejected; 0.64s/1s/2s zeros passed; alignment enforced."
+    },
+    {
+      "name": "equal-valid-lengths",
+      "status": "passed",
+      "details": "Equal [B] valid_lengths preserves output; wrong vector shape rejected."
+    },
+    {
+      "name": "invalid-input-rejection",
+      "status": "passed",
+      "details": "Wrong rank, stereo, integer dtype and sample rate rejected."
+    },
+    {
+      "name": "checkpoint-loaded-cpu-forward",
+      "status": "passed",
+      "details": "Checkpoint-loaded public CPU forward completed with finite outputs."
+    },
+    {
+      "name": "checkpoint-output-contract",
+      "status": "passed",
+      "details": "Declared output ranks, shapes, float32 dtype, CPU placement and finiteness match."
+    },
+    {
+      "name": "checkpoint-probability-contract",
+      "status": "passed",
+      "details": "[1,527] public predict_probability equals sigmoid(logits), bounded in [0,1]."
+    },
+    {
+      "name": "checkpoint-native-output-parity",
+      "status": "passed",
+      "details": "Public tensors equal a separate native upstream forward exactly in eval mode."
+    },
+    {
+      "name": "checkpoint-default-embedding",
+      "status": "passed",
+      "details": "Default embedding: [1,2048], equal to native embedding."
+    },
+    {
+      "name": "audioset-label-contract",
+      "status": "passed",
+      "details": "527 output columns match upstream AudioSet index/MID/display-name order."
+    },
+    {
+      "name": "checkpoint-deterministic-evaluation",
+      "status": "passed",
+      "details": "All logits, probabilities and embeddings repeat exactly with eval/dropout disabled."
+    },
+    {
+      "name": "cpu-device-placement",
+      "status": "passed",
+      "details": "Public .to('cpu') parameters, buffers and checkpoint-loaded forward remain on CPU."
+    },
+    {
+      "name": "checkpoint-differentiability",
+      "status": "passed",
+      "details": "Logits/embedding backpropagate finite waveform, all trainable fc_audioset gradients and backbone gradient bn0.weight; waveform gradient nonzero entries=20480/20480. Zero gradients on this input do not imply a disconnected graph."
+    },
+    {
+      "name": "automatic-resampling",
+      "status": "unsupported",
+      "details": "panns-resnet38-map-0434 requires sample_rate=32000; automatic resampling is not supported"
+    },
+    {
+      "name": "padded-variable-valid-lengths",
+      "status": "unsupported",
+      "details": "PANNs integration does not yet define padded-batch semantics; every valid_lengths value must equal the waveform time dimension T"
+    },
+    {
+      "name": "mps-native-execution",
+      "status": "passed",
+      "details": "Native MPS checkpoint-loaded forward passed with fallback disabled."
+    }
+  ],
+  "verification_status": "passed"
+}

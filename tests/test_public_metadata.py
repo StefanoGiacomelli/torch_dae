@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import re
 import subprocess
 import sys
@@ -13,11 +12,6 @@ import pytest
 import yaml
 
 from scripts.validate_repository import MODEL_DEPS, numbered_stage_errors
-
-
-def git_blob_hash(path: Path) -> str:
-    data = path.read_bytes()
-    return hashlib.sha1(f"blob {len(data)}\0".encode() + data).hexdigest()
 
 
 def markdown_link_errors(root: Path, paths: list[Path]) -> list[str]:
@@ -36,10 +30,13 @@ def markdown_link_errors(root: Path, paths: list[Path]) -> list[str]:
     return errors
 
 
-def test_project_spec_is_byte_preserved(repo_root: Path) -> None:
-    assert (
-        git_blob_hash(repo_root / "project_spec.md") == "e915c388190e64aeebaae2efead051ef98fe8a18"
+def test_project_spec_records_card_independent_authority(repo_root: Path) -> None:
+    specification = (repo_root / "project_spec.md").read_text()
+    assert "accepted environment definitions, not model cards, authorize materialization" in (
+        specification
     )
+    assert "RuntimeVerificationTarget" in specification
+    assert "EnvironmentVerificationResult" in specification
 
 
 def test_tracked_paths_and_text_are_free_of_numbered_stage_labels(repo_root: Path) -> None:
@@ -117,11 +114,12 @@ def test_license_citation_and_contribution_files(repo_root: Path) -> None:
 
     contribution = (repo_root / "CONTRIBUTING.md").read_text()
     for value in (
-        "uv sync --all-groups",
+        "uv sync --python 3.11 --all-groups --extra profiling --frozen",
         "ruff format --check",
         "mypy src scripts",
         "pytest",
         "generate_schemas.py",
+        "generate_profiling_schema.py --check",
         "validate_repository.py",
         "validate_skill_artifacts.py",
         "model-specific runtime dependencies",
@@ -188,9 +186,8 @@ def test_readme_badges_sections_and_public_status(repo_root: Path) -> None:
     assert "pip install torch-deepaudioembedding" in text
 
     normalized_text = " ".join(text.split())
-    assert (
-        "No model-specific integrations are distributed in the current release." in normalized_text
-    )
+    assert "production PANNs adapters" in normalized_text
+    assert "No pretrained checkpoint payload or checkpoint-specific model card" in normalized_text
     assert "uv run torch-dae card list" in text
     assert "uv run torch-dae env create" in text
     assert "uv run torch-dae checkpoint ensure" in text
@@ -216,6 +213,7 @@ def test_agent_templates_have_exact_contract(repo_root: Path) -> None:
     request = (repo_root / "skills/audio-model-onboarding/templates/agent-request.md").read_text()
     for placeholder in (
         "MODE: <analyze | resolve-environment | integrate | verify | card>",
+        "WORKFLOW_ID: <STABLE_WORKFLOW_ID_OR_AUTO_DISCOVER>",
         "MODEL_NAME: <MODEL_NAME>",
         "UPSTREAM_REPOSITORY: <GITHUB_REPOSITORY_URL>",
         "PAPER_OR_TECHNICAL_REFERENCE: <PAPER_URL_OR_NONE>",
@@ -229,6 +227,11 @@ def test_agent_templates_have_exact_contract(repo_root: Path) -> None:
     for heading in (
         "## Summary",
         "## Work completed",
+        "## Consumed handoff",
+        "## Produced handoff",
+        "## Finalize result",
+        "## Evidence invariance",
+        "## Workspace cleanup",
         "## Problems and resolutions",
         "## Open questions",
         "## Files",
@@ -346,8 +349,6 @@ def test_no_future_integration_roadmap_terminology(repo_root: Path) -> None:
     prohibited_terms = (
         "pi" + "lot",
         "pi" + "lots",
-        "pa" + "nns",
-        "cn" + "n14",
         "byol" + "-a",
         "en" + "codec",
         "audio" + "clip",

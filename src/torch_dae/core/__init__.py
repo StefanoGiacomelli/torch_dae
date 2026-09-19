@@ -2,12 +2,18 @@
 
 from torch_dae.core.capabilities import Capability, ModelCapabilities
 from torch_dae.core.checkpoint import (
+    CheckpointAcquisitionPolicy,
+    CheckpointAuthority,
+    CheckpointAuthorityResolution,
     CheckpointManager,
     CheckpointMaterializationRecord,
     CheckpointSourceType,
     CheckpointSpec,
     LicenseRecord,
+    ObservedChecksum,
+    PublishedChecksum,
     ResolvedCheckpoint,
+    resolve_checkpoint_authority,
 )
 from torch_dae.core.embeddings import EmbeddingSpec
 from torch_dae.core.errors import FeatureNotAvailableError, UnsupportedCapabilityError
@@ -24,6 +30,9 @@ __all__ = [
     "AudioModelOutput",
     "AudioModelProtocol",
     "Capability",
+    "CheckpointAcquisitionPolicy",
+    "CheckpointAuthority",
+    "CheckpointAuthorityResolution",
     "CheckpointManager",
     "CheckpointMaterializationRecord",
     "CheckpointSourceType",
@@ -33,9 +42,12 @@ __all__ = [
     "FeatureNotAvailableError",
     "LicenseRecord",
     "ModelCapabilities",
+    "ObservedChecksum",
     "PreprocessingOutput",
+    "PublishedChecksum",
     "ResolvedCheckpoint",
     "TensorLike",
     "UnsupportedCapabilityError",
     "WaveformInputContract",
+    "resolve_checkpoint_authority",
 ]

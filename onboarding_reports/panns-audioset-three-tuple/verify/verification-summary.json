@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0.0",
+  "workflow_id": "panns-audioset-three-tuple",
+  "integration_handoff_sha256": "ac39cb76a729970414bdc1ad8b3508760f5834d81dabb2da474d3e5efada1a59",
+  "package_identity": "content-sha256:9123000a875d88806d83c6e57e2977a703ff47ca452cfa1d1d25ae775c30fcc6",
+  "wheel_sha256": "ccd51952538e5b18e4ba1c09aefbf77026bff4ed1588bb7b42427663b20a4d9f",
+  "runtime_implementation": {
+    "executor_sha256": "2c9ae2e229e6c78cc49b4e74ff2f7c97da80d0d33510441c0bddebf3d60260a5",
+    "worker_sha256": "043beb65afbe8e42769f0c6c1a0334791327e8fa0bdf06dd65664066b4fb6a85",
+    "provider_sha256": "638bea4d81e8e087d8d54c9998dfe7ec664ca44f33c80d68d6381c3b60be9a4a"
+  },
+  "targets": [
+    {
+      "checkpoint_id": "panns-cnn14-16k-map-0438",
+      "environment_fingerprint": "db47eb04412793e51daf7905b4c2d4d012046a9e8d267cc6f1ad0e1487b6e6c3",
+      "checkpoint_sha256": "e2ee543a27919542c2ea03eabaa70b24dcd4e6c8e05621de6b67a94e4c5058e6",
+      "strict_load": "passed",
+      "required": {"passed": 23, "total": 23},
+      "optional": {"passed": 1, "unsupported": 2, "total": 3},
+      "verification_status": "passed"
+    },
+    {
+      "checkpoint_id": "panns-resnet38-map-0434",
+      "environment_fingerprint": "d66ce6f1081759c455ca4923bafac2648bf34e49bf423b1d621c3beb93009ef9",
+      "checkpoint_sha256": "39454db77d80e6e482fb1428537d1a65d3bb87d3aa70660fb4d13d5af90b2f97",
+      "strict_load": "passed",
+      "required": {"passed": 23, "total": 23},
+      "optional": {"passed": 1, "unsupported": 2, "total": 3},
+      "verification_status": "passed"
+    },
+    {
+      "checkpoint_id": "panns-wavegram-logmel-cnn14-map-0439",
+      "environment_fingerprint": "9c2cf158bc69fed87690a237b66fff9501f789e4b1db72c57b80983877330f36",
+      "checkpoint_sha256": "6c1c917d780967c40bbfd0f20027bd394a7da72453ca716745fe8657206200ae",
+      "strict_load": "passed",
+      "required": {"passed": 23, "total": 23},
+      "optional": {"passed": 1, "unsupported": 2, "total": 3},
+      "verification_status": "passed"
+    }
+  ],
+  "atomic_promotion_eligible": true,
+  "next_mode": "card"
+}

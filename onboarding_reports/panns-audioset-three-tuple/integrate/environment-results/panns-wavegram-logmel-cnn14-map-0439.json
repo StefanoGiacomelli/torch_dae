@@ -1,0 +1,99 @@
+{
+  "completed_at": "2026-08-01T18:06:58.945235Z",
+  "direct_dependency_versions": {
+    "jsonschema": "4.26.0",
+    "numpy": "2.4.6",
+    "packaging": "26.2",
+    "platformdirs": "4.11.0",
+    "pydantic": "2.13.4",
+    "pypdf": "6.14.2",
+    "torch": "2.13.0",
+    "torchlibrosa": "0.1.0",
+    "typer": "0.27.0"
+  },
+  "environment_fingerprint": "c4f3ab5be95c952ea18b750eba1b9a8c5f9fa720553521390c4d281bab198521",
+  "environment_id": "panns-wavegram-logmel-cnn14-map-0439",
+  "environment_smoke_results": [
+    {
+      "details": "Direct dependencies, installed sources, and the local wheel matched.",
+      "name": "dependency-and-source-integrity",
+      "status": "passed"
+    }
+  ],
+  "environment_spec_sha256": "e29880e85eee0ce25de304f567e474e90314fb2fd47899d40a40e9e61bc36e5f",
+  "evidence": [
+    {
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/environment.json",
+      "sha256": "e29880e85eee0ce25de304f567e474e90314fb2fd47899d40a40e9e61bc36e5f"
+    },
+    {
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/pyproject.toml",
+      "sha256": "5825e7d135916a78cd896eda8ef11936e8797986166c62bb0675821fdc943061"
+    },
+    {
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/uv.lock",
+      "sha256": "bd266ff4ef9fa581fc65c9c906a37ac32b884545c32b7edd9bbcf5565c7b1af1"
+    },
+    {
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/sources.json",
+      "sha256": "a76db3dc217ad376d5b0cecedf03c067f2da2414d057ec563e3503ebf329f08f"
+    },
+    {
+      "path": "environments/panns-wavegram-logmel-cnn14-map-0439/verify_environment.py",
+      "sha256": "ffde27bdb9eaa17946c17ed15146eb5be0ff9ef5cf3a70f115ba9f0980a39297"
+    },
+    {
+      "path": "reports/environments/panns-wavegram-logmel-cnn14-map-0439/c4f3ab5be95c952ea18b750eba1b9a8c5f9fa720553521390c4d281bab198521/verification-commands/python-inspection-74f2cabd1bf141ca88d96fdaaeeeed3b.json",
+      "sha256": "931139d7a74fdf85b95c6025cd52352670cb637347d8fcbb53c7a9d7690b8c0c"
+    },
+    {
+      "path": "reports/environments/panns-wavegram-logmel-cnn14-map-0439/c4f3ab5be95c952ea18b750eba1b9a8c5f9fa720553521390c4d281bab198521/verification-commands/installed-distributions-825529c5adb9422ab336fd29b1413588.json",
+      "sha256": "c201868f2bc800bda59f732c8890c4a64f79fda041ea529ba85c6f4070dabb0f"
+    },
+    {
+      "path": "reports/environments/panns-wavegram-logmel-cnn14-map-0439/c4f3ab5be95c952ea18b750eba1b9a8c5f9fa720553521390c4d281bab198521/verification-commands/dependency-check-847fd0dbbbde43238ca286b8b5d9aad4.json",
+      "sha256": "d745db6cff3640f9012449cc21c0a31c326edb5d11edba8d61049ce05fb6d495"
+    },
+    {
+      "path": "reports/environments/panns-wavegram-logmel-cnn14-map-0439/c4f3ab5be95c952ea18b750eba1b9a8c5f9fa720553521390c4d281bab198521/verification-commands/distribution-inspection-9f0fb44159484ddea3f634190a8d2f75.json",
+      "sha256": "5f8e4ee7ba02673e0a3c8f3be256acc744e2b7d85daa3aaca9fa9ee595eb679b"
+    },
+    {
+      "path": "reports/environments/panns-wavegram-logmel-cnn14-map-0439/c4f3ab5be95c952ea18b750eba1b9a8c5f9fa720553521390c4d281bab198521/verification-commands/local-wheel-import-check-e3c8fdaa640444c895b92f3e5e8084ae.json",
+      "sha256": "a49298dc9d081473a42d0fcc2affe1a3875bb778ee8085a6a67d580d71417d16"
+    },
+    {
+      "path": "reports/environments/panns-wavegram-logmel-cnn14-map-0439/c4f3ab5be95c952ea18b750eba1b9a8c5f9fa720553521390c4d281bab198521/verification-commands/installed-distributions-cb584629abeb409ebaa452061f578fb8.json",
+      "sha256": "1a9e80a2035008ac7154478d5f04aee36e7505cdcd95bf6eb8143b715b0f8bda"
+    },
+    {
+      "path": "reports/environments/panns-wavegram-logmel-cnn14-map-0439/c4f3ab5be95c952ea18b750eba1b9a8c5f9fa720553521390c4d281bab198521/verification-commands/distribution-inspection-34c782042498462f962117e0591fe2ce.json",
+      "sha256": "b2ded31814822db4d84d0f96a1cc2b18b9fdca2e871465d02d01a408dd445e8b"
+    },
+    {
+      "path": "reports/environments/panns-wavegram-logmel-cnn14-map-0439/c4f3ab5be95c952ea18b750eba1b9a8c5f9fa720553521390c4d281bab198521/verification-commands/verification-script-90ca737c39f342868d5385550ac59c36.json",
+      "sha256": "c6fe64e3c4981f90259dd9183cdfdbd6db9d0080281417bc74c98e8cdf99f673"
+    }
+  ],
+  "exact_interpreter": "CPython 3.12.13",
+  "failure_classification": null,
+  "import_results": [
+    {
+      "details": "The committed environment verification script completed.",
+      "name": "verification-script-imports",
+      "status": "passed"
+    }
+  ],
+  "lifecycle_state": "environment_verified",
+  "materialization_result_reference": {
+    "path": "environments/panns-wavegram-logmel-cnn14-map-0439/c4f3ab5be95c952ea18b750eba1b9a8c5f9fa720553521390c4d281bab198521/torch-dae-materialization.json",
+    "sha256": "488cad44df471e6816bf8832259517bf338ba7fa7726ce66b2f6925e24d704b3"
+  },
+  "platform": "macos-arm64",
+  "result_path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-results/panns-wavegram-logmel-cnn14-map-0439.json",
+  "schema_version": "1.0.0",
+  "started_at": "2026-08-01T18:04:56.309574Z",
+  "verification_script_sha256": "ffde27bdb9eaa17946c17ed15146eb5be0ff9ef5cf3a70f115ba9f0980a39297",
+  "verification_status": "passed",
+  "warnings": []
+}

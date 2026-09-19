@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0.0",
+  "environment_id": "panns-wavegram-logmel-cnn14-map-0439",
+  "sources": [
+    {
+      "source_id": "panns-upstream-minimal-vendor",
+      "role": "model_implementation",
+      "installation": "vendored",
+      "upstream_url": "https://github.com/qiuqiangkong/audioset_tagging_cnn",
+      "upstream_revision": "58d0e624a2055fb1f2b5fb06369ecd726cfe64e0",
+      "copied_files": [
+        "src/torch_dae/models/panns/_vendor/LICENSE.MIT",
+        "src/torch_dae/models/panns/_vendor/models.py",
+        "src/torch_dae/models/panns/_vendor/pytorch_utils.py",
+        "src/torch_dae/models/panns/resources/class_labels_indices.csv"
+      ],
+      "adaptation_description": "Production minimal source reduction retains only the upstream symbols required by Cnn14_16k, ResNet38, and Wavegram_Logmel_Cnn14; adapts the pytorch_utils import to package-relative form; and exposes the existing fc_audioset result as raw logits before applying the unchanged sigmoid. The authoritative ordered AudioSet class metadata is copied unchanged.",
+      "justification": "The official repository is not packaged, the official inference package omits the requested classes, and the retained source dependency closure, license, and authoritative 527-class metadata form the minimal production substrate for all three accepted identities."
+    }
+  ]
+}

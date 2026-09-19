@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0.0",
+  "report_id": "panns-three-tuple-analysis",
+  "supplements": [
+    {
+      "supplement_id": "manual-preflight",
+      "reason": "Repository baseline and release-identity gates are outside the upstream static inspectors.",
+      "determination": "Verified branch pilot/panns-skill-analysis-v2, HEAD 858f7c3b2d9a48ac790f427c51674c33ba7aee63, clean worktree/index including untracked files, project_spec.md Git blob e915c388190e64aeebaae2efead051ef98fe8a18 equal to the starting commit, annotated v0.1.0 tag object 3f9ed16db9fa4109ddb720f2bc95094ddf94c9aa dereferencing to 5387bfc301dea8b4e4dc4d4c855c8dd978f84d24, and project version 0.1.0."
+    },
+    {
+      "supplement_id": "manual-zenodo-metadata",
+      "reason": "The checkpoint inspector found only the Cnn14_16k README URL and did not query authoritative host metadata.",
+      "determination": "Queried only Zenodo record metadata/API, filtered the three requested file entries, preserved their md5 algorithms and digests, sizes, file IDs, record-level access/license metadata, and did not request asset content URLs."
+    },
+    {
+      "supplement_id": "manual-paper-review",
+      "reason": "The bounded PDF extractor exposes text but does not interpret or verify scientific claims.",
+      "determination": "Reviewed the supplied arXiv v5 text for architecture, preprocessing, embeddings, metrics, and scope; cross-checked the peer-reviewed publication identity supplied by the user. Extraction status was ok, 15 pages, 84405 characters, no OCR."
+    },
+    {
+      "supplement_id": "manual-source-chronology-cnn16",
+      "reason": "Static inspectors record the inspected revision but do not establish candidate-specific checkpoint/source chronology.",
+      "determination": "Applied the bounded hierarchy independently. No host revision, associated tag, release, or cited commit exists. Default-branch nearest preceding candidate is 802432669263a31af0c448dd8d7b677af3815c01. Side-branch 58d0e624a2055fb1f2b5fb06369ecd726cfe64e0 adds the exact Cnn14_16k checkpoint name shortly before record creation but is not a current-master ancestor. Both remain unverified candidates."
+    },
+    {
+      "supplement_id": "manual-source-chronology-resnet38",
+      "reason": "Static inspectors record the inspected revision but do not establish candidate-specific checkpoint/source chronology.",
+      "determination": "Applied the bounded hierarchy independently. No host revision, associated tag, release, cited commit, or filename-bearing repository history was found. Default-branch nearest preceding candidate 802432669263a31af0c448dd8d7b677af3815c01 contains ResNet38 but remains chronological inference only."
+    },
+    {
+      "supplement_id": "manual-source-chronology-wavegram",
+      "reason": "Static inspectors record the inspected revision but do not establish candidate-specific checkpoint/source chronology.",
+      "determination": "Applied the bounded hierarchy independently. No host revision, associated tag, release, cited commit, or filename-bearing repository history was found. Default-branch nearest preceding candidate 802432669263a31af0c448dd8d7b677af3815c01 contains Wavegram_Logmel_Cnn14 but remains chronological inference only."
+    },
+    {
+      "supplement_id": "manual-historic-inspection-workaround",
+      "reason": "Full historic checkout inspection first encountered an evidence-path validation failure from leading-underscore paths, then a syntax error in an unrelated backup Python file.",
+      "determination": "Used sparse, read-only historic worktrees containing README.md, LICENSE.MIT, requirements.txt, and the relevant production pytorch source files. Ran all six canonical inspectors on both 802432669263a31af0c448dd8d7b677af3815c01 and 58d0e624a2055fb1f2b5fb06369ecd726cfe64e0; retained the failures and workaround in this audit record."
+    },
+    {
+      "supplement_id": "manual-source-interpretation",
+      "reason": "Static candidates do not establish architecture, output, or embedding semantics.",
+      "determination": "Read the requested class constructors/forwards, shared blocks, inference loader, data preprocessing, requirements, README, and paper. Distinguished the upstream named post-fc1 embedding from pooled, temporal, branch-local, and fused architectural candidates."
+    },
+    {
+      "supplement_id": "manual-official-package-assessment",
+      "reason": "The main repository README links an official package that must be considered before Git/vendoring strategies.",
+      "determination": "Read-only cloned and statically inspected qiuqiangkong/panns_inference at f673f604ec6f4805a61c5b3be087e24776ec5fda. It does not contain the three requested classes and includes uncontrolled wget behavior, so it is not a complete strategy for this scope."
+    }
+  ]
+}

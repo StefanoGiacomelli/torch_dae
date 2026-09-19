@@ -105,7 +105,10 @@
       "environment_id": "synthetic-family-variant-checkpoint",
       "specification": "environments/synthetic-family-variant-checkpoint/environment.json",
       "lockfile": "environments/synthetic-family-variant-checkpoint/uv.lock",
-      "verified": true
+      "verified": true,
+      "fingerprint": "5555555555555555555555555555555555555555555555555555555555555555",
+      "verification_result": "onboarding_reports/synthetic/verify/environment-verification-result.json",
+      "verification_result_sha256": "7777777777777777777777777777777777777777777777777777777777777777"
     },
     "installation_commands": [],
     "checkpoint_loading": [],
@@ -207,7 +210,10 @@
     ],
     "known_limitations": []
   },
+  "runtime_verification_target": "onboarding_reports/synthetic/verify/runtime-verification-target.json",
+  "runtime_verification_target_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
   "verification_report": "verification_reports/synthetic-family-variant-checkpoint-runtime.json",
+  "verification_report_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
   "architectural_profiling": {
     "status": "not_profiled",
     "report": null

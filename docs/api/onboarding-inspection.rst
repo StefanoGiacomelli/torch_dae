@@ -36,10 +36,12 @@ Inspector responsibilities
    * - ``inspect_model_candidates``
      - ``nn.Module``-like class and model/load/preprocess-named function candidates.
    * - ``inspect_output_candidates``
-     - Forward return keys and tensor-like assignment names, without claiming embedding semantics.
+     - Forward return keys and tensor-like assignment names with lexical class/method ownership and
+       source spans, without claiming embedding semantics.
    * - ``inspect_checkpoints``
      - Local checkpoint-like paths, literal URLs/hashes, and statically resolvable helper
-       associations; unresolved components remain explicit.
+       associations; binary and malformed text paths are skipped per file with deterministic
+       reasons, while unresolved components remain explicit.
    * - ``classify_source_strategy``
      - Packaging, framework, revision, officiality, vendoring, external-implementation, ambiguity,
        and decision evidence. It does not choose among unresolved strategies.
@@ -49,9 +51,10 @@ Inspector responsibilities
    * - ``inspect_scenario_repository``
      - One validated aggregate built by the same production inspectors under one shared budget.
 
-Malformed files, unsafe paths, unsupported symlinks, syntax errors, and budget exhaustion raise
-:class:`OnboardingInspectionError`. Missing or ambiguous evidence usually remains in returned
-candidates rather than becoming a fact.
+Unsafe fixed artifacts, unsupported symlinks, Python syntax errors, and budget exhaustion raise
+:class:`OnboardingInspectionError`. Checkpoint discovery isolates arbitrary binary or malformed text
+files in ``skipped_files`` so one unrelated file cannot erase valid text candidates. Missing or
+ambiguous evidence usually remains in returned candidates rather than becoming a fact.
 
 Synthetic offline example
 -------------------------

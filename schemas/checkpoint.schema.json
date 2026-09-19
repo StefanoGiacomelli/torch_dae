@@ -1,5 +1,71 @@
 {
   "$defs": {
+    "CheckpointAuthority": {
+      "additionalProperties": false,
+      "description": "Immutable authoritative identity for one provider record file.",
+      "properties": {
+        "expected_size_bytes": {
+          "exclusiveMinimum": 0,
+          "title": "Expected Size Bytes",
+          "type": "integer"
+        },
+        "filename": {
+          "minLength": 1,
+          "title": "Filename",
+          "type": "string"
+        },
+        "provenance_status": {
+          "const": "authoritative_provider_declared",
+          "minLength": 1,
+          "title": "Provenance Status",
+          "type": "string"
+        },
+        "provider": {
+          "const": "zenodo",
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        },
+        "published_checksums": {
+          "items": {
+            "$ref": "#/$defs/PublishedChecksum"
+          },
+          "title": "Published Checksums",
+          "type": "array"
+        },
+        "record_id": {
+          "minLength": 1,
+          "pattern": "^[1-9][0-9]*$",
+          "title": "Record Id",
+          "type": "string"
+        },
+        "record_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Record Url"
+        }
+      },
+      "required": [
+        "provider",
+        "record_id",
+        "filename",
+        "expected_size_bytes",
+        "published_checksums",
+        "provenance_status"
+      ],
+      "title": "CheckpointAuthority",
+      "type": "object"
+    },
     "CheckpointSourceType": {
       "description": "Enumerate supported checkpoint acquisition categories.\n\n``https`` streams a direct URL; ``github_release`` resolves a repository, tag, and filename;\n``huggingface`` resolves a repository, optional revision, and filename; ``package_bundle``\nreads a file from an exact installed package; and ``local_path`` copies a repository-relative\nfile. The enum selects validation and acquisition behavior.",
       "enum": [
@@ -11,6 +77,16 @@
       ],
       "minLength": 1,
       "title": "CheckpointSourceType",
+      "type": "string"
+    },
+    "ChecksumAlgorithm": {
+      "description": "Published digest algorithms understood by the checkpoint authority contract.",
+      "enum": [
+        "md5",
+        "sha256"
+      ],
+      "minLength": 1,
+      "title": "ChecksumAlgorithm",
       "type": "string"
     },
     "LicenseRecord": {
@@ -63,6 +139,26 @@
         "status"
       ],
       "title": "LicenseRecord",
+      "type": "object"
+    },
+    "PublishedChecksum": {
+      "additionalProperties": false,
+      "description": "One digest explicitly published by an authoritative provider.",
+      "properties": {
+        "algorithm": {
+          "$ref": "#/$defs/ChecksumAlgorithm"
+        },
+        "digest": {
+          "minLength": 1,
+          "title": "Digest",
+          "type": "string"
+        }
+      },
+      "required": [
+        "algorithm",
+        "digest"
+      ],
+      "title": "PublishedChecksum",
       "type": "object"
     }
   },
@@ -269,6 +365,17 @@
   ],
   "description": "Validate one concrete checkpoint source and loader contract.\n\nAttributes\n----------\nschema_version, checkpoint_id, source_type\n    Contract version, canonical asset identity, and acquisition category.\nurl, repository_id, package, package_version, revision, release_tag, filename, local_path\n    Source-specific location fields. Paths and filenames must be safe and repository-relative.\nexpected_sha256, observed_sha256\n    Optional lowercase hexadecimal SHA-256 values; when both exist they must agree.\nformat, loader\n    Serialization format and model-specific loader description.\nlicense\n    Informational license record.\n\nRaises\n------\npydantic.ValidationError\n    If required source fields are missing, contradictory fields are present, a path escapes the\n    repository, or hashes disagree.\n\nNotes\n-----\nValidation performs no network access and does not deserialize model weights.",
   "properties": {
+    "authority": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CheckpointAuthority"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "checkpoint_id": {
       "minLength": 1,
       "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
@@ -409,7 +516,10 @@
       "title": "Revision"
     },
     "schema_version": {
-      "const": "1.0.0",
+      "enum": [
+        "1.0.0",
+        "2.0.0"
+      ],
       "minLength": 1,
       "title": "Schema Version",
       "type": "string"

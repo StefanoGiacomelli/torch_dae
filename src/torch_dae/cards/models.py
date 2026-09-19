@@ -17,6 +17,7 @@ from torch_dae.contracts import (
 )
 from torch_dae.core.checkpoint import CheckpointSpec
 from torch_dae.core.embeddings import EmbeddingSpec
+from torch_dae.environment.results import ArtifactEvidence
 
 
 class ModelCardLifecycle(StrEnum):
@@ -208,11 +209,31 @@ class RecommendedEnvironment(StrictBaseModel):
     specification: Annotated[str, Field(pattern=REPO_RELATIVE_PATTERN)]
     lockfile: Annotated[str, Field(pattern=REPO_RELATIVE_PATTERN)]
     verified: bool
+    fingerprint: Annotated[str | None, Field(pattern=r"^[0-9a-f]{64}$")] = None
+    verification_result: Annotated[str | None, Field(pattern=REPO_RELATIVE_PATTERN)] = None
+    verification_result_sha256: Annotated[str | None, Field(pattern=r"^[0-9a-f]{64}$")] = None
 
-    @field_validator("specification", "lockfile")
+    @field_validator("specification", "lockfile", "verification_result")
     @classmethod
-    def paths_repository_relative(cls, value: str) -> str:
-        return ensure_repository_relative(value) or value
+    def paths_repository_relative(cls, value: str | None) -> str | None:
+        return ensure_repository_relative(value)
+
+    @model_validator(mode="after")
+    def verified_requires_canonical_evidence(self) -> RecommendedEnvironment:
+        evidence = (
+            self.fingerprint,
+            self.verification_result,
+            self.verification_result_sha256,
+        )
+        if self.verified and any(item is None for item in evidence):
+            raise ValueError(
+                "verified recommended environments require fingerprint and verification evidence"
+            )
+        if not self.verified and any(item is not None for item in evidence):
+            raise ValueError(
+                "unverified recommended environments cannot claim verification evidence"
+            )
+        return self
 
 
 class Usage(StrictBaseModel):
@@ -374,6 +395,10 @@ class ModelCard(StrictBaseModel):
     card_status: ModelCardLifecycle
     identity: Identity
     checkpoint: CheckpointSpec
+    checkpoint_specification_fingerprint: Annotated[
+        str | None, Field(pattern=r"^[0-9a-f]{64}$")
+    ] = None
+    checkpoint_materialization: ArtifactEvidence | None = None
     sources: Sources
     scientific_reference: ScientificReference
     description: Description
@@ -386,7 +411,12 @@ class ModelCard(StrictBaseModel):
     embeddings: EmbeddingsSection
     capabilities: CapabilitiesSection
     device_support: DeviceSupport
+    runtime_verification_target: Annotated[str | None, Field(pattern=REPO_RELATIVE_PATTERN)] = None
+    runtime_verification_target_sha256: Annotated[str | None, Field(pattern=r"^[0-9a-f]{64}$")] = (
+        None
+    )
     verification_report: Annotated[str | None, Field(pattern=REPO_RELATIVE_PATTERN)] = None
+    verification_report_sha256: Annotated[str | None, Field(pattern=r"^[0-9a-f]{64}$")] = None
     architectural_profiling: ProfilingSection
     inference_profiling: ProfilingSection
     energy_profiling: ProfilingSection
@@ -394,7 +424,7 @@ class ModelCard(StrictBaseModel):
     issues: tuple[IssueRecord, ...]
     evidence: tuple[EvidenceRecord, ...]
 
-    @field_validator("verification_report")
+    @field_validator("runtime_verification_target", "verification_report")
     @classmethod
     def verification_report_repository_relative(cls, value: str | None) -> str | None:
         return ensure_repository_relative(value)
@@ -427,12 +457,33 @@ class ModelCard(StrictBaseModel):
         if (
             self.card_status
             in {
+                ModelCardLifecycle.CHECKPOINT_VERIFIED,
                 ModelCardLifecycle.RUNTIME_VERIFIED,
                 ModelCardLifecycle.PROFILED,
             }
-            and self.verification_report is None
+            and self.checkpoint.schema_version == "2.0.0"
+            and (
+                self.checkpoint_specification_fingerprint is None
+                or self.checkpoint_materialization is None
+            )
         ):
-            raise ValueError("runtime_verified and profiled cards require verification_report")
+            raise ValueError(
+                "authority-complete checkpoint claims require specification fingerprint and "
+                "materialization provenance"
+            )
+        if self.card_status in {
+            ModelCardLifecycle.RUNTIME_VERIFIED,
+            ModelCardLifecycle.PROFILED,
+        } and (
+            self.runtime_verification_target is None
+            or self.runtime_verification_target_sha256 is None
+            or self.verification_report is None
+            or self.verification_report_sha256 is None
+        ):
+            raise ValueError(
+                "runtime_verified and profiled cards require a runtime target and "
+                "verification report"
+            )
         if self.card_status == ModelCardLifecycle.PROFILED:
             for section in (
                 self.architectural_profiling,

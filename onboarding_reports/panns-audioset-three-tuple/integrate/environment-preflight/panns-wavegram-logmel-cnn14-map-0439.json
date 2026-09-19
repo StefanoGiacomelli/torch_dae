@@ -1,0 +1,79 @@
+{
+  "active_runtime_requirements": [
+    "jsonschema>=4.25.0",
+    "packaging>=26.0",
+    "platformdirs>=4.3.0",
+    "pydantic>=2.11.0",
+    "pypdf<7,>=6",
+    "typer>=0.16.0"
+  ],
+  "environment_id": "panns-wavegram-logmel-cnn14-map-0439",
+  "failure_classification": null,
+  "incompatible_requirements": [],
+  "installation_policy": "locked-project-closure-then-local-wheel-no-deps",
+  "lockfile_sha256": "bd266ff4ef9fa581fc65c9c906a37ac32b884545c32b7edd9bbcf5565c7b1af1",
+  "missing_requirements": [],
+  "package_wheel_identity": "torch-deepaudioembedding==0.1.0",
+  "package_wheel_sha256": "218fbf4e5bfe576d8beed092d22c620c858b191a0164ddf6f7f8fa3940e33a31",
+  "platform": "macos-arm64",
+  "python_version": "3.12.13",
+  "result_path": "onboarding_reports/panns-audioset-three-tuple/integrate/environment-preflight/panns-wavegram-logmel-cnn14-map-0439.json",
+  "satisfied_requirements": [
+    {
+      "marker": null,
+      "normalized_name": "jsonschema",
+      "reachable_versions": [
+        "4.26.0"
+      ],
+      "requirement": "jsonschema>=4.25.0",
+      "specifier": ">=4.25.0"
+    },
+    {
+      "marker": null,
+      "normalized_name": "packaging",
+      "reachable_versions": [
+        "26.2"
+      ],
+      "requirement": "packaging>=26.0",
+      "specifier": ">=26.0"
+    },
+    {
+      "marker": null,
+      "normalized_name": "platformdirs",
+      "reachable_versions": [
+        "4.11.0"
+      ],
+      "requirement": "platformdirs>=4.3.0",
+      "specifier": ">=4.3.0"
+    },
+    {
+      "marker": null,
+      "normalized_name": "pydantic",
+      "reachable_versions": [
+        "2.13.4"
+      ],
+      "requirement": "pydantic>=2.11.0",
+      "specifier": ">=2.11.0"
+    },
+    {
+      "marker": null,
+      "normalized_name": "pypdf",
+      "reachable_versions": [
+        "6.14.2"
+      ],
+      "requirement": "pypdf<7,>=6",
+      "specifier": "<7,>=6"
+    },
+    {
+      "marker": null,
+      "normalized_name": "typer",
+      "reachable_versions": [
+        "0.27.0"
+      ],
+      "requirement": "typer>=0.16.0",
+      "specifier": ">=0.16.0"
+    }
+  ],
+  "schema_version": "1.0.0",
+  "status": "passed"
+}

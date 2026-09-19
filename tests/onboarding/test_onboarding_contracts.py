@@ -11,6 +11,7 @@ from torch_dae.onboarding.contracts import (
     EnvironmentCandidateGenerationResult,
     EnvironmentResolutionReport,
     EvidenceItem,
+    PublishedChecksum,
     SourceStrategy,
 )
 from torch_dae.onboarding.inspection import generate_environment_candidates
@@ -22,6 +23,171 @@ def environment_resolution_data(repo_root: Path) -> dict[str, object]:
             repo_root / "tests/fixtures/valid/environment-resolution-report.synthetic.json"
         ).read_text()
     )
+
+
+def analysis_data(repo_root: Path) -> dict[str, object]:
+    return json.loads(
+        (repo_root / "tests/fixtures/valid/analysis-report.synthetic.json").read_text()
+    )
+
+
+def test_analysis_report_scopes_resolve_and_reject_duplicates(repo_root: Path) -> None:
+    data = analysis_data(repo_root)
+    data["variants"] = [
+        {
+            "variant_id": "variant-a",
+            "name": "Variant A",
+            "status": "locally_observed_behavior",
+            "evidence_ids": ["ev-static"],
+            "unresolved_reason": None,
+        }
+    ]
+    data["architecture"]["claims"] = [
+        {
+            "statement": "Variant-scoped architecture claim.",
+            "status": "locally_observed_behavior",
+            "evidence_ids": ["ev-static"],
+            "variant_ids": ["variant-a"],
+            "checkpoint_ids": ["clear-audio"],
+            "rationale": None,
+        }
+    ]
+    data["embedding_candidates"] = [
+        {
+            "embedding_id": "candidate-a",
+            "tensor_origin": "Encoder.forward",
+            "semantic_kind": "pooled_representation",
+            "shape_semantics": "B,D",
+            "batch_dimension": "B",
+            "time_dimension": None,
+            "status": "locally_observed_behavior",
+            "evidence_ids": ["ev-static"],
+            "variant_ids": ["variant-a"],
+            "checkpoint_ids": ["clear-audio"],
+            "requires_user_decision": True,
+            "unresolved_reason": None,
+        }
+    ]
+    data["confidence_summary"]["locally_observed_count"] = 5
+    report = AnalysisReport.model_validate(data)
+    assert report.architecture.claims[0].variant_ids == ("variant-a",)
+    assert report.embedding_candidates[0].checkpoint_ids == ("clear-audio",)
+
+    missing_variant = json.loads(json.dumps(data))
+    missing_variant["architecture"]["claims"][0]["variant_ids"] = ["missing"]
+    with pytest.raises(ValidationError, match="claim variant scope is unresolved"):
+        AnalysisReport.model_validate(missing_variant)
+
+    missing_checkpoint = json.loads(json.dumps(data))
+    missing_checkpoint["embedding_candidates"][0]["checkpoint_ids"] = ["missing"]
+    with pytest.raises(ValidationError, match="embedding checkpoint scope is unresolved"):
+        AnalysisReport.model_validate(missing_checkpoint)
+
+    duplicate_scope = json.loads(json.dumps(data))
+    duplicate_scope["architecture"]["claims"][0]["variant_ids"] = [
+        "variant-a",
+        "variant-a",
+    ]
+    with pytest.raises(ValidationError, match="variant scope IDs must be unique"):
+        AnalysisReport.model_validate(duplicate_scope)
+
+
+@pytest.mark.parametrize(
+    ("algorithm", "digest"),
+    [
+        ("md5", "a" * 32),
+        ("sha256", "b" * 64),
+    ],
+)
+def test_published_checksum_known_algorithms(algorithm: str, digest: str) -> None:
+    checksum = PublishedChecksum(
+        algorithm=algorithm,
+        digest=digest,
+        evidence_id="ev-checksum",
+    )
+    assert checksum.verification_state == "published_not_locally_verified"
+
+
+@pytest.mark.parametrize(
+    ("algorithm", "digest"),
+    [
+        ("md5", "a" * 31),
+        ("sha1", "a" * 39),
+        ("sha256", "A" * 64),
+        ("sha512", "a" * 127),
+        ("blake2b", "a" * 64),
+    ],
+)
+def test_published_checksum_rejects_malformed_known_digests(
+    algorithm: str,
+    digest: str,
+) -> None:
+    with pytest.raises(ValidationError, match="digest must contain exactly"):
+        PublishedChecksum(
+            algorithm=algorithm,
+            digest=digest,
+            evidence_id="ev-checksum",
+        )
+
+
+def test_published_checksum_unknown_algorithm_requires_explanation() -> None:
+    with pytest.raises(ValidationError, match="require provenance_note"):
+        PublishedChecksum(
+            algorithm="unknown",
+            digest="host-specific-value",
+            evidence_id="ev-checksum",
+        )
+    checksum = PublishedChecksum(
+        algorithm="other",
+        digest="host-specific-value",
+        evidence_id="ev-checksum",
+        provenance_note="The authoritative host does not identify a standard algorithm.",
+    )
+    assert checksum.algorithm.value == "other"
+
+
+def test_analysis_report_multiple_published_checksums_and_evidence(
+    repo_root: Path,
+) -> None:
+    data = analysis_data(repo_root)
+    data["evidence_items"].append(
+        {
+            "evidence_id": "ev-checksum",
+            "kind": "official_documentation",
+            "claim_status": "verified_upstream_fact",
+            "description": "Authoritative host metadata publishes checksums.",
+            "source_file": None,
+            "source_line_or_symbol": None,
+            "url": "https://example.invalid/record",
+            "revision": None,
+            "rationale": None,
+        }
+    )
+    data["checkpoint_candidates"][0]["published_checksums"] = [
+        {
+            "algorithm": "md5",
+            "digest": "a" * 32,
+            "evidence_id": "ev-checksum",
+            "verification_state": "published_not_locally_verified",
+            "provenance_note": "Published by the host; payload not acquired.",
+        },
+        {
+            "algorithm": "sha256",
+            "digest": "b" * 64,
+            "evidence_id": "ev-checksum",
+            "verification_state": "published_not_locally_verified",
+            "provenance_note": None,
+        },
+    ]
+    data["confidence_summary"]["verified_fact_count"] = 1
+    report = AnalysisReport.model_validate(data)
+    assert len(report.checkpoint_candidates[0].published_checksums) == 2
+    assert report.checkpoint_candidates[0].hash_evidence is None
+
+    missing = json.loads(json.dumps(data))
+    missing["checkpoint_candidates"][0]["published_checksums"][0]["evidence_id"] = "missing"
+    with pytest.raises(ValidationError, match="evidence references are unresolved"):
+        AnalysisReport.model_validate(missing)
 
 
 def test_analysis_report_rejects_unresolved_evidence_reference(repo_root: Path) -> None:

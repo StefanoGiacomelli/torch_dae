@@ -78,6 +78,29 @@ def test_agent_aliases_share_skill_bytes(repo_root: Path) -> None:
     ]
 
 
+def test_analyze_guidance_preserves_revision_and_metadata_boundaries(
+    repo_root: Path,
+) -> None:
+    references = repo_root / "skills/audio-model-onboarding/references"
+    repository_guidance = (references / "repository-analysis.md").read_text()
+    checkpoint_guidance = (references / "checkpoint-discovery.md").read_text()
+    workflow_guidance = (references / "workflow-overview.md").read_text()
+
+    assert "current default-branch HEAD" in repository_guidance
+    assert "current-source evidence" in repository_guidance
+    assert "never automatic checkpoint-equivalence evidence" in checkpoint_guidance
+    assert "nearest preceding commit" in repository_guidance
+    assert "record every inspected revision" in repository_guidance.lower()
+    for host in ("Zenodo", "GitHub Releases", "Hugging Face", "package-bundled", "direct HTTPS"):
+        assert host in checkpoint_guidance
+    assert "published_not_locally_verified" in checkpoint_guidance
+    normalized_checkpoint_guidance = " ".join(checkpoint_guidance.split())
+    assert "does not satisfy later local SHA-256 verification" in normalized_checkpoint_guidance
+    assert "uv sync --all-groups --frozen" in workflow_guidance
+    assert "root `.venv` is expected" in workflow_guidance
+    assert "`pypdf` is a" in workflow_guidance
+
+
 def test_skill_artifact_validator_fails_on_mutated_fixture_evidence(
     repo_root: Path,
     tmp_path: Path,

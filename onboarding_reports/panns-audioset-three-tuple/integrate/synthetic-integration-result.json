@@ -1,0 +1,163 @@
+{
+  "schema_version": "1.0.0",
+  "workflow_id": "panns-audioset-three-tuple",
+  "description": "bounded random-initialized synthetic integration and duration checks",
+  "scientific_status": "synthetic random weights are scientifically meaningless and do not establish pretrained behavior",
+  "environment": {
+    "python": "3.12.13",
+    "numpy": "2.4.6",
+    "torch": "2.13.0",
+    "torchlibrosa": "0.1.0",
+    "platform": "macos-arm64",
+    "device": "cpu"
+  },
+  "variants": [
+    {
+      "model_id": "panns-cnn14-16k-map-0438",
+      "upstream_class": "Cnn14_16k",
+      "sample_rate": 16000,
+      "minimum_samples": 4960,
+      "duration_constraint": "T >= 4960",
+      "successful_cases": [
+        {
+          "input_samples": 10240,
+          "input_duration_seconds": 0.64,
+          "logits_shape": [1, 527],
+          "probability_shape": [1, 527],
+          "embedding_shape": [1, 2048]
+        },
+        {
+          "input_samples": 16000,
+          "input_duration_seconds": 1.0,
+          "logits_shape": [1, 527],
+          "probability_shape": [1, 527],
+          "embedding_shape": [1, 2048]
+        },
+        {
+          "input_samples": 32000,
+          "input_duration_seconds": 2.0,
+          "logits_shape": [1, 527],
+          "probability_shape": [1, 527],
+          "embedding_shape": [1, 2048]
+        }
+      ],
+      "rejected_case": {
+        "input_samples": 4959,
+        "input_duration_seconds": 0.3099375,
+        "reason": "explicit minimum-length rejection; no padding applied"
+      }
+    },
+    {
+      "model_id": "panns-resnet38-map-0434",
+      "upstream_class": "ResNet38",
+      "sample_rate": 32000,
+      "minimum_samples": 9920,
+      "duration_constraint": "T >= 9920",
+      "successful_cases": [
+        {
+          "input_samples": 20480,
+          "input_duration_seconds": 0.64,
+          "logits_shape": [1, 527],
+          "probability_shape": [1, 527],
+          "embedding_shape": [1, 2048]
+        },
+        {
+          "input_samples": 32000,
+          "input_duration_seconds": 1.0,
+          "logits_shape": [1, 527],
+          "probability_shape": [1, 527],
+          "embedding_shape": [1, 2048]
+        },
+        {
+          "input_samples": 64000,
+          "input_duration_seconds": 2.0,
+          "logits_shape": [1, 527],
+          "probability_shape": [1, 527],
+          "embedding_shape": [1, 2048]
+        }
+      ],
+      "rejected_case": {
+        "input_samples": 9919,
+        "input_duration_seconds": 0.30996875,
+        "reason": "explicit minimum-length rejection; no padding applied"
+      }
+    },
+    {
+      "model_id": "panns-wavegram-logmel-cnn14-map-0439",
+      "upstream_class": "Wavegram_Logmel_Cnn14",
+      "sample_rate": 32000,
+      "minimum_samples": 10236,
+      "duration_constraint": "T >= 10236 and T % 640 is 0..319 or 636..639",
+      "successful_cases": [
+        {
+          "input_samples": 20480,
+          "input_duration_seconds": 0.64,
+          "logits_shape": [1, 527],
+          "probability_shape": [1, 527],
+          "embedding_shape": [1, 2048]
+        },
+        {
+          "input_samples": 32000,
+          "input_duration_seconds": 1.0,
+          "logits_shape": [1, 527],
+          "probability_shape": [1, 527],
+          "embedding_shape": [1, 2048]
+        },
+        {
+          "input_samples": 64000,
+          "input_duration_seconds": 2.0,
+          "logits_shape": [1, 527],
+          "probability_shape": [1, 527],
+          "embedding_shape": [1, 2048]
+        }
+      ],
+      "rejected_cases": [
+        {
+          "input_samples": 10235,
+          "input_duration_seconds": 0.31984375,
+          "reason": "explicit minimum-length rejection; no padding applied"
+        },
+        {
+          "input_samples": 10560,
+          "input_duration_seconds": 0.33,
+          "reason": "explicit Wavegram/log-mel branch-alignment rejection; no padding, cropping, or truncation applied"
+        }
+      ],
+      "boundary_observations": [
+        {
+          "input_samples": 10236,
+          "passed": true
+        },
+        {
+          "input_samples": 10559,
+          "passed": true
+        },
+        {
+          "input_samples": 10876,
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "checks": {
+    "all_three_identities": true,
+    "cpu_parameter_placement": true,
+    "eval_mode": true,
+    "finite_logits": true,
+    "probability_range_zero_to_one": true,
+    "sigmoid_consistency_rtol": 0.000001,
+    "sigmoid_consistency_atol": 0.0000001,
+    "deterministic_repeated_output_exact": true,
+    "sample_rate_rejection": true,
+    "multichannel_rejection": true,
+    "integer_waveform_rejection": true,
+    "unequal_valid_lengths_rejection": true,
+    "hidden_padding_cropping_resampling_or_truncation": false
+  },
+  "checkpoint_requests": 0,
+  "checkpoint_downloads": 0,
+  "checkpoint_loads": 0,
+  "checkpoint_inspections": 0,
+  "pretrained_inference_runs": 0,
+  "pytest_result": "13 passed in 7.57s"
+}

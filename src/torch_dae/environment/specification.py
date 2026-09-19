@@ -129,7 +129,8 @@ class EnvironmentSpecification(StrictBaseModel):
     environment_id
         Canonical identifier for the environment definition.
     model_card_id
-        Card whose model-family, variant, and checkpoint this environment supports.
+        Optional legacy card identity retained only for backward compatibility. New definitions
+        are authorized by ``environment_id`` and do not require this field.
     python
         Declared version constraint and the exact resolved Python version.
     platforms
@@ -156,7 +157,7 @@ class EnvironmentSpecification(StrictBaseModel):
 
     schema_version: Literal["1.0.0"]
     environment_id: CanonicalId
-    model_card_id: CanonicalId
+    model_card_id: CanonicalId | None = None
     python: PythonSpecification
     platforms: PlatformSpecification
     dependency_manager: Literal["uv"]

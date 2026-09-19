@@ -1,0 +1,442 @@
+{
+  "$defs": {
+    "CleanupConsumedRunManifest": {
+      "additionalProperties": false,
+      "description": "A finalized run manifest embedded in a durable cleanup receipt.",
+      "properties": {
+        "manifest": {
+          "$ref": "#/$defs/ManagedRunManifest"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "manifest"
+      ],
+      "title": "CleanupConsumedRunManifest",
+      "type": "object"
+    },
+    "CleanupExternalProtectionConflict": {
+      "additionalProperties": false,
+      "description": "An existing external output that overlaps a planned deletion root.",
+      "properties": {
+        "deletion_root": {
+          "minLength": 1,
+          "title": "Deletion Root",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "remediation": {
+          "minLength": 1,
+          "title": "Remediation",
+          "type": "string"
+        },
+        "resolved_path": {
+          "minLength": 1,
+          "title": "Resolved Path",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "retained-existing-file",
+            "retained-existing-directory",
+            "retained-symlink",
+            "missing"
+          ],
+          "minLength": 1,
+          "title": "Status",
+          "type": "string"
+        },
+        "supplied_external_path": {
+          "minLength": 1,
+          "title": "Supplied External Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "supplied_external_path",
+        "resolved_path",
+        "deletion_root",
+        "status",
+        "reason",
+        "remediation"
+      ],
+      "title": "CleanupExternalProtectionConflict",
+      "type": "object"
+    },
+    "CleanupPathRecord": {
+      "additionalProperties": false,
+      "description": "One managed or external path retained by cleanup.",
+      "properties": {
+        "category": {
+          "minLength": 1,
+          "title": "Category",
+          "type": "string"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        },
+        "status": {
+          "enum": [
+            "retained-existing-file",
+            "retained-existing-directory",
+            "retained-symlink",
+            "missing"
+          ],
+          "minLength": 1,
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "category",
+        "reason",
+        "status"
+      ],
+      "title": "CleanupPathRecord",
+      "type": "object"
+    },
+    "CleanupRetentionConflict": {
+      "additionalProperties": false,
+      "description": "A retained path that would be removed by a planned deletion root.",
+      "properties": {
+        "deletion_root": {
+          "minLength": 1,
+          "title": "Deletion Root",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "remediation": {
+          "minLength": 1,
+          "title": "Remediation",
+          "type": "string"
+        },
+        "retained_path": {
+          "minLength": 1,
+          "title": "Retained Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "retained_path",
+        "deletion_root",
+        "reason",
+        "remediation"
+      ],
+      "title": "CleanupRetentionConflict",
+      "type": "object"
+    },
+    "ManagedRunManifest": {
+      "additionalProperties": false,
+      "description": "Ignored runtime manifest for one managed onboarding phase execution.",
+      "properties": {
+        "cleanup_result": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cleanup Result"
+        },
+        "created_paths": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Created Paths",
+          "type": "array"
+        },
+        "external_paths": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "External Paths",
+          "type": "array"
+        },
+        "phase": {
+          "$ref": "#/$defs/OnboardingPhase"
+        },
+        "repository_commit": {
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Repository Commit",
+          "type": "string"
+        },
+        "retained_paths": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Retained Paths",
+          "type": "array"
+        },
+        "retained_reasons": {
+          "additionalProperties": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Retained Reasons",
+          "type": "object"
+        },
+        "reused_paths": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Reused Paths",
+          "type": "array"
+        },
+        "run_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0.0",
+          "minLength": 1,
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "format": "date-time",
+          "minLength": 1,
+          "title": "Started At",
+          "type": "string"
+        },
+        "workflow_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "title": "Workflow Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "run_id",
+        "workflow_id",
+        "phase",
+        "started_at",
+        "repository_commit",
+        "created_paths"
+      ],
+      "title": "ManagedRunManifest",
+      "type": "object"
+    },
+    "OnboardingPhase": {
+      "description": "Committed onboarding phases, including checkpoint-specific verification.",
+      "enum": [
+        "analyze",
+        "resolve-environment",
+        "integrate",
+        "verify",
+        "card"
+      ],
+      "minLength": 1,
+      "title": "OnboardingPhase",
+      "type": "string"
+    }
+  },
+  "$id": "https://torch-dae.local/schemas/cleanup-receipt.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Durable ignored-runtime receipt for one cleanup plan or execution.",
+  "properties": {
+    "checkpoint_caches_retained": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CleanupPathRecord"
+      },
+      "title": "Checkpoint Caches Retained",
+      "type": "array"
+    },
+    "cleanup_operation_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Cleanup Operation Id",
+      "type": "string"
+    },
+    "errors": {
+      "default": [],
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Errors",
+      "type": "array"
+    },
+    "external_protection_conflicts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CleanupExternalProtectionConflict"
+      },
+      "title": "External Protection Conflicts",
+      "type": "array"
+    },
+    "materialized_environments_retained": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CleanupPathRecord"
+      },
+      "title": "Materialized Environments Retained",
+      "type": "array"
+    },
+    "mode": {
+      "enum": [
+        "dry-run",
+        "execute"
+      ],
+      "minLength": 1,
+      "title": "Mode",
+      "type": "string"
+    },
+    "package_caches_retained": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CleanupPathRecord"
+      },
+      "title": "Package Caches Retained",
+      "type": "array"
+    },
+    "planned_paths": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Planned Paths",
+      "type": "array"
+    },
+    "removed_paths": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Removed Paths",
+      "type": "array"
+    },
+    "repository_caches_retained": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CleanupPathRecord"
+      },
+      "title": "Repository Caches Retained",
+      "type": "array"
+    },
+    "retained_external_paths": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CleanupPathRecord"
+      },
+      "title": "Retained External Paths",
+      "type": "array"
+    },
+    "retained_managed_paths": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CleanupPathRecord"
+      },
+      "title": "Retained Managed Paths",
+      "type": "array"
+    },
+    "retention_conflicts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CleanupRetentionConflict"
+      },
+      "title": "Retention Conflicts",
+      "type": "array"
+    },
+    "run_manifests_consumed": {
+      "items": {
+        "$ref": "#/$defs/CleanupConsumedRunManifest"
+      },
+      "title": "Run Manifests Consumed",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "time": {
+      "format": "date-time",
+      "minLength": 1,
+      "title": "Time",
+      "type": "string"
+    },
+    "verified_removed": {
+      "title": "Verified Removed",
+      "type": "boolean"
+    },
+    "workflow_id": {
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "title": "Workflow Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "workflow_id",
+    "cleanup_operation_id",
+    "time",
+    "mode",
+    "run_manifests_consumed",
+    "planned_paths",
+    "removed_paths",
+    "verified_removed"
+  ],
+  "title": "CleanupReceipt",
+  "type": "object"
+}
