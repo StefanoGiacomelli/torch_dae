@@ -34,10 +34,12 @@ If you are new to the project, read these pages in order:
 : Read {doc}`user-guide/model-cards` and {doc}`profiling/technical-cards`.
 
 **I want to integrate a new model**
-: Start with {doc}`skill/overview` and the end-to-end {doc}`tutorials/audio-model-onboarding`.
+: Start with {doc}`skill/overview`, use the copy-paste requests in {doc}`skill/prompt-library`, and
+  follow the end-to-end {doc}`tutorials/audio-model-onboarding`.
 
 **I want to profile an accepted model**
-: Start with {doc}`profiling/overview`; the profiling workflow is independent from model onboarding.
+: Start with {doc}`profiling/overview` and {doc}`tutorials/profiling`; the profiling workflow is
+  independent from model onboarding.
 
 **I want to contribute to or release the framework**
 : Use {doc}`development/architecture`, {doc}`development/contributing`, and
@@ -58,6 +60,7 @@ getting-started/quickstart
 
 tutorials/panns-inference
 tutorials/audio-model-onboarding
+tutorials/profiling
 tutorials/agent-interaction
 ```
 
@@ -73,6 +76,7 @@ user-guide/model-registry
 user-guide/environments
 user-guide/checkpoints
 user-guide/model-cards
+user-guide/technical-cards
 ```
 
 ```{toctree}
@@ -90,6 +94,7 @@ profiling/contributing
 :caption: AI skills
 
 skill/overview
+skill/prompt-library
 ```
 
 ```{toctree}
