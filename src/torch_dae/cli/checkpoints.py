@@ -22,7 +22,10 @@ from torch_dae.core.errors import (
 from torch_dae.environment.manager import discover_repository_root
 from torch_dae.environment.policy import ExecutionPolicy
 
-app = typer.Typer(no_args_is_help=True, help="Checkpoint commands.")
+app = typer.Typer(
+    no_args_is_help=True,
+    help="Resolve, acquire, inspect, and remove managed checkpoint payloads.",
+)
 
 
 def _manager(offline: bool = False) -> CheckpointManager:
@@ -47,10 +50,12 @@ def _load_spec(path: Path) -> CheckpointSpec:
 
 @app.command("ensure")
 def ensure(
-    card_id: str,
-    offline: bool = typer.Option(False, "--offline"),
-    json_output: bool = typer.Option(False, "--json"),
+    card_id: Annotated[str, typer.Argument(help="Accepted Model Card id.")],
+    offline: bool = typer.Option(False, "--offline", help="Forbid network access."),
+    json_output: bool = typer.Option(False, "--json", help="Emit structured JSON."),
 ) -> None:
+    """Ensure the checkpoint referenced by an accepted Model Card is present and verified."""
+
     try:
         resolved = _manager(offline).ensure(card_id)
         if json_output:
@@ -62,7 +67,12 @@ def ensure(
 
 
 @app.command("info")
-def info(card_id: str, json_output: bool = typer.Option(False, "--json")) -> None:
+def info(
+    card_id: Annotated[str, typer.Argument(help="Accepted Model Card id.")],
+    json_output: bool = typer.Option(False, "--json", help="Emit structured JSON."),
+) -> None:
+    """Inspect checkpoint authority and cache state for an accepted Model Card."""
+
     import json
 
     try:
@@ -77,9 +87,17 @@ def info(card_id: str, json_output: bool = typer.Option(False, "--json")) -> Non
 
 @app.command("resolve")
 def resolve_spec(
-    spec_path: Annotated[Path, typer.Option("--spec", exists=True, dir_okay=False)],
-    offline: bool = typer.Option(False, "--offline"),
-    json_output: bool = typer.Option(False, "--json"),
+    spec_path: Annotated[
+        Path,
+        typer.Option(
+            "--spec",
+            exists=True,
+            dir_okay=False,
+            help="Path to a CheckpointSpec JSON file.",
+        ),
+    ],
+    offline: bool = typer.Option(False, "--offline", help="Forbid network access."),
+    json_output: bool = typer.Option(False, "--json", help="Emit structured JSON."),
 ) -> None:
     """Resolve authoritative metadata for an explicit spec without acquiring payload bytes."""
 
@@ -98,10 +116,23 @@ def resolve_spec(
 
 @app.command("ensure-spec")
 def ensure_spec(
-    spec_path: Annotated[Path, typer.Option("--spec", exists=True, dir_okay=False)],
-    offline: bool = typer.Option(False, "--offline"),
-    maximum_bytes: int | None = typer.Option(None, "--maximum-bytes", min=1),
-    json_output: bool = typer.Option(False, "--json"),
+    spec_path: Annotated[
+        Path,
+        typer.Option(
+            "--spec",
+            exists=True,
+            dir_okay=False,
+            help="Path to a CheckpointSpec JSON file.",
+        ),
+    ],
+    offline: bool = typer.Option(False, "--offline", help="Forbid network access."),
+    maximum_bytes: int | None = typer.Option(
+        None,
+        "--maximum-bytes",
+        min=1,
+        help="Optional upper bound on acquired checkpoint bytes.",
+    ),
+    json_output: bool = typer.Option(False, "--json", help="Emit structured JSON."),
 ) -> None:
     """Acquire an explicit spec through the canonical checkpoint manager."""
 
@@ -127,8 +158,16 @@ def ensure_spec(
 
 @app.command("info-spec")
 def info_spec(
-    spec_path: Annotated[Path, typer.Option("--spec", exists=True, dir_okay=False)],
-    json_output: bool = typer.Option(False, "--json"),
+    spec_path: Annotated[
+        Path,
+        typer.Option(
+            "--spec",
+            exists=True,
+            dir_okay=False,
+            help="Path to a CheckpointSpec JSON file.",
+        ),
+    ],
+    json_output: bool = typer.Option(False, "--json", help="Emit structured JSON."),
 ) -> None:
     """Inspect an explicit spec and managed cache without network access."""
 
@@ -145,7 +184,12 @@ def info_spec(
 
 
 @app.command("remove")
-def remove(card_id: str, json_output: bool = typer.Option(False, "--json")) -> None:
+def remove(
+    card_id: Annotated[str, typer.Argument(help="Accepted Model Card id.")],
+    json_output: bool = typer.Option(False, "--json", help="Emit structured JSON."),
+) -> None:
+    """Remove the managed checkpoint cache entry associated with a Model Card."""
+
     try:
         _manager().remove(card_id)
         if json_output:

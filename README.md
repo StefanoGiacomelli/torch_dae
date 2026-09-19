@@ -2,22 +2,16 @@
 
 [![CI](https://github.com/StefanoGiacomelli/torch_dae/actions/workflows/ci.yml/badge.svg)](https://github.com/StefanoGiacomelli/torch_dae/actions/workflows/ci.yml)
 [![Codecov](https://codecov.io/gh/StefanoGiacomelli/torch_dae/graph/badge.svg)](https://codecov.io/gh/StefanoGiacomelli/torch_dae)
+[![PyPI](https://img.shields.io/pypi/v/torch-deepaudioembedding)](https://pypi.org/project/torch-deepaudioembedding/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21641390.svg)](https://doi.org/10.5281/zenodo.21641390)
 [![Documentation Status](https://readthedocs.org/projects/torch-dae/badge/?version=stable)](https://torch-dae.readthedocs.io/en/stable/?badge=stable)
 [![Python 3.11 | 3.12](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org/)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
-[![Status: Release](https://img.shields.io/badge/status-release-brightgreen)](https://github.com/StefanoGiacomelli/torch_dae/releases/tag/v0.1.0)
-[![Version: v0.1.0](https://img.shields.io/badge/version-v0.1.0-blue)](https://github.com/StefanoGiacomelli/torch_dae/releases/tag/v0.1.0)
 
-## Project status
-
-`torch-dae 0.1.0` is the first public release of the generic framework. Its typed control
-plane, isolated environment and checkpoint subsystems, and evidence-grounded audio-model onboarding
-skill are implemented and validated. The source tree now includes the production PANNs adapters for
-three accepted AudioSet model/checkpoint identities; checkpoint-specific cards and pretrained
-payload verification remain later onboarding phases.
-
-## Overview
+`torch-dae` is a reproducible integration and profiling framework for PyTorch audio models. It
+connects one explicit model variant and checkpoint to a validated runtime environment, a typed
+waveform/output interface, runtime-verification evidence, and optional performance Technical Cards.
+The repository also ships agent skills for controlled model onboarding and profiling.
 
 <p align="center">
   <img
@@ -27,223 +21,259 @@ payload verification remain later onboarding phases.
   />
 </p>
 
-`torch-dae` turns an official audio-model implementation and a specific checkpoint into a
-reproducible, evidence-backed PyTorch integration. It separates lightweight repository control from
-model runtimes so incompatible research dependencies can live in isolated, checkpoint-specific
-environments.
+## What you can do
 
-The project keeps source provenance, scientific decisions, environment resolution, checkpoint
-identity, wrapper behavior, embeddings, and runtime observations explicit and machine-validatable.
-One model card always describes exactly one model family, variant, and checkpoint tuple.
+- **Use accepted audio models through one typed PyTorch wrapper contract.**
+- **Extract checkpoint-specific embeddings** with declared dimensions and semantics.
+- **Recreate model runtimes reproducibly** from committed environment definitions instead of
+  installing model dependencies into the root package.
+- **Acquire checkpoints explicitly** through a content-addressed cache; weights are never silently
+  downloaded during import or wrapper construction.
+- **Inspect checkpoint-specific Model Cards** describing input, output, embedding, runtime, and
+  limitation contracts.
+- **Profile accepted models** on CPU, MPS, and CUDA selectors supported by the local machine and
+  generate candidate Technical Cards with raw timing measurements.
+- **Integrate additional models with the `audio-model-onboarding` skill** through controlled
+  analysis, environment resolution, integration, verification, and card-generation phases.
 
-## Current capabilities
+The framework deliberately separates model execution from repository control. The root package
+stays lightweight; heavyweight or mutually incompatible model dependencies live in isolated,
+model-specific environments.
 
-- Strict typed contracts and generated JSON Schemas for cards, environments, checkpoints,
-  embeddings, onboarding reports, cross-phase workflow handoffs, and runtime verification.
-- Reproducible model-specific environment materialization, verification, reuse, and execution.
-- Checkpoint acquisition from HTTPS, GitHub releases, Hugging Face, package resources, and local
-  paths, with hashing, cache validation, offline behavior, and sanitized diagnostics.
-- Static upstream inspection and evidence-grounded analysis without importing untrusted model code.
-- A canonical agent-neutral onboarding skill shared by Codex and Claude.
-- Synthetic grounded evaluations, repository safety validation, and strict quality gates.
-- Lazy, isolated PANNs adapters for Cnn14_16k, ResNet38, and Wavegram_Logmel_Cnn14 with raw logits,
-  native sigmoid probabilities, the upstream post-fc1 embedding, and ordered AudioSet labels.
+## Supported models
 
-## Not available yet
+The repository currently contains three accepted PANNs / AudioSet checkpoint integrations. Each is
+`runtime_verified` and has canonical Profiling v1 Technical Cards for CPU and Apple MPS execution
+contexts.
 
-- No pretrained checkpoint payload or checkpoint-specific model card is redistributed by the
-  repository; supported checkpoint payloads are acquired through the checkpoint-management subsystem.
-- `model inspect` remains an explicit unavailable-feature placeholder.
-- Candidate Technical Cards produced by `torch-dae model profile` are not automatically promoted
-  into the repository's official `technical_cards/` tree; promotion is a separate, later,
-  human-reviewed step.
+| Model Card ID | Wrapper | Native sample rate | Input | Primary output | Default embedding | Locally verified devices |
+|---|---|---:|---|---|---|---|
+| `panns-cnn14-16k-map-0438` | `PannsCnn14_16kMap0438` | 16 kHz | `[B,1,T]` | logits `[B,527]` | `[B,2048]` | CPU, MPS |
+| `panns-resnet38-map-0434` | `PannsResNet38Map0434` | 32 kHz | `[B,1,T]` | logits `[B,527]` | `[B,2048]` | CPU, MPS |
+| `panns-wavegram-logmel-cnn14-map-0439` | `PannsWavegramLogmelCnn14Map0439` | 32 kHz | `[B,1,T]` | logits `[B,527]` | `[B,2048]` | CPU, MPS |
 
-## Profiling and Technical Cards
-
-`torch-dae` defines an optional profiling evidence layer independent from model onboarding. An
-accepted checkpoint-specific Model Card remains the immutable scientific/runtime identity of the
-supported model. `torch-dae model profile` emits one immutable candidate **Technical Card** per
-successfully profiled device/backend plus compact, lossless raw `.npz` measurements; profiling
-never rewrites the Model Card.
-
-Profiling v1 is dataset-independent and uses deterministic seeded white noise only. It measures
-architecture, cold/steady-state latency, throughput, host RAM, accelerator memory where available,
-and CodeCarbon-backed energy measurement or estimation when supported (`uv sync --extra profiling`
-installs CodeCarbon/`psutil` for the root control plane only). Multiple users may append Technical
-Cards for the same Model Card so later analytics can compare compatible hardware/software execution
-contexts without changing onboarding evidence.
-
-The CLI and normative protocol are documented under
-[`docs/profiling/`](docs/profiling/overview.md); see also the `skills/audio-model-profiling` skill.
-
-## Architecture
-
-The root package is a model-agnostic control plane:
-
-- [Typed contracts](src/torch_dae/contracts.py) and [model-card models](src/torch_dae/cards/models.py)
-  enforce public identity, lifecycle, waveform, output, and evidence rules.
-- [Environment management](docs/environment-management.md) recreates isolated runtimes from
-  committed specifications under `environments/<environment-id>/`.
-- [Checkpoint management](docs/checkpoint-management.md) validates and caches assets only under
-  ignored runtime state.
-- [Static onboarding inspectors](src/torch_dae/onboarding/inspection.py) collect bounded evidence
-  without executing upstream repositories.
-- [Evidence and decision gates](docs/onboarding-evidence-policy.md) prevent unsupported facts or
-  ambiguous scientific choices from being silently promoted.
-- The [canonical onboarding skill](skills/audio-model-onboarding/SKILL.md) drives agent workflows for
-  both Codex and Claude.
-- [Synthetic grounded evaluation](skills/audio-model-onboarding/references/synthetic-evaluation.md)
-  checks reports against concrete fixture observations.
-
-Model cards belong under `model_cards/`, accepted pre-runtime phase handoffs under
-`onboarding_reports/`, verification reports under `verification_reports/`, and committed
-environment inputs under `environments/`. `verification_reports/` contains checkpoint-specific
-runtime observations only. Materialized environments, managed workspaces, repositories, checkpoints,
-diagnostics, and coverage data remain under ignored `.torch-dae/`.
+CUDA is declared by the upstream PANNs implementation but has not been locally verified by the
+accepted Model Cards. The currently accepted PANNs environment definitions constrain managed
+materialization to macOS on arm64. See [PANNs integration](docs/models/panns-runtime.md) for the exact
+runtime and duration constraints.
 
 ## Installation
 
-The complete user and API documentation is available in the
-[stable Read the Docs release](https://torch-dae.readthedocs.io/en/stable/).
+### Package installation
 
-Install a published package-index release:
+The published distribution is named `torch-deepaudioembedding`; the import package is `torch_dae`
+and the console command is `torch-dae`.
 
 ```bash
 pip install torch-deepaudioembedding
+python -c "import torch_dae"
 torch-dae --help
 ```
 
-Install from source with [uv](https://docs.astral.sh/uv/):
+The wheel provides the Python package and CLI control plane. It intentionally does **not** bundle the
+repository's Model Cards, environment definitions, verification reports, Technical Cards, agent
+skills, or model checkpoints.
+
+### Full repository workspace
+
+Use a source checkout for the complete registry-backed workflow: supported models, managed
+environments, checkpoint acquisition, runtime verification, profiling, and the agent skills.
 
 ```bash
 git clone https://github.com/StefanoGiacomelli/torch_dae.git
 cd torch_dae
-uv sync --all-groups
+uv sync --python 3.11 --all-groups --extra profiling --frozen
 uv run torch-dae --help
 ```
 
+Model-specific PyTorch stacks are **not** installed into this root environment. They are
+materialized separately from `environments/<environment-id>/` when a model runtime is needed.
+
+Full installation guidance: [docs/getting-started/installation.md](docs/getting-started/installation.md).
+
 ## Quick start
 
-Inspect the empty public registry and validate a synthetic card fixture:
+From a source checkout:
 
 ```bash
 uv run torch-dae card list
-uv run torch-dae card validate tests/fixtures/valid/model-card.analyzed.json
-uv run torch-dae env --help
-uv run torch-dae checkpoint --help
+uv run torch-dae card show panns-cnn14-16k-map-0438
+uv run torch-dae technical-card list
 ```
 
-Direct `env resolve`, `env preflight`, `env materialize`, and `env verify` commands require an accepted environment
-definition; they do not require a model card. Card-oriented `env create`, `env ensure`, `env run`,
-`env info`, and `env remove` remain compatibility conveniences where applicable. Checkpoint
-commands remain card/checkpoint-specific. No pretrained checkpoint or checkpoint-specific card is
-included yet.
+Expected Model Card IDs:
 
-## Illustrative model-wrapper usage
+```text
+panns-cnn14-16k-map-0438
+panns-resnet38-map-0434
+panns-wavegram-logmel-cnn14-map-0439
+```
 
-The public registry remains empty until checkpoint-specific cards are authored. The placeholder
-`model_name` below denotes a future card identifier. This non-executable interface example
-illustrates how a wrapper is resolved once its card, checkpoint, and isolated runtime are activated.
+The first command discovers accepted model identities without importing the model runtime. The
+second prints the normalized checkpoint-specific Model Card. The third lists canonical empirical
+profiling evidence already accepted under `technical_cards/`.
+
+For an end-to-end pretrained PANNs example, including environment creation, checkpoint acquisition,
+and Python inference, follow the
+[PANNs inference tutorial](docs/tutorials/panns-inference.md).
+
+## Model execution at a glance
+
+A supported wrapper receives a floating-point waveform tensor and an integer native sample rate.
+For the current PANNs integrations, the public input layout is always:
+
+```text
+[B, 1, T]
+```
+
+where `B` is batch size, the channel dimension must be exactly `1`, and `T` is the number of audio
+samples. The wrappers do not automatically resample, downmix, normalize amplitude, pad, crop, or
+truncate the input.
+
+Inside the verified model environment, the core API is:
 
 ```python
 from pathlib import Path
 
+import torch
+
 from torch_dae import ModelCardRegistry
 
-repository_root = Path("/path/to/torch_dae_checkout")
-registry = ModelCardRegistry(repository_root)
+card_id = "panns-cnn14-16k-map-0438"
+checkpoint_path = Path("/absolute/path/to/Cnn14_16k_mAP=0.438.pth")
 
-model_class = registry.get_model_class("model_name")
-model = model_class.from_pretrained()
+registry = ModelCardRegistry(Path.cwd())
+model_class = registry.get_model_class(card_id)
+model = model_class.from_pretrained(checkpoint_path).eval()
 
-waveform = ...  # Tensor-like audio shaped [batch, channels, samples].
-sample_rate = 16_000
+waveform = torch.zeros(1, 1, 16_000, dtype=torch.float32)
 
-output = model.forward(waveform, sample_rate)
+with torch.no_grad():
+    output = model(waveform, 16_000)
+    embedding = model.compute_embedding(waveform, 16_000)
 
+print(output.primary.shape)                  # torch.Size([1, 527])
+print(output.tensors["probabilities"].shape) # torch.Size([1, 527])
+print(embedding.tensor.shape)                # torch.Size([1, 2048])
+```
+
+`from_pretrained()` never downloads a default checkpoint. Supply a checkpoint already materialized
+by `torch-dae checkpoint ensure <card-id>` or another explicitly controlled path.
+
+### PANNs output contract
+
+| Access path | Meaning | Shape |
+|---|---|---|
+| `output.primary` | raw AudioSet classifier logits | `[B,527]` |
+| `output.tensors["logits"]` | same raw logits | `[B,527]` |
+| `output.tensors["probabilities"]` | native `sigmoid(logits)` multi-label probabilities | `[B,527]` |
+| `output.tensors["embedding"]` | upstream post-`fc1`, pre-classifier representation | `[B,2048]` |
+| `model.compute_embedding(...).tensor` | selected default embedding | `[B,2048]` |
+
+Do not apply a softmax to the 527-class output: PANNs performs multi-label audio tagging and exposes
+independent sigmoid probabilities. No threshold or class aggregation is applied by the wrapper.
+
+Detailed execution semantics: [docs/user-guide/model-execution.md](docs/user-guide/model-execution.md).
+
+## Embeddings
+
+All three current PANNs Model Cards expose one verified default embedding:
+
+```text
+panns-official-post-fc1-embedding
+```
+
+It is a clipwise `[B,2048]` representation produced after `ReLU(fc1)` and the following dropout
+call, immediately before the final AudioSet classifier. In evaluation mode the dropout call is the
+identity.
+
+```python
 embedding = model.compute_embedding(
     waveform,
     sample_rate,
-    embedding_id=None,  # Use the model-card default embedding.
+    embedding_id=None,  # use the Model Card default
 )
-
-print(model.available_embeddings())
-print(output.primary)
-print(embedding.tensor)
-print(embedding.layout)
-
-# Invoke only when the model card declares probability support.
-probabilities = model.predict_probability(waveform, sample_rate)
-print(probabilities)
+print(embedding.embedding_id)
+print(embedding.layout)       # B,D
+print(embedding.tensor.shape) # [B,2048]
 ```
 
-The exact tensor runtime, checkpoint source, sample-rate behavior, embedding identifiers, output
-layouts, and probability support are integration-specific and are defined by the corresponding
-model card and wrapper.
+See [docs/user-guide/embeddings.md](docs/user-guide/embeddings.md).
 
-## Available CLI commands
+## Profiling a supported model
 
-The implemented control-plane CLI currently exposes:
+Profiling is optional empirical evidence and never mutates the accepted Model Card. A profiling run
+creates candidate Technical Card JSON plus compact raw `.npz` measurements in a repository-local
+candidate directory.
+
+Example CPU run:
+
+```bash
+uv run torch-dae model profile \
+  --model panns-cnn14-16k-map-0438 \
+  --device cpu \
+  --energy off \
+  --output-dir profiling_candidates/panns-cnn14-cpu
+```
+
+The user-selectable controls are:
 
 ```text
-uv run torch-dae card list
-uv run torch-dae card show <card-id>
-uv run torch-dae card validate <card-id-or-path>
-
-uv run torch-dae env create <card-id>
-uv run torch-dae env ensure <card-id>
-uv run torch-dae env resolve <environment-id>
-uv run torch-dae env preflight <environment-id>
-uv run torch-dae env materialize <environment-id>
-uv run torch-dae env verify <environment-id>
-uv run torch-dae env remove <card-id>
-uv run torch-dae env info <card-id>
-uv run torch-dae env run <card-id> -- <command>
-
-uv run torch-dae checkpoint ensure <card-id>
-uv run torch-dae checkpoint info <card-id>
-uv run torch-dae checkpoint remove <card-id>
+--model
+--device auto|cpu|mps|cuda|cuda:<index>   (repeatable)
+--protocol audio-inference-v1
+--energy auto|off
+--allow-privileged-energy
+--output-dir
+--json
 ```
 
-The CLI also exposes `uv run torch-dae model inspect <card-id>` and
-`uv run torch-dae model verify <card-id>` as explicit unavailable-feature placeholders. They do not
-perform onboarding or runtime verification.
+Profiling v1 fixes the comparable measurement protocol rather than exposing every benchmark detail
+as a CLI knob: deterministic seeded float32 white noise, batch sizes `1,2,4,8`, 10 warmups, 50
+measured steady-state inferences, and both `single_thread` and `native_default` regimes for CPU.
 
-Local package and environment identities are stable across commits: the package identity hashes
-only deterministic wheel build inputs, while Git HEAD and cleanliness are separate informational
-provenance. Shared local-wheel cache creation is safe across concurrent processes and publishes one
-validated cache entry atomically, so parallel environment materialization requires no manual
-serialization.
+After a run, inspect the Technical Card JSON for summarized architecture, latency, throughput,
+real-time factor, memory, energy coverage, and minimum-input evidence. Use the accompanying `.npz`
+when you need the raw latency observations. Canonical Technical Cards already accepted for the PANNs
+models live under `technical_cards/<model-id>/`.
 
-## Audio-model-onboarding skill
+Profiling guide: [docs/profiling/overview.md](docs/profiling/overview.md).
 
-The [canonical skill](skills/audio-model-onboarding/SKILL.md) supports these implemented agent
-workflows:
+## Model Cards and Technical Cards
 
-- `analyze`: static, evidence-grounded upstream analysis.
-- `resolve-environment`: compatibility resolution and controlled isolated trials.
-- `integrate`: explicitly authorized wrapper and model-package integration after all prerequisites.
-- `verify`: controlled acquisition and runtime verification for one selected model/checkpoint.
-- `card`: checkpoint-specific model-card generation from validated evidence and artifacts.
+These artifacts answer different questions:
 
-`profile` remains a reserved compatibility entry point inside the onboarding skill; it never
-executes profiling itself. Profiling v1 is an independent, repeatable Technical Card workflow
-implemented by the separate [`skills/audio-model-profiling`](skills/audio-model-profiling/SKILL.md)
-skill and the `torch-dae model profile` / `torch-dae technical-card` CLI commands. Agent workflows
-are not one-shot CLI commands and must not be confused with the control-plane commands above. See
-the
-[skill guide](docs/model-onboarding-skill.md), [artifact guide](docs/onboarding-artifacts.md), and
-[canonical templates](skills/audio-model-onboarding/templates/README.md).
+| Artifact | Question it answers | Typical contents |
+|---|---|---|
+| **Model Card** | *What exactly is this supported model/checkpoint and how may I call it?* | identity, checkpoint, environment, waveform contract, outputs, embedding, verified devices, limitations |
+| **Technical Card** | *How did that accepted model behave in one profiling context?* | device/backend, latency, throughput, RTF, memory, energy, minimum input, architecture metrics, raw-measurement reference |
 
-## Copy-paste agent request
+One checkpoint-specific Model Card may therefore have zero, one, or many Technical Cards. Profiling
+adds evidence; it does not change model identity or acceptance status.
 
-Copy [the canonical request template](skills/audio-model-onboarding/templates/agent-request.md) and
-fill in its placeholders:
+## Integrating a new model with the skill
+
+The canonical `audio-model-onboarding` skill separates integration into reviewable phases:
+
+```text
+analyze
+  ↓
+resolve-environment
+  ↓
+integrate
+  ↓
+verify
+  ↓
+card
+```
+
+Run one phase per agent request and review the produced evidence before authorizing the next phase.
+A good first request is:
 
 ```text
 Use the canonical `audio-model-onboarding` skill available in this repository.
 
-MODE: <analyze | resolve-environment | integrate | verify | card>
+MODE: analyze
 WORKFLOW_ID: <STABLE_WORKFLOW_ID_OR_AUTO_DISCOVER>
 
 MODEL_NAME: <MODEL_NAME>
@@ -256,69 +286,58 @@ PREFERRED_EMBEDDING: <EMBEDDING_NAME_OR_UNRESOLVED>
 
 ADDITIONAL_CONSTRAINTS:
 <OPTIONAL_PROJECT_SPECIFIC_CONDITIONING_OR_NONE>
+
+Inspect the upstream project statically, identify the supported model/checkpoint/embedding
+candidates, report unresolved decisions, and stop at the analyze-mode boundary. Do not continue to
+environment resolution until I explicitly approve the analysis.
 ```
 
-The template also carries the required safety, evidence, isolation, validation, mode-scope, and
-no-commit instructions.
-
-## Expected agent response
-
-The [canonical response template](skills/audio-model-onboarding/templates/agent-response.md) reports
-the consumed and produced handoffs, promoted paths, external review bundle and digest, scoped
-workspace cleanup, retained managed runtime paths, problems, open questions, files, and validation.
-It lists only files actually changed for the requested model and uses `None.` when no open question
-remains.
-
-Promotion accepts only the selected handoff's exact declared phase-local artifact set. Review
-bundles include explicit archive-normalization results and a SHA-256 sidecar. Scoped cleanup reports
-external audit outputs without deleting them and persists an atomic receipt under
-`.torch-dae/reports/onboarding/<workflow-id>/cleanup/`.
-
-Accepted prerequisites are locally discoverable by stable workflow ID:
-
-```bash
-uv run python scripts/onboarding_handoff.py discover \
-  --workflow-id <workflow-id> \
-  --required-phase <phase> \
-  --json
-```
-
-Accepted handoffs retain the skill fingerprint and specification SHA-256 observed for their phase.
-Discovery and validation report those historical values beside the current control plane, including
-separate skill/specification drift flags. Historical drift is informational; pending phase candidates
-must still match the current values exactly before promotion.
-
-Build a normalized deterministic external review bundle through an accepted phase:
-
-```bash
-uv run python scripts/onboarding_handoff.py bundle \
-  --workflow-id <workflow-id> \
-  --through-phase <phase> \
-  --output-dir ../torch-dae-review-bundles \
-  --include-working-tree \
-  --json
-```
+The exact canonical template is in
+[`skills/audio-model-onboarding/templates/agent-request.md`](skills/audio-model-onboarding/templates/agent-request.md).
+The onboarding skill and the independent profiling skill are documented under
+[`skills/`](skills/) and in the [documentation](docs/index.md). A larger copy-paste prompt library is
+part of the user documentation work for the next release.
 
 ## Repository layout
 
 ```text
-src/torch_dae/                         Root control-plane package
+src/torch_dae/                         Python control plane and public wrappers
+model_cards/                           Accepted checkpoint-specific Model Cards
+environments/                          Committed isolated-runtime definitions
+verification_reports/                  Accepted checkpoint runtime observations
+technical_cards/                       Accepted empirical profiling evidence
+onboarding_reports/                    Accepted cross-phase onboarding artifacts
+skills/audio-model-onboarding/         Canonical model-integration agent skill
+skills/audio-model-profiling/          Canonical profiling agent skill
 schemas/                               Generated strict JSON Schemas
-scripts/                               Schema, coverage, and repository validation
-skills/audio-model-onboarding/         Canonical agent workflow
-docs/                                  Public subsystem and workflow guides
-graphics/                              README figures and architectural diagrams
-tests/                                 Contract, subsystem, safety, and synthetic evaluation tests
-environments/                          Committed per-card environment inputs
-onboarding_reports/                    Accepted pre-runtime cross-phase handoffs
-model_cards/                           Checkpoint-specific production cards
-verification_reports/                  Committed checkpoint-specific runtime observations
-.torch-dae/                            Ignored runtime state and managed workspaces
+docs/                                  User, API, workflow, and developer documentation
+tests/                                 Contract, runtime, safety, and regression tests
+.torch-dae/                            Ignored local runtime/cache/workspace state
 ```
 
-The `.agents/` and `.claude/` skill entries are public relative symlinks to the canonical skill.
+Model checkpoint payloads are not committed to the repository.
 
-## Development and validation
+## Documentation
+
+Read the hosted documentation at <https://torch-dae.readthedocs.io/en/stable/>.
+
+Recommended entry points:
+
+- [Installation](docs/getting-started/installation.md)
+- [Mental model](docs/getting-started/mental-model.md)
+- [Quickstart](docs/getting-started/quickstart.md)
+- [Supported models](docs/models/index.md)
+- [PANNs inference tutorial](docs/tutorials/panns-inference.md)
+- [Model execution](docs/user-guide/model-execution.md)
+- [Embeddings](docs/user-guide/embeddings.md)
+- [Profiling](docs/profiling/overview.md)
+- [Onboarding skill](docs/skill/overview.md)
+- [Python API](docs/api/index.md)
+
+## Development
+
+The root development environment remains model-agnostic. Model runtimes are exercised through their
+isolated environments rather than by adding heavyweight dependencies to the package root.
 
 ```bash
 uv sync --python 3.11 --all-groups --extra profiling --frozen
@@ -326,53 +345,25 @@ uv run --python 3.11 --all-groups --extra profiling --frozen ruff format --check
 uv run --python 3.11 --all-groups --extra profiling --frozen ruff check
 uv run --python 3.11 --all-groups --extra profiling --frozen mypy src scripts
 uv run --python 3.11 --all-groups --extra profiling --frozen pytest
-uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/generate_schemas.py --check
-uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/generate_profiling_schema.py --check
-uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/check_worktree_patch.py --json
 uv run --python 3.11 --all-groups --extra profiling --frozen python scripts/validate_repository.py
-uv run --python 3.11 --all-groups --extra profiling --frozen python skills/audio-model-onboarding/scripts/validate_skill_artifacts.py . --json
+uv run --python 3.11 --all-groups --extra profiling --frozen sphinx-build -W --keep-going -b html docs docs/_build/html
 ```
 
-The `profiling` extra installs root control-plane tooling (`numpy`, `psutil`, and CodeCarbon), not
-model-runtime dependencies. The complete validation matrix is in
-[`docs/development/testing.md`](docs/development/testing.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution contract.
 
-Run coverage with the same local thresholds as CI:
+## Current boundaries
 
-```bash
-mkdir -p .torch-dae
-uv run pytest -q \
-  --cov=torch_dae \
-  --cov-branch \
-  --cov-report=term-missing \
-  --cov-report=json:.torch-dae/coverage.json
-uv run python scripts/check_coverage.py \
-  .torch-dae/coverage.json \
-  --min-line 85 \
-  --min-branch 70
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution and pull-request expectations.
-
-## Roadmap
-
-The completed PANNs onboarding work terminates at immutable `runtime_verified` Model Cards.
-
-Profiling v1 and its Technical Card contracts are implemented. The next development sequence is:
-
-1. finalize and commit the Profiling v1 implementation;
-2. rerun the three PANNs profiling campaigns from that clean committed implementation;
-3. independently review the newly generated candidate Technical Cards;
-4. promote only approved new cards into `technical_cards/<model-id>/`;
-5. build the local-first Model Card + Technical Card presentation/analytics site;
-6. publish the coordinated repository/documentation/package update through the protected GitHub
-   pull-request workflow.
-
-The nine pre-closure PANNs dogfood cards under `candidate_technical_cards/` are historical evidence
-only. They must remain unmodified and must never be promoted.
-
-Profiling is optional for model acceptance and may be repeated indefinitely by different
-contributors and execution contexts.
+- The repository does not redistribute pretrained checkpoint payloads; accepted assets are acquired
+  explicitly from their authoritative providers.
+- The current accepted PANNs managed environments are constrained to macOS/arm64. CUDA support is
+  upstream-declared but not locally verified by the accepted cards.
+- PANNs inputs must already be mono floating-point tensors at the exact native sample rate. Automatic
+  resampling, downmixing, amplitude normalization, padding, cropping, and truncation are not part of
+  the wrapper contract.
+- Padded batches with unequal `valid_lengths` are not currently supported by the PANNs wrappers.
+- `torch-dae model inspect` remains an explicit unavailable-feature placeholder.
+- Candidate profiling evidence is never promoted automatically into `technical_cards/`; promotion is
+  a separate human-reviewed repository operation.
 
 ## Funding
 
@@ -381,34 +372,20 @@ The research project title is:
 *Methods of Computational Auditory Scene Analysis and Synthesis supporting eXtended and Immersive
 Reality Services*
 
-Funding identifiers: DM 118/2023; Mission 4; Component 1; Investment 4.1; PNRR Research; CUP
-E11I23000100001.
-
 Research activities were mainly funded under the Ministerial Decree (DM) 118/2023, Mission 4,
 Component 1, Investment 4.1 of the National Recovery and Resilience Plan (PNRR) – “PNRR Research” –
 CUP: E11I23000100001.
 
 ## Citations
 
-Cite the software entry when citing this repository or package. Also cite the IEEE ISCC paper when
-discussing the framework design, standardization rationale, or deployment methodology. The
-repository's canonical software metadata is in [CITATION.cff](CITATION.cff).
+Use the repository's [CITATION.cff](CITATION.cff) for software citation metadata. The stable
+concept DOI for the complete software series is
+[`10.5281/zenodo.21641390`](https://doi.org/10.5281/zenodo.21641390). Zenodo assigns an immutable
+version-specific DOI after each GitHub release is archived; use that record when citing an exact
+release.
 
-The concept DOI for the complete software series is
-[`10.5281/zenodo.21641390`](https://doi.org/10.5281/zenodo.21641390). The immutable DOI for version
-`0.1.0` is [`10.5281/zenodo.21641391`](https://doi.org/10.5281/zenodo.21641391).
-
-```bibtex
-@software{giacomelli2026torch_dae,
-  author  = {Giacomelli, Stefano},
-  title   = {{torch-dae}: an AI skill-based framework for Audio Embedding Models},
-  year    = {2026},
-  version = {0.1.0},
-  doi     = {10.5281/zenodo.21641391},
-  url     = {https://github.com/StefanoGiacomelli/torch_dae},
-  license = {Apache-2.0}
-}
-```
+When discussing the framework design, standardization rationale, or deployment methodology, also
+cite:
 
 ```bibtex
 @inproceedings{giacomelli2025torch_dae,
@@ -435,12 +412,6 @@ Licensed under the [Apache License 2.0](LICENSE). Attribution information is pro
 ICT - Ph.D. Candidate<br>
 Department of Information Engineering, Computer Science and Mathematics (DISIM)<br>
 University of L'Aquila, Italy
-
-<img
-  src="https://phdict.disim.univaq.it/wp-content/uploads/2024/06/logo-univaq-disim-2-2-768x283.png"
-  alt="University of L'Aquila — DISIM"
-  width="420"
-/>
 
 - **Email:** [stefano.giacomelli@graduate.univaq.it](mailto:stefano.giacomelli@graduate.univaq.it)
 - **GitHub:** [StefanoGiacomelli](https://github.com/StefanoGiacomelli)

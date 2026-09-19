@@ -1,4 +1,4 @@
-"""Model inspection and card-independent runtime verification commands."""
+"""Model runtime-verification and profiling commands."""
 
 from __future__ import annotations
 
@@ -10,34 +10,78 @@ import typer
 
 from torch_dae.core.errors import FeatureNotAvailableError
 
-app = typer.Typer(no_args_is_help=True, help="Model commands.")
+app = typer.Typer(
+    no_args_is_help=True,
+    help="Verify explicit runtime targets and profile accepted runtime-verified models.",
+)
 
 
 @app.command("profile")
 def profile(
-    model: Annotated[str, typer.Option("--model")],
-    device: Annotated[list[str] | None, typer.Option("--device")] = None,
-    protocol: Annotated[str, typer.Option("--protocol")] = "audio-inference-v1",
-    energy: Annotated[str, typer.Option("--energy")] = "auto",
+    model: Annotated[
+        str,
+        typer.Option(
+            "--model",
+            help="Accepted runtime_verified Model Card id to profile.",
+        ),
+    ],
+    device: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--device",
+            help=(
+                "Device selector; repeat for multiple selectors. Supported values are auto, cpu, "
+                "mps, cuda, and cuda:<index>. Default: auto."
+            ),
+        ),
+    ] = None,
+    protocol: Annotated[
+        str,
+        typer.Option(
+            "--protocol",
+            help="Profiling protocol id. Profiling v1 uses audio-inference-v1.",
+        ),
+    ] = "audio-inference-v1",
+    energy: Annotated[
+        str,
+        typer.Option(
+            "--energy",
+            help=(
+                "Energy policy: auto attempts supported measurement; off disables energy "
+                "measurement."
+            ),
+        ),
+    ] = "auto",
     allow_privileged_energy: Annotated[
         bool,
         typer.Option(
             "--allow-privileged-energy",
-            help="Permit a platform energy backend to request local privileged hardware counters.",
+            help=(
+                "Permit a platform energy backend to request local privileged hardware counters "
+                "when required (for example Apple PowerMetrics)."
+            ),
         ),
     ] = False,
-    output_dir: Annotated[Path, typer.Option("--output-dir")] = Path("./candidate_technical_cards"),
-    json_output: Annotated[bool, typer.Option("--json")] = False,
+    output_dir: Annotated[
+        Path,
+        typer.Option(
+            "--output-dir",
+            help=(
+                "Repository-local candidate directory for campaign results and Technical Card "
+                "JSON/NPZ evidence. Canonical technical_cards/ paths are rejected."
+            ),
+        ),
+    ] = Path("./candidate_technical_cards"),
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Emit the ProfilingCampaignResult as JSON."),
+    ] = False,
 ) -> None:
-    """Run Profiling v1 for an accepted, runtime_verified Model Card.
+    """Run Profiling v1 for one accepted, runtime-verified Model Card.
 
-    Produces candidate Technical Card JSON/`.npz` evidence under `--output-dir`, which must resolve
-    to a repository-local candidate/workspace path (default: `./candidate_technical_cards`). The
-    repository root, canonical `technical_cards/` tree, its descendants, and paths resolving
-    outside the repository are rejected. Profiling never mutates the Model Card; promotion into
-    the canonical tree is a separate, human-reviewed operation. On platforms where CodeCarbon
-    requires privileged hardware counters (for example Apple PowerMetrics), privilege is permitted
-    only when `--allow-privileged-energy` is explicitly supplied.
+    The command creates candidate evidence only. It never mutates the Model Card and never promotes
+    output into the canonical ``technical_cards/`` tree. Protocol-controlled warmups, repetitions,
+    batch sizes, durations, and CPU thread regimes are intentionally not CLI knobs.
     """
 
     device = device or ["auto"]
@@ -91,16 +135,35 @@ def _deferred(card_id: str, operation: str) -> None:
 
 @app.command("inspect")
 def inspect(card_id: str) -> None:
+    """Reserved model-inspection command; not available in the current control-plane CLI."""
+
     _deferred(card_id, "inspect")
 
 
 @app.command("verify")
 def verify(
-    target: Annotated[Path, typer.Option("--target", exists=True, dir_okay=False)],
-    json_output: Annotated[bool, typer.Option("--json")] = False,
-    offline: Annotated[bool, typer.Option("--offline")] = False,
+    target: Annotated[
+        Path,
+        typer.Option(
+            "--target",
+            exists=True,
+            dir_okay=False,
+            help="Path to a schema-2 RuntimeVerificationTarget JSON file.",
+        ),
+    ],
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Emit the verification result and evidence paths as JSON."),
+    ] = False,
+    offline: Annotated[
+        bool,
+        typer.Option(
+            "--offline",
+            help="Forbid network access while resolving runtime dependencies and checkpoint data.",
+        ),
+    ] = False,
 ) -> None:
-    """Execute a schema-2 runtime target in its verified environment; no model card required."""
+    """Execute a schema-2 runtime target in its verified environment; no Model Card is required."""
 
     from torch_dae.onboarding.handoff import discover_repository_root
     from torch_dae.runtime_executor import execute_runtime_verification

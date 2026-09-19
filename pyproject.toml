@@ -1,7 +1,7 @@
 [project]
 name = "torch-deepaudioembedding"
-version = "0.1.0"
-description = "torch-dae: an AI skill-based framework for Audio Embedding Models"
+version = "0.2.0"
+description = "Reproducible PyTorch framework for integrating, verifying, and profiling audio embedding models"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
 license = "Apache-2.0"
@@ -15,11 +15,13 @@ keywords = [
   "computational auditory scene analysis",
   "deep learning",
   "model onboarding",
+  "model profiling",
   "pytorch",
   "research software",
+  "runtime verification",
 ]
 classifiers = [
-  "Development Status :: 2 - Pre-Alpha",
+  "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: Apache Software License",
@@ -44,6 +46,8 @@ Homepage = "https://github.com/StefanoGiacomelli/torch_dae"
 Repository = "https://github.com/StefanoGiacomelli/torch_dae"
 Issues = "https://github.com/StefanoGiacomelli/torch_dae/issues"
 Documentation = "https://torch-dae.readthedocs.io/en/latest/"
+Changelog = "https://github.com/StefanoGiacomelli/torch_dae/blob/main/CHANGELOG.md"
+Citation = "https://doi.org/10.5281/zenodo.21641390"
 
 [project.scripts]
 torch-dae = "torch_dae.cli.main:app"

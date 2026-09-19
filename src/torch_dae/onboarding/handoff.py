@@ -99,6 +99,7 @@ SHARED_CONTROL_PLANE_ARTIFACTS = frozenset(
         "src/torch_dae/environment/manager.py",
         "src/torch_dae/onboarding/contracts.py",
         "src/torch_dae/onboarding/handoff.py",
+        "tests/environment/test_environment_materialization.py",
         "tests/onboarding/test_handoff_management.py",
         "tests/test_check_worktree_patch.py",
         "tests/test_public_metadata.py",

@@ -39,12 +39,23 @@ def test_model_profile_help() -> None:
     assert "--energy" in output
     assert "--allow-privileged-energy" in output
     assert "--output-dir" in output
+    assert "runtime_verified" in output
+    assert "Protocol" in output or "protocol" in output
+    assert "candidate" in output
 
 
 def test_technical_card_help() -> None:
     runner = CliRunner()
-    assert runner.invoke(app, ["technical-card", "--help"]).exit_code == 0
-    assert runner.invoke(app, ["technical-card", "validate", "--help"]).exit_code == 0
+    group = runner.invoke(app, ["technical-card", "--help"])
+    assert group.exit_code == 0
+    assert "raw evidence" in unstyle(group.output)
+
+    validate = runner.invoke(app, ["technical-card", "validate", "--help"])
+    assert validate.exit_code == 0
+    validate_output = unstyle(validate.output)
+    assert "raw NPZ evidence" in validate_output
+    assert "--json" in validate_output
+
     assert runner.invoke(app, ["technical-card", "inspect", "--help"]).exit_code == 0
     assert runner.invoke(app, ["technical-card", "list", "--help"]).exit_code == 0
 

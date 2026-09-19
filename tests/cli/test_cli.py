@@ -3,14 +3,29 @@ from __future__ import annotations
 from click import unstyle
 from typer.testing import CliRunner
 
+from torch_dae import __version__
 from torch_dae.cli.main import app
 
 
 def test_root_and_group_help() -> None:
     runner = CliRunner()
-    assert runner.invoke(app, ["--help"]).exit_code == 0
+    root = runner.invoke(app, ["--help"])
+    assert root.exit_code == 0
+    root_output = unstyle(root.output)
+    assert "--version" in root_output
+    assert "runtime verification" in root_output
     assert runner.invoke(app, ["card", "--help"]).exit_code == 0
     assert runner.invoke(app, ["env", "--help"]).exit_code == 0
+    assert runner.invoke(app, ["checkpoint", "--help"]).exit_code == 0
+    assert runner.invoke(app, ["model", "--help"]).exit_code == 0
+    assert runner.invoke(app, ["technical-card", "--help"]).exit_code == 0
+
+
+def test_root_version_matches_installed_distribution() -> None:
+    runner = CliRunner()
+    result = runner.invoke(app, ["--version"])
+    assert result.exit_code == 0
+    assert result.output == f"torch-dae {__version__}\n"
 
 
 def test_card_list_reflects_committed_cards(repo_root: object) -> None:

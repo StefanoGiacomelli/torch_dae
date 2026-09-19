@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import sys
+import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -12,7 +13,8 @@ sys.path.insert(0, str(ROOT / "src"))
 project = "torch-dae: an AI skill-based framework for Audio Embedding Models"
 author = "Stefano Giacomelli"
 copyright = "2026, Stefano Giacomelli"
-version = "0.1.0"
+_project_metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+version = str(_project_metadata["version"])
 release = version
 
 extensions = [
@@ -29,7 +31,14 @@ source_suffix = {
     ".md": "markdown",
 }
 master_doc = "index"
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = [
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    # Immutable onboarding evidence. The current user-facing PANNs guide is
+    # ``models/panns-runtime.md``.
+    "models/panns.md",
+]
 autosummary_generate = False
 autodoc_typehints = "none"
 napoleon_google_docstring = False
