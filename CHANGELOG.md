@@ -49,7 +49,6 @@ All notable changes to this project are documented in this file.
   CodeCarbon measured/estimated energy provenance.
 - Marked schema-1 `profiled`/embedded Model Card profiling fields as legacy compatibility only.
 
-
 ### Canonical lifecycle finalization and cross-agent review packaging
 
 - Added `scripts/onboarding_handoff.py finalize`, the single canonical end-of-task path. It
