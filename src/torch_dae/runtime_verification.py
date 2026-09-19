@@ -179,7 +179,10 @@ def validate_runtime_verification_target(
         raise ValueError("runtime target checkpoint is outside the integration handoff")
     if target.future_card_id and target.future_card_id not in handoff.target_card_ids:
         raise ValueError("runtime target future card is outside the integration handoff")
-    definition = EnvironmentManager(root).resolve_environment(target.environment_id)
+    definition = EnvironmentManager(root).resolve_environment(
+        target.environment_id,
+        enforce_platform=False,
+    )
     if definition.environment_spec_sha256 != target.environment_spec_sha256:
         raise ValueError("runtime target environment specification SHA-256 mismatch")
     if (

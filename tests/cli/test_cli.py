@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from click import unstyle
 from typer.testing import CliRunner
 
 from torch_dae.cli.main import app
@@ -32,11 +33,12 @@ def test_model_verification_requires_an_explicit_target() -> None:
     assert "model card not found" in result.output
     result = runner.invoke(app, ["model", "verify", "synthetic"])
     assert result.exit_code == 2
-    assert "--target" in result.output
+    assert "--target" in unstyle(result.output)
     help_result = runner.invoke(app, ["model", "verify", "--help"])
     assert help_result.exit_code == 0
-    assert "--target" in help_result.output
-    assert "--offline" in help_result.output
+    help_output = unstyle(help_result.output)
+    assert "--target" in help_output
+    assert "--offline" in help_output
 
 
 def test_env_info_absent() -> None:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
+from click import unstyle
 from typer.testing import CliRunner
 
 from torch_dae.cli.main import app
@@ -31,12 +32,13 @@ def test_model_profile_help() -> None:
     runner = CliRunner()
     result = runner.invoke(app, ["model", "profile", "--help"])
     assert result.exit_code == 0
-    assert "--model" in result.output
-    assert "--device" in result.output
-    assert "--protocol" in result.output
-    assert "--energy" in result.output
-    assert "--allow-privileged-energy" in result.output
-    assert "--output-dir" in result.output
+    output = unstyle(result.output)
+    assert "--model" in output
+    assert "--device" in output
+    assert "--protocol" in output
+    assert "--energy" in output
+    assert "--allow-privileged-energy" in output
+    assert "--output-dir" in output
 
 
 def test_technical_card_help() -> None:
@@ -51,7 +53,7 @@ def test_model_profile_requires_model_option() -> None:
     runner = CliRunner()
     result = runner.invoke(app, ["model", "profile"])
     assert result.exit_code != 0
-    assert "--model" in result.output
+    assert "--model" in unstyle(result.output)
 
 
 def test_model_profile_rejects_unknown_protocol() -> None:
@@ -142,11 +144,22 @@ def test_model_profile_propagates_privileged_energy_consent() -> None:
     assert mock_run.call_args.kwargs["allow_privileged_energy"] is True
 
 
-def test_technical_card_list_reports_no_official_cards_yet(repo_root: object) -> None:
+def test_technical_card_list_reports_canonical_cards(repo_root: object) -> None:
     runner = CliRunner()
     result = runner.invoke(app, ["technical-card", "list"])
     assert result.exit_code == 0
-    assert "no official Technical Cards exist yet" in result.output
+    listed = [line for line in result.output.splitlines() if line]
+    assert listed == [
+        "panns-cnn14-16k-map-0438/tc-059e5a619219e8dd",
+        "panns-cnn14-16k-map-0438/tc-799b336a42338294",
+        "panns-cnn14-16k-map-0438/tc-c40157b533b69cb3",
+        "panns-resnet38-map-0434/tc-82c3d3220b2ae57b",
+        "panns-resnet38-map-0434/tc-84fcb0e59f0cd4eb",
+        "panns-resnet38-map-0434/tc-a612f635b7bd6fcc",
+        "panns-wavegram-logmel-cnn14-map-0439/tc-3ce3f58a0831eb15",
+        "panns-wavegram-logmel-cnn14-map-0439/tc-c8fec918f4cd7a4e",
+        "panns-wavegram-logmel-cnn14-map-0439/tc-cc1e330beaab9f78",
+    ]
 
 
 def test_technical_card_validate_reports_missing_file() -> None:

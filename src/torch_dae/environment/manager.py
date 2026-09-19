@@ -389,7 +389,12 @@ class EnvironmentManager:
             )
         return manifest
 
-    def resolve_environment(self, environment_id: str) -> ResolvedEnvironmentDefinition:
+    def resolve_environment(
+        self,
+        environment_id: str,
+        *,
+        enforce_platform: bool = False,
+    ) -> ResolvedEnvironmentDefinition:
         """Resolve and strictly validate an environment without consulting model cards.
 
         New definitions use ``environments/<environment-id>/``. A uniquely matching legacy
@@ -400,6 +405,11 @@ class EnvironmentManager:
         ----------
         environment_id
             Canonical logical environment identifier.
+        enforce_platform
+            Whether this direct resolution call must require the current host platform to satisfy
+            the environment's declared constraints. Structural resolution is host-independent by
+            default. Runtime operations enforce platform compatibility when converting a resolved
+            definition into executable environment inputs.
 
         Returns
         -------
@@ -482,7 +492,8 @@ class EnvironmentManager:
                         )
                     source_hashes[relative] = sha256_file(path)
         platform = canonical_platform_tag()
-        validate_platform_constraint(specification, platform)
+        if enforce_platform:
+            validate_platform_constraint(specification, platform)
         package_provenance = local_package_provenance(self.repository_root)
         package_identity = package_identity_from_content_digest(
             package_provenance.package_content_sha256
@@ -1307,6 +1318,10 @@ class EnvironmentManager:
         self,
         definition: ResolvedEnvironmentDefinition,
     ) -> EnvironmentInputs:
+        validate_platform_constraint(
+            definition.specification,
+            definition.platform,
+        )
         specification_path = contained_path(self.repository_root, definition.specification_path)
         project_path = contained_path(self.repository_root, definition.project_path)
         lock_path = contained_path(self.repository_root, definition.lock_path)
