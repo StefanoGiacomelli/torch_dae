@@ -1,4 +1,4 @@
-"""`torch-dae technical-card` commands (Section 29)."""
+"""Commands for canonical and candidate Technical Card evidence."""
 
 from __future__ import annotations
 
@@ -8,15 +8,28 @@ from typing import Annotated
 
 import typer
 
-app = typer.Typer(no_args_is_help=True, help="Technical Card commands.")
+app = typer.Typer(
+    no_args_is_help=True,
+    help="List, inspect, and validate profiling Technical Cards and their raw evidence.",
+)
 
 
 @app.command("validate")
 def validate(
-    card: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
-    json_output: Annotated[bool, typer.Option("--json")] = False,
+    card: Annotated[
+        Path,
+        typer.Argument(
+            exists=True,
+            dir_okay=False,
+            help="Candidate or canonical Technical Card JSON file.",
+        ),
+    ],
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Emit structured validation results as JSON."),
+    ] = False,
 ) -> None:
-    """Validate one candidate or official Technical Card JSON file."""
+    """Validate one Technical Card against its Model Card and raw NPZ evidence."""
 
     from torch_dae.onboarding.handoff import discover_repository_root
     from torch_dae.profiling.validation import validate_technical_card_file
@@ -43,9 +56,16 @@ def validate(
 
 @app.command("inspect")
 def inspect(
-    card: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    card: Annotated[
+        Path,
+        typer.Argument(
+            exists=True,
+            dir_okay=False,
+            help="Technical Card JSON file to parse and print.",
+        ),
+    ],
 ) -> None:
-    """Print the parsed content of one Technical Card JSON file."""
+    """Print one parsed Technical Card as normalized JSON without running benchmarks."""
 
     from torch_dae.profiling.contracts import TechnicalCard
 
@@ -54,8 +74,13 @@ def inspect(
 
 
 @app.command("list")
-def list_cards(json_output: Annotated[bool, typer.Option("--json")] = False) -> None:
-    """List every Technical Card under the canonical `technical_cards/` repository tree."""
+def list_cards(
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Emit the canonical Technical Card inventory as JSON."),
+    ] = False,
+) -> None:
+    """List every Technical Card under the canonical ``technical_cards/`` repository tree."""
 
     from torch_dae.onboarding.handoff import discover_repository_root
     from torch_dae.profiling.storage import list_technical_cards

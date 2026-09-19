@@ -109,6 +109,7 @@ api/index
 :caption: Reference
 
 reference/cli
+reference/panns-runtime-api
 reference/schemas
 reference/lifecycle
 ```

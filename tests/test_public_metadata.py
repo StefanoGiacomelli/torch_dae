@@ -171,7 +171,7 @@ def test_readme_badges_sections_and_public_status(repo_root: Path) -> None:
     assert "raw.githubusercontent.com" not in text
     assert "from torch_dae import ModelCardRegistry" in text
     assert "model.compute_embedding(" in text
-    assert "output.tensors[\"probabilities\"]" in text
+    assert 'output.tensors["probabilities"]' in text
     assert "pip install torch-deepaudioembedding" in text
 
     normalized_text = " ".join(text.split())

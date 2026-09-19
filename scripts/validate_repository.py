@@ -56,6 +56,8 @@ from torch_dae.onboarding.inspection import (
     inspect_dependencies,
     inspect_scenario_repository,
 )
+from torch_dae.profiling.contracts import TechnicalCard
+from torch_dae.profiling.validation import validate_technical_card_file
 from torch_dae.runtime_verification import (
     RuntimeVerificationTarget,
     validate_runtime_verification_target,
@@ -1085,6 +1087,104 @@ def onboarding_behavioral_smoke(failures: list[str]) -> None:
         fail("scenario inspection did not use the shared inspection budget", failures)
 
 
+def validate_canonical_technical_cards(root: Path, failures: list[str]) -> None:
+    """Validate every canonical Technical Card JSON/NPZ pair in repository storage.
+
+    An absent or empty ``technical_cards/`` tree remains a valid repository state. When canonical
+    cards are present, however, filenames, model directories, raw assets, Model Card references,
+    identity recomputation, timing summaries, privacy constraints, and raw-asset hashes are all
+    repository-wide acceptance gates.
+    """
+
+    technical_root = root / "technical_cards"
+    if not technical_root.exists():
+        return
+    if not technical_root.is_dir():
+        fail("technical_cards exists but is not a directory", failures)
+        return
+
+    seen_ids: dict[str, Path] = {}
+    json_paths: set[Path] = set()
+    npz_paths: set[Path] = set()
+
+    for child in sorted(technical_root.iterdir()):
+        if not child.is_dir():
+            fail(
+                f"unexpected canonical Technical Card root entry: {child.relative_to(root)}",
+                failures,
+            )
+            continue
+        nested_directories = sorted(path for path in child.iterdir() if path.is_dir())
+        for nested in nested_directories:
+            fail(
+                f"unexpected nested directory in canonical Technical Card tree: "
+                f"{nested.relative_to(root)}",
+                failures,
+            )
+        for artifact in sorted(path for path in child.iterdir() if path.is_file()):
+            if artifact.suffix == ".json":
+                json_paths.add(artifact)
+            elif artifact.suffix == ".npz":
+                npz_paths.add(artifact)
+            else:
+                fail(
+                    f"unexpected canonical Technical Card artifact: {artifact.relative_to(root)}",
+                    failures,
+                )
+
+    expected_npz: set[Path] = set()
+    for card_path in sorted(json_paths):
+        relative = card_path.relative_to(root)
+        try:
+            card = TechnicalCard.model_validate_json(card_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            fail(f"invalid canonical Technical Card {relative}: schema validity: {exc}", failures)
+            continue
+
+        technical_card_id = card.identity.technical_card_id
+        if card_path.stem != technical_card_id:
+            fail(
+                f"canonical Technical Card filename disagrees with identity: {relative}",
+                failures,
+            )
+        if card_path.parent.name != card.model.model_card_id:
+            fail(
+                "canonical Technical Card model directory disagrees with Model Card id: "
+                f"{relative}",
+                failures,
+            )
+        expected_raw_name = f"{technical_card_id}.npz"
+        if card.raw_measurements.path != expected_raw_name:
+            fail(
+                f"canonical Technical Card raw asset must be colocated as {expected_raw_name}: "
+                f"{relative}",
+                failures,
+            )
+        expected_npz.add(card_path.with_suffix(".npz"))
+
+        prior = seen_ids.get(technical_card_id)
+        if prior is not None:
+            fail(
+                f"duplicate canonical Technical Card id {technical_card_id}: "
+                f"{prior.relative_to(root)}, {relative}",
+                failures,
+            )
+        else:
+            seen_ids[technical_card_id] = card_path
+
+        result = validate_technical_card_file(card_path, repository_root=root)
+        for error in result.errors:
+            fail(f"invalid canonical Technical Card {relative}: {error}", failures)
+
+    for missing in sorted(expected_npz - npz_paths):
+        fail(
+            f"canonical Technical Card raw asset is missing: {missing.relative_to(root)}",
+            failures,
+        )
+    for orphan in sorted(npz_paths - expected_npz):
+        fail(f"orphan canonical Technical Card raw asset: {orphan.relative_to(root)}", failures)
+
+
 def main() -> int:
     failures: list[str] = []
 
@@ -1112,6 +1212,7 @@ def main() -> int:
     failures.extend(root_dependency_errors(ROOT))
     validate_integration_artifacts(ROOT, failures)
     control_plane_drift = validate_onboarding_reports(ROOT, failures)
+    validate_canonical_technical_cards(ROOT, failures)
     if subprocess.run(
         ["git", "ls-files", "._*"], cwd=ROOT, check=False, capture_output=True, text=True
     ).stdout:
