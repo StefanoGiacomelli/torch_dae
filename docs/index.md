@@ -115,6 +115,13 @@ reference/lifecycle
 ```
 
 ```{toctree}
+:maxdepth: 1
+:caption: Releases
+
+releases/0.2.0
+```
+
+```{toctree}
 :maxdepth: 2
 :caption: Development
 

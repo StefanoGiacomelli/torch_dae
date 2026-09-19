@@ -4,6 +4,7 @@ import json
 import shutil
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -20,10 +21,18 @@ from torch_dae.environment.policy import ExecutionPolicy
 from torch_dae.runtime_verification import RuntimeVerificationTarget
 
 
+def project_distribution_version(repo_root: Path) -> str:
+    """Return the distribution version declared by the repository under test."""
+
+    project = tomllib.loads((repo_root / "pyproject.toml").read_text())
+    return str(project["project"]["version"])
+
+
 def write_synthetic_repository(root: Path, repo_root: Path, valid_fixture_dir: Path) -> str:
     card_id = "synthetic-environment-card"
     environment_id = "synthetic-shared-environment"
     version = ".".join(str(part) for part in sys.version_info[:3])
+    package_version = project_distribution_version(repo_root)
     (root / "project_spec.md").write_text("synthetic environment and checkpoint test repository\n")
     shutil.copy2(repo_root / "pyproject.toml", root / "pyproject.toml")
     shutil.copy2(repo_root / "README.md", root / "README.md")
@@ -84,7 +93,7 @@ def write_synthetic_repository(root: Path, repo_root: Path, valid_fixture_dir: P
         )
     )
     (env_dir / "verify_environment.py").write_text(
-        """
+        f"""
 from __future__ import annotations
 
 import importlib.metadata as metadata
@@ -98,7 +107,7 @@ import torch_dae.environment
 
 assert "PYTHONPATH" not in os.environ
 assert "PYTHONHOME" not in os.environ
-assert metadata.version("torch-deepaudioembedding") == "0.1.0"
+assert metadata.version("torch-deepaudioembedding") == {package_version!r}
 scripts = pathlib.Path(sysconfig.get_path("scripts"))
 assert (scripts / "torch-dae").exists()
 pyvenv = pathlib.Path(os.environ["TORCH_DAE_ENVIRONMENT_ROOT"]) / "pyvenv.cfg"
@@ -218,6 +227,7 @@ def test_environment_lifecycle(
     monkeypatch.setenv("PYTHONPATH", str(hostile))
     monkeypatch.setenv("PYTHONHOME", "/definitely/not/pythonhome")
     card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
+    package_version = project_distribution_version(repo_root)
     manager = EnvironmentManager(
         tmp_path,
         policy=ExecutionPolicy(command_timeout_seconds=120, download_timeout_seconds=120),
@@ -246,7 +256,7 @@ def test_environment_lifecycle(
     )
     assert resolved.python_executable.exists()
     assert not (tmp_path / f"environments/{card_id}/.venv").exists()
-    assert resolved.installed_packages["torch-deepaudioembedding"] == "0.1.0"
+    assert resolved.installed_packages["torch-deepaudioembedding"] == package_version
     metadata = resolved.root / "lib/python{}.{}".format(*sys.version_info[:2])
     assert metadata.exists()
     materialization = json.loads((resolved.root / "torch-dae-materialization.json").read_text())
@@ -286,7 +296,7 @@ def test_environment_lifecycle(
                 "torch_dae.cards.models, torch_dae.environment; "
                 "assert 'PYTHONPATH' not in os.environ; "
                 "assert 'PYTHONHOME' not in os.environ; "
-                "assert m.version('torch-deepaudioembedding') == '0.1.0'; "
+                f"assert m.version('torch-deepaudioembedding') == {package_version!r}; "
                 "assert pathlib.Path(torch_dae.__file__).is_relative_to("
                 "pathlib.Path(os.environ['VIRTUAL_ENV']).resolve()); "
                 "print('inside')"

@@ -13,7 +13,10 @@ from pathlib import Path
 
 import pytest
 
-from tests.environment.test_environment_materialization import write_synthetic_repository
+from tests.environment.test_environment_materialization import (
+    project_distribution_version,
+    write_synthetic_repository,
+)
 from torch_dae.core import checkpoint as checkpoint_module
 from torch_dae.core.checkpoint import (
     CheckpointManager,
@@ -813,6 +816,7 @@ def test_package_bundle_checkpoint_uses_owned_distribution_file_offline(
 ) -> None:
     monkeypatch.setenv("UV_CACHE_DIR", str(tmp_path.parent / f"{tmp_path.name}-uv-cache"))
     card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
+    package_version = project_distribution_version(repo_root)
     package_file = tmp_path / "src/torch_dae/__init__.py"
     sha = hashlib.sha256(package_file.read_bytes()).hexdigest()
     update_checkpoint(
@@ -822,7 +826,7 @@ def test_package_bundle_checkpoint_uses_owned_distribution_file_offline(
             "checkpoint_id": "synthetic-package-bundle-checkpoint",
             "source_type": "package_bundle",
             "package": "torch-deepaudioembedding",
-            "package_version": "0.1.0",
+            "package_version": package_version,
             "filename": "torch_dae/__init__.py",
             "expected_sha256": sha,
             "format": "python",
@@ -843,7 +847,7 @@ def test_package_bundle_checkpoint_uses_owned_distribution_file_offline(
 @pytest.mark.parametrize(
     ("filename", "version"),
     [
-        ("torch_dae/missing-resource.bin", "0.1.0"),
+        ("torch_dae/missing-resource.bin", None),
         ("torch_dae/__init__.py", "9.9.9"),
     ],
 )
@@ -853,10 +857,11 @@ def test_package_bundle_rejects_missing_resource_or_version(
     valid_fixture_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
     filename: str,
-    version: str,
+    version: str | None,
 ) -> None:
     monkeypatch.setenv("UV_CACHE_DIR", str(tmp_path.parent / f"{tmp_path.name}-uv-cache"))
     card_id = write_synthetic_repository(tmp_path, repo_root, valid_fixture_dir)
+    package_version = version or project_distribution_version(repo_root)
     update_checkpoint(
         tmp_path,
         {
@@ -864,7 +869,7 @@ def test_package_bundle_rejects_missing_resource_or_version(
             "checkpoint_id": "synthetic-package-bundle-checkpoint",
             "source_type": "package_bundle",
             "package": "torch-deepaudioembedding",
-            "package_version": version,
+            "package_version": package_version,
             "filename": filename,
             "format": "python",
             "loader": "manual",

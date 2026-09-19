@@ -380,12 +380,14 @@ def test_generic_control_plane_history_keeps_model_artifacts_strict(tmp_path):
     )
 
     generic = "src/torch_dae/environment/manager.py"
+    generic_test = "tests/environment/test_environment_materialization.py"
     model = "src/torch_dae/models/panns/model.py"
     environment = "environments/panns-cnn14-16k-map-0438/environment.json"
     assert generic in SHARED_CONTROL_PLANE_ARTIFACTS
+    assert generic_test in SHARED_CONTROL_PLANE_ARTIFACTS
     assert model not in SHARED_CONTROL_PLANE_ARTIFACTS
     assert environment not in SHARED_CONTROL_PLANE_ARTIFACTS
-    for relative in (generic, model, environment):
+    for relative in (generic, generic_test, model, environment):
         path = tmp_path / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("changed bytes")
@@ -395,7 +397,7 @@ def test_generic_control_plane_history_keeps_model_artifacts_strict(tmp_path):
         tmp_path,
         {
             relative: (OnboardingPhase.INTEGRATE, "a" * 64)
-            for relative in (generic, model, environment)
+            for relative in (generic, generic_test, model, environment)
         },
     )
     assert len(errors) == 2

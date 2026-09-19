@@ -378,11 +378,11 @@ CUP: E11I23000100001.
 
 ## Citations
 
-Use the repository's [CITATION.cff](CITATION.cff) for release-specific software citation metadata.
-The concept DOI for the software series is
-[`10.5281/zenodo.21641390`](https://doi.org/10.5281/zenodo.21641390). The immutable DOI for the
-currently published `0.1.0` release is
-[`10.5281/zenodo.21641391`](https://doi.org/10.5281/zenodo.21641391).
+Use the repository's [CITATION.cff](CITATION.cff) for software citation metadata. The stable
+concept DOI for the complete software series is
+[`10.5281/zenodo.21641390`](https://doi.org/10.5281/zenodo.21641390). Zenodo assigns an immutable
+version-specific DOI after each GitHub release is archived; use that record when citing an exact
+release.
 
 When discussing the framework design, standardization rationale, or deployment methodology, also
 cite:

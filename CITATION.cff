@@ -2,16 +2,12 @@ cff-version: 1.2.0
 message: "If you use torch-dae in academic work, please cite this software."
 title: "torch-dae: an AI skill-based framework for Audio Embedding Models"
 type: software
-version: 0.1.0
-date-released: "2026-07-28"
-doi: "10.5281/zenodo.21641391"
+version: 0.2.0
+date-released: "2026-09-19"
 identifiers:
   - type: doi
     value: "10.5281/zenodo.21641390"
     description: "Concept DOI representing all releases of torch-dae."
-  - type: doi
-    value: "10.5281/zenodo.21641391"
-    description: "Version-specific DOI for torch-dae 0.1.0."
 license: Apache-2.0
 repository-code: "https://github.com/StefanoGiacomelli/torch_dae"
 url: "https://github.com/StefanoGiacomelli/torch_dae"
@@ -22,14 +18,15 @@ authors:
     orcid: "https://orcid.org/0009-0009-0438-1748"
     affiliation: "Department of Information Engineering, Computer Science and Mathematics (DISIM), University of L'Aquila"
 abstract: >-
-  torch-dae is a generic framework that provides an AI skill-based workflow for
-  evidence-grounded onboarding and integration of audio embedding models. It keeps
-  model-specific dependencies in isolated environments and records provenance,
-  checkpoint identity, environment resolution, public wrapper behavior, embeddings,
-  and runtime verification as explicit artifacts. Research activities were mainly
-  funded under the Ministerial Decree (DM) 118/2023, Mission 4, Component 1,
-  Investment 4.1 of the National Recovery and Resilience Plan (PNRR) – “PNRR
-  Research” – CUP: E11I23000100001.
+  torch-dae is a reproducible PyTorch framework for integrating, verifying, and profiling
+  checkpoint-specific audio embedding models. It separates the lightweight repository control
+  plane from isolated model runtimes, records explicit Model Cards and runtime-verification
+  evidence, exposes typed waveform, output, and embedding contracts, and supports repeatable
+  device-specific profiling through Technical Cards with raw measurements. The repository also
+  provides agent skills for controlled model onboarding and profiling. Research activities were
+  mainly funded under the Ministerial Decree (DM) 118/2023, Mission 4, Component 1, Investment
+  4.1 of the National Recovery and Resilience Plan (PNRR) – “PNRR Research” – CUP:
+  E11I23000100001.
 references:
   - type: conference-paper
     authors:

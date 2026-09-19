@@ -47,9 +47,10 @@ def test_public_package_metadata(repo_root: Path) -> None:
     pyproject = tomllib.loads((repo_root / "pyproject.toml").read_text())
     project = pyproject["project"]
     assert project["name"] == "torch-deepaudioembedding"
-    assert project["version"] == "0.1.0"
+    assert project["version"] == "0.2.0"
     assert project["description"] == (
-        "torch-dae: an AI skill-based framework for Audio Embedding Models"
+        "Reproducible PyTorch framework for integrating, verifying, and profiling audio "
+        "embedding models"
     )
     assert project["requires-python"] == ">=3.11,<3.13"
     assert project["license"] == "Apache-2.0"
@@ -60,8 +61,18 @@ def test_public_package_metadata(repo_root: Path) -> None:
             "email": "stefano.giacomelli@graduate.univaq.it",
         }
     ]
-    assert set(project["keywords"]) >= {"audio", "pytorch", "model onboarding"}
+    assert set(project["keywords"]) >= {
+        "audio",
+        "pytorch",
+        "model onboarding",
+        "model profiling",
+        "runtime verification",
+    }
+    assert "Development Status :: 3 - Alpha" in project["classifiers"]
+    assert "Development Status :: 2 - Pre-Alpha" not in project["classifiers"]
     assert project["urls"]["Repository"] == "https://github.com/StefanoGiacomelli/torch_dae"
+    assert project["urls"]["Changelog"].endswith("/blob/main/CHANGELOG.md")
+    assert project["urls"]["Citation"] == "https://doi.org/10.5281/zenodo.21641390"
     assert project["scripts"] == {"torch-dae": "torch_dae.cli.main:app"}
     assert pyproject["tool"]["hatch"]["build"]["targets"]["wheel"]["packages"] == ["src/torch_dae"]
     assert (repo_root / "src/torch_dae/__init__.py").is_file()
@@ -90,15 +101,12 @@ def test_license_citation_and_contribution_files(repo_root: Path) -> None:
     assert citation["cff-version"] == "1.2.0"
     assert citation["title"] == "torch-dae: an AI skill-based framework for Audio Embedding Models"
     assert citation["type"] == "software"
-    assert citation["version"] == "0.1.0"
-    assert citation["date-released"] == "2026-07-28"
-    assert citation["doi"] == "10.5281/zenodo.21641391"
+    assert citation["version"] == "0.2.0"
+    assert citation["date-released"] == "2026-09-19"
+    assert "doi" not in citation
 
     identifiers = {(item["type"], item["value"]) for item in citation["identifiers"]}
-    assert identifiers == {
-        ("doi", "10.5281/zenodo.21641390"),
-        ("doi", "10.5281/zenodo.21641391"),
-    }
+    assert identifiers == {("doi", "10.5281/zenodo.21641390")}
 
     assert citation["license"] == "Apache-2.0"
     assert citation["authors"][0]["orcid"] == "https://orcid.org/0009-0009-0438-1748"
@@ -197,7 +205,6 @@ def test_readme_badges_sections_and_public_status(repo_root: Path) -> None:
     for value in (
         "0009-0009-0438-1748",
         "10.5281/zenodo.21641390",
-        "10.5281/zenodo.21641391",
         "stefano.giacomelli@graduate.univaq.it",
         "DM) 118/2023",
         "Mission 4",
@@ -327,8 +334,8 @@ def test_license_files_in_distribution_metadata_and_archives(
 ) -> None:
     wheel = next(built_distributions.glob("*.whl"))
     source = next(built_distributions.glob("*.tar.gz"))
-    assert wheel.name == "torch_deepaudioembedding-0.1.0-py3-none-any.whl"
-    assert source.name == "torch_deepaudioembedding-0.1.0.tar.gz"
+    assert wheel.name == "torch_deepaudioembedding-0.2.0-py3-none-any.whl"
+    assert source.name == "torch_deepaudioembedding-0.2.0.tar.gz"
     with zipfile.ZipFile(wheel) as archive:
         names = archive.namelist()
         metadata_name = next(name for name in names if name.endswith(".dist-info/METADATA"))
