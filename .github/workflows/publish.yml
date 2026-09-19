@@ -27,7 +27,7 @@ jobs:
           python -c "import pathlib,tomllib;
           value=tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'];
           print(f'value={value}')" >> "$GITHUB_OUTPUT"
-      - run: uv sync --all-groups --frozen
+      - run: uv sync --all-groups --extra profiling --frozen
       - name: Validate production tag
         env:
           PROJECT_VERSION: ${{ steps.project-version.outputs.value }}
